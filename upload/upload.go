@@ -88,14 +88,13 @@ func keywords(b Book) (k []string) {
 func store(coll *mgo.Collection, path string) {
 	var book Book
 
-	e, err := epub.Open(PATH+path, 0)
+	e, err := epub.Open(PATH+"in/"+path, 0)
 	if err != nil {
 		fmt.Println(path)
 		panic(err) // TODO: do something
 	}
 	defer e.Close()
 
-	// TODO: do it for all metadata
 	book.Title = strings.Join(e.Metadata(epub.EPUB_TITLE), ", ")
 	book.Author = parseAuthr(e.Metadata(epub.EPUB_CREATOR))
 	book.Contributor = strings.Join(e.Metadata(epub.EPUB_CONTRIB), ", ")
@@ -111,11 +110,14 @@ func store(coll *mgo.Collection, path string) {
 	book.Coverage = strings.Join(e.Metadata(epub.EPUB_COVERAGE), ", ")
 	book.Rights = strings.Join(e.Metadata(epub.EPUB_RIGHTS), ", ")
 	book.Meta = strings.Join(e.Metadata(epub.EPUB_META), ", ")
-	book.Path = PATH + path
+	book.Path = PATH + path[:1] + "/" + path
 	book.Cover, book.CoverSmall = getCover(e, path)
 	book.Keywords = keywords(book)
-
 	coll.Insert(book)
+
+	os.Mkdir(PATH + path[:1], os.ModePerm)
+	cmd := exec.Command("mv", PATH+"in/"+path, book.Path)
+	cmd.Run()
 }
 
 func main() {
@@ -126,9 +128,9 @@ func main() {
 	defer session.Close()
 	coll := session.DB(DB_NAME).C(BOOKS_COLL)
 
-	f, err := os.Open(PATH)
+	f, err := os.Open(PATH + "in/")
 	if err != nil {
-		fmt.Println(PATH)
+		fmt.Println(PATH + "in/")
 		panic(err) // TODO: do something
 	}
 	names, err := f.Readdirnames(0)
