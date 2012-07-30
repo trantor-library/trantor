@@ -58,6 +58,7 @@ func main() {
 	http.HandleFunc("/search/", func(w http.ResponseWriter, r *http.Request) { searchHandler(coll, w, r) })
 	http.HandleFunc("/img/", sendFile)
 	http.HandleFunc("/cover/", sendFile)
+	http.HandleFunc("/books/", sendFile)
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { loadTemplate(w, "front", nil) })
 	http.ListenAndServe(":8080", nil)
 }
