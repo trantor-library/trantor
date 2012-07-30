@@ -1,0 +1,10 @@
+<h1>{{.Title}}</h1>
+<p>{{.Description}}</p>
+<img src="{{.Cover}}" alt="{{.Title}}" />
+<ul>
+	<li><strong>Author:</strong> {{range .Author}}{{.}}, {{end}}</li>
+	<li><strong>Publisher:</strong> {{.Publisher}}</li>
+	<li><strong>Tags:</strong> {{range .Subject}}{{.}}, {{end}}</li>
+	<li><strong>Date:</strong> {{.Date}}</li>
+	<li><strong>Lang:</strong> {{range .Lang}}{{.}} {{end}}</li>
+</ul>

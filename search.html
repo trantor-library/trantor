@@ -1,0 +1,13 @@
+<h1>Search</h1>
+<form action="/search/">
+	<input type="search" name="q" value="{{.Search}}"/>
+	<input type="submit" value="Search">
+</form>
+
+<ul>
+{{with .Books}}
+	{{range .}}
+	<li><img src="{{.CoverSmall}}" alt="{{.Title}}" /><a href="/book/{{.Title}}">{{.Title}}</a> - {{range .Author}}{{.}}, {{end}}</li>
+	{{end}}
+{{end}}
+</ul>

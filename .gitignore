@@ -1,4 +1,8 @@
 books/
+cover/
 img/
 trantor
 .*.swp
+upload/upload
+upload/books
+upload/cover
