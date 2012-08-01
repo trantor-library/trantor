@@ -1,4 +1,5 @@
 books/
+new/
 cover/
 img/
 trantor
@@ -6,3 +7,4 @@ trantor
 upload/upload
 upload/books
 upload/cover
+upload/new

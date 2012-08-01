@@ -15,6 +15,7 @@ const (
 	DB_NAME    = "trantor"
 	BOOKS_COLL = "books"
 	PATH       = "books/"
+	NEW_PATH    = "new/"
 	COVER_PATH = "cover/"
 	RESIZE     = "/usr/bin/convert -resize 300 -quality 60 "
 	RESIZE_THUMB = "/usr/bin/convert -resize 60 -quality 60 "
@@ -30,13 +31,15 @@ func getCover(e *epub.Epub, path string) (string, string) {
 	for err == nil {
 		res := exp.FindStringSubmatch(txt)
 		if res != nil {
-			imgPath := COVER_PATH + path + res[2]
+			folder := COVER_PATH + path[:1] + "/"
+			os.Mkdir(folder, os.ModePerm)
+			imgPath := folder + path + res[2]
 			f, _ := os.Create(imgPath)
 			f.Write(e.Data(res[1]))
 			resize := append(strings.Split(RESIZE, " "), imgPath, imgPath)
 			cmd := exec.Command(resize[0], resize[1:]...)
 			cmd.Run()
-			imgPathSmall := COVER_PATH + path + "_small" + res[2]
+			imgPathSmall := folder + path + "_small" + res[2]
 			resize = append(strings.Split(RESIZE_THUMB, " "), imgPath, imgPathSmall)
 			cmd = exec.Command(resize[0], resize[1:]...)
 			cmd.Run()
@@ -88,7 +91,7 @@ func keywords(b Book) (k []string) {
 func store(coll *mgo.Collection, path string) {
 	var book Book
 
-	e, err := epub.Open(PATH+"in/"+path, 0)
+	e, err := epub.Open(NEW_PATH+path, 0)
 	if err != nil {
 		fmt.Println(path)
 		panic(err) // TODO: do something
@@ -116,7 +119,7 @@ func store(coll *mgo.Collection, path string) {
 	coll.Insert(book)
 
 	os.Mkdir(PATH + path[:1], os.ModePerm)
-	cmd := exec.Command("mv", PATH+"in/"+path, book.Path)
+	cmd := exec.Command("mv", NEW_PATH+path, book.Path)
 	cmd.Run()
 }
 
@@ -128,9 +131,9 @@ func main() {
 	defer session.Close()
 	coll := session.DB(DB_NAME).C(BOOKS_COLL)
 
-	f, err := os.Open(PATH + "in/")
+	f, err := os.Open(NEW_PATH)
 	if err != nil {
-		fmt.Println(PATH + "in/")
+		fmt.Println(NEW_PATH)
 		panic(err) // TODO: do something
 	}
 	names, err := f.Readdirnames(0)
