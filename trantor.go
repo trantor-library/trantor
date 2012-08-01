@@ -17,6 +17,7 @@ func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	// TODO: when finish devel conver to global:
 	var templates = template.Must(template.ParseFiles("head.html", "foot.html", "front.html", "book.html", "search.html"))
 
+	// TODO: use includes
 	err := templates.ExecuteTemplate(w, "head.html", nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -53,12 +54,14 @@ func main() {
 	}
 	defer session.Close()
 	coll := session.DB(DB_NAME).C(BOOKS_COLL)
+	num, _ := coll.Count()
 
 	http.HandleFunc("/book/", func(w http.ResponseWriter, r *http.Request) { bookHandler(coll, w, r) })
 	http.HandleFunc("/search/", func(w http.ResponseWriter, r *http.Request) { searchHandler(coll, w, r) })
+	// FIXME: shows content
 	http.HandleFunc("/img/", sendFile)
 	http.HandleFunc("/cover/", sendFile)
 	http.HandleFunc("/books/", sendFile)
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { loadTemplate(w, "front", nil) })
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { loadTemplate(w, "front", num) })
 	http.ListenAndServe(":8080", nil)
 }
