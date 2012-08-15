@@ -21,7 +21,36 @@ const (
 	RESIZE_THUMB = "/usr/bin/convert -resize 60 -quality 60 "
 )
 
+func resize(folder, name, extension string) (string, string) {
+	imgPath := folder + name + extension
+	resize := append(strings.Split(RESIZE, " "), imgPath, imgPath)
+	cmd := exec.Command(resize[0], resize[1:]...)
+	cmd.Run()
+	imgPathSmall := folder + name + "_small" + extension
+	resize = append(strings.Split(RESIZE_THUMB, " "), imgPath, imgPathSmall)
+	cmd = exec.Command(resize[0], resize[1:]...)
+	cmd.Run()
+	return "/" + imgPath, "/" + imgPathSmall
+}
+
 func getCover(e *epub.Epub, path string) (string, string) {
+	folder := COVER_PATH + path[:1] + "/"
+	os.Mkdir(folder, os.ModePerm)
+
+	/* Try first common names */
+	imgPath := folder + path + ".jpg"
+	file, _ := os.Create(imgPath)
+	defer file.Close()
+	n, _ := file.Write(e.Data("cover.jpg"))
+	if n != 0 {
+		return resize(folder, path, ".jpg")
+	}
+	n, _ = file.Write(e.Data("cover.jpeg"))
+	if n != 0 {
+		return resize(folder, path, ".jpg")
+	}
+	defer os.Remove(imgPath)
+
 	exp, _ := regexp.Compile("<img.*src=[\"']([^\"']*(\\.[^\\.\"']*))[\"']")
 	it := e.Iterator(epub.EITERATOR_SPINE)
 	defer it.Close()
@@ -31,19 +60,23 @@ func getCover(e *epub.Epub, path string) (string, string) {
 	for err == nil {
 		res := exp.FindStringSubmatch(txt)
 		if res != nil {
-			folder := COVER_PATH + path[:1] + "/"
-			os.Mkdir(folder, os.ModePerm)
-			imgPath := folder + path + res[2]
+			urlPart := strings.Split(it.CurrUrl(), "/")
+			url := strings.Join(urlPart[:len(urlPart)-1], "/")
+			if url == "" {
+				url = res[1]
+			} else {
+				url = url + "/" + res[1]
+			}
+			imgPath = folder + path + res[2]
 			f, _ := os.Create(imgPath)
-			f.Write(e.Data(res[1]))
-			resize := append(strings.Split(RESIZE, " "), imgPath, imgPath)
-			cmd := exec.Command(resize[0], resize[1:]...)
-			cmd.Run()
-			imgPathSmall := folder + path + "_small" + res[2]
-			resize = append(strings.Split(RESIZE_THUMB, " "), imgPath, imgPathSmall)
-			cmd = exec.Command(resize[0], resize[1:]...)
-			cmd.Run()
-			return "/" + imgPath, "/" + imgPathSmall
+			defer f.Close()
+			/* try to write it, if there is nothing search for other img */
+			n, _ = f.Write(e.Data(url))
+			if n != 0 {
+				return resize(folder, path, res[2])
+			}
+			panic(url) // FIXME
+			defer os.Remove(imgPath)
 		}
 		txt, err = it.Next()
 	}
@@ -73,7 +106,7 @@ func parseAuthr(creator []string) []string {
 func parseSubject(subject []string) []string {
 	var res []string
 	for _, s := range subject {
-		res = append(res, strings.Split(s, " / ")...) // FIXME
+		res = append(res, strings.Split(s, " / ")...)
 	}
 	return res
 }
@@ -91,9 +124,9 @@ func keywords(b Book) (k []string) {
 func store(coll *mgo.Collection, path string) {
 	var book Book
 
+	fmt.Println(path)
 	e, err := epub.Open(NEW_PATH+path, 0)
 	if err != nil {
-		fmt.Println(path)
 		panic(err) // TODO: do something
 	}
 	defer e.Close()
