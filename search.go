@@ -1,10 +1,10 @@
 package main
 
 import (
-	"strconv"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -26,9 +26,9 @@ type searchData struct {
 	Search string
 	Found  int
 	Books  []Book
-	Page int
-	Next string
-	Prev string
+	Page   int
+	Next   string
+	Prev   string
 }
 
 func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
@@ -54,11 +54,11 @@ func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 		data.Search = req
 		data.Found = len(res)
 		if len(res) > ITEMS_PAGE*(page+1) {
-			data.Books = res[ITEMS_PAGE*page:ITEMS_PAGE*(page+1)]
+			data.Books = res[ITEMS_PAGE*page : ITEMS_PAGE*(page+1)]
 		} else {
 			data.Books = res[ITEMS_PAGE*page:]
 		}
-		data.Page = page+1
+		data.Page = page + 1
 		if len(res) > (page+1)*ITEMS_PAGE {
 			data.Next = "/search/?q=" + req + "&p=" + strconv.Itoa(page+1)
 		}

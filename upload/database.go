@@ -19,5 +19,5 @@ type Book struct {
 	Path        string
 	Cover       string
 	CoverSmall  string
-	Keywords   []string
+	Keywords    []string
 }

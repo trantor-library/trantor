@@ -1,9 +1,9 @@
 package main
 
 import (
+	"labix.org/v2/mgo"
 	"os"
 	"strconv"
-	"labix.org/v2/mgo"
 	//"labix.org/v2/mgo/bson"
 	"net/http"
 )

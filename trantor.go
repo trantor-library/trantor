@@ -24,12 +24,10 @@ func bookHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 	}
 }
 
-
 func fileHandler(path string) {
 	h := http.FileServer(http.Dir(path[1:]))
 	http.Handle(path, http.StripPrefix(path, h))
 }
-
 
 type indexData struct {
 	Books []Book

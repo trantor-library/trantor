@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	IP         = "127.0.0.1"
-	DB_NAME    = "trantor"
-	BOOKS_COLL = "books"
-	PATH       = "books/"
-	NEW_PATH    = "new/"
-	COVER_PATH = "cover/"
-	RESIZE     = "/usr/bin/convert -resize 300 -quality 60 "
+	IP           = "127.0.0.1"
+	DB_NAME      = "trantor"
+	BOOKS_COLL   = "books"
+	PATH         = "books/"
+	NEW_PATH     = "new/"
+	COVER_PATH   = "cover/"
+	RESIZE       = "/usr/bin/convert -resize 300 -quality 60 "
 	RESIZE_THUMB = "/usr/bin/convert -resize 60 -quality 60 "
 )
 
@@ -118,7 +118,7 @@ func store(coll *mgo.Collection, path string) {
 	book.Keywords = keywords(book)
 	coll.Insert(book)
 
-	os.Mkdir(PATH + path[:1], os.ModePerm)
+	os.Mkdir(PATH+path[:1], os.ModePerm)
 	cmd := exec.Command("mv", NEW_PATH+path, book.Path)
 	cmd.Run()
 }
