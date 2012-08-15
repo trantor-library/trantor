@@ -13,13 +13,21 @@ const (
 )
 
 func buildQuery(q string) bson.M {
+	var reg []bson.RegEx
+	query := bson.M{}
 	words := strings.Split(q, " ")
-	reg := make([]bson.RegEx, len(words))
-	for i, w := range words {
-		reg[i].Pattern = w
-		reg[i].Options = "i"
+	for _, w := range words {
+		tag := strings.SplitN(w, ":", 2)
+		if len(tag) > 1 {
+			query[tag[0]] = bson.RegEx{tag[1], "i"}
+		} else {
+			reg = append(reg, bson.RegEx{w, "i"})
+		}
 	}
-	return bson.M{"keywords": bson.M{"$all": reg}}
+	if len(reg) > 0 {
+		query["keywords"] = bson.M{"$all": reg}
+	}
+	return query
 }
 
 type searchData struct {
