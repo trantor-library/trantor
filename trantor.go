@@ -35,10 +35,10 @@ type indexData struct {
 }
 
 func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
-	var data indexData
-	data.Count, _ = coll.Count()
-	coll.Find(bson.M{}).Sort("-_id").Limit(10).All(&data.Books)
 	return func(w http.ResponseWriter, r *http.Request) {
+		var data indexData
+		data.Count, _ = coll.Count()
+		coll.Find(bson.M{}).Sort("-_id").Limit(10).All(&data.Books)
 		loadTemplate(w, "index", data)
 	}
 }
