@@ -21,6 +21,13 @@ const (
 	RESIZE_THUMB = "/usr/bin/convert -resize 60 -quality 60 "
 )
 
+func cleanStr(str string) string {
+	str = strings.Replace(str, "&#39;", "'", -1)
+	exp, _ := regexp.Compile("[ ,]*$")
+	str = exp.ReplaceAllString(str, "")
+	return str
+}
+
 func resize(folder, name, extension string) (string, string) {
 	imgPath := folder + name + extension
 	resize := append(strings.Split(RESIZE, " "), imgPath, imgPath)
@@ -49,7 +56,7 @@ func getCover(e *epub.Epub, path string) (string, string) {
 	if n != 0 {
 		return resize(folder, path, ".jpg")
 	}
-	defer os.Remove(imgPath)
+	os.Remove(imgPath)
 
 	exp, _ := regexp.Compile("<img.*src=[\"']([^\"']*(\\.[^\\.\"']*))[\"']")
 	it := e.Iterator(epub.EITERATOR_SPINE)
@@ -62,6 +69,10 @@ func getCover(e *epub.Epub, path string) (string, string) {
 		if res != nil {
 			urlPart := strings.Split(it.CurrUrl(), "/")
 			url := strings.Join(urlPart[:len(urlPart)-1], "/")
+			if res[1][:3] == "../" {
+				res[1] = res[1][3:]
+				url = strings.Join(urlPart[:len(urlPart)-2], "/")
+			}
 			if url == "" {
 				url = res[1]
 			} else {
@@ -75,8 +86,7 @@ func getCover(e *epub.Epub, path string) (string, string) {
 			if n != 0 {
 				return resize(folder, path, res[2])
 			}
-			panic(url) // FIXME
-			defer os.Remove(imgPath)
+			os.Remove(imgPath)
 		}
 		txt, err = it.Next()
 	}
@@ -90,13 +100,13 @@ func parseAuthr(creator []string) []string {
 	for _, s := range creator {
 		auth := exp1.FindStringSubmatch(s)
 		if auth != nil {
-			res = append(res, strings.Join(auth[2:], ", "))
+			res = append(res, cleanStr(strings.Join(auth[2:], ", ")))
 		} else {
 			auth := exp2.FindStringSubmatch(s)
 			if auth != nil {
-				res = append(res, auth[1])
+				res = append(res, cleanStr(auth[1]))
 			} else {
-				res = append(res, s)
+				res = append(res, cleanStr(s))
 			}
 		}
 	}
@@ -109,6 +119,13 @@ func parseSubject(subject []string) []string {
 		res = append(res, strings.Split(s, " / ")...)
 	}
 	return res
+}
+
+func parseDate(date []string) string {
+	if len(date) == 0 {
+		return ""
+	}
+	return strings.Replace(date[0], "Unspecified: ", "", -1)
 }
 
 func keywords(b Book) (k []string) {
@@ -131,13 +148,13 @@ func store(coll *mgo.Collection, path string) {
 	}
 	defer e.Close()
 
-	book.Title = strings.Join(e.Metadata(epub.EPUB_TITLE), ", ")
+	book.Title = cleanStr(strings.Join(e.Metadata(epub.EPUB_TITLE), ", "))
 	book.Author = parseAuthr(e.Metadata(epub.EPUB_CREATOR))
-	book.Contributor = strings.Join(e.Metadata(epub.EPUB_CONTRIB), ", ")
-	book.Publisher = strings.Join(e.Metadata(epub.EPUB_PUBLISHER), ", ")
+	book.Contributor = cleanStr(strings.Join(e.Metadata(epub.EPUB_CONTRIB), ", "))
+	book.Publisher = cleanStr(strings.Join(e.Metadata(epub.EPUB_PUBLISHER), ", "))
 	book.Description = strings.Join(e.Metadata(epub.EPUB_DESCRIPTION), ", ")
 	book.Subject = parseSubject(e.Metadata(epub.EPUB_SUBJECT))
-	book.Date = strings.Join(e.Metadata(epub.EPUB_DATE), ", ")
+	book.Date = parseDate(e.Metadata(epub.EPUB_DATE))
 	book.Lang = e.Metadata(epub.EPUB_LANG)
 	book.Type = strings.Join(e.Metadata(epub.EPUB_TYPE), ", ")
 	book.Format = strings.Join(e.Metadata(epub.EPUB_FORMAT), ", ")
