@@ -42,9 +42,9 @@ func bookHandler(coll *mgo.Collection, w http.ResponseWriter, r *http.Request) {
 }
 
 
-func sendFile(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path[1:]
-	http.ServeFile(w, r, path)
+func fileHandler(path string) {
+	h := http.FileServer(http.Dir(path[1:]))
+	http.Handle(path, http.StripPrefix(path, h))
 }
 
 func main() {
@@ -58,10 +58,10 @@ func main() {
 
 	http.HandleFunc("/book/", func(w http.ResponseWriter, r *http.Request) { bookHandler(coll, w, r) })
 	http.HandleFunc("/search/", func(w http.ResponseWriter, r *http.Request) { searchHandler(coll, w, r) })
-	// FIXME: shows content
-	http.HandleFunc("/img/", sendFile)
-	http.HandleFunc("/cover/", sendFile)
-	http.HandleFunc("/books/", sendFile)
+	http.HandleFunc("/upload/", func(w http.ResponseWriter, r *http.Request) { uploadHandler(coll, w, r) })
+	fileHandler("/img/")
+	fileHandler("/cover/")
+	fileHandler("/books/")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { loadTemplate(w, "front", num) })
 	http.ListenAndServe(":8080", nil)
 }
