@@ -15,7 +15,7 @@ const (
 
 func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	// TODO: when finish devel conver to global:
-	var templates = template.Must(template.ParseFiles("head.html", "foot.html", "front.html", "book.html", "search.html"))
+	var templates = template.Must(template.ParseFiles("head.html", "foot.html", "front.html", "book.html", "search.html", "upload.html"))
 
 	// TODO: use includes
 	err := templates.ExecuteTemplate(w, "head.html", nil)
