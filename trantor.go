@@ -30,6 +30,21 @@ func fileHandler(path string) {
 	http.Handle(path, http.StripPrefix(path, h))
 }
 
+
+type indexData struct {
+	Books []Book
+	Count int
+}
+
+func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
+	var data indexData
+	data.Count, _ = coll.Count()
+	coll.Find(bson.M{}).Sort("-_id").Limit(10).All(&data.Books)
+	return func(w http.ResponseWriter, r *http.Request) {
+		loadTemplate(w, "index", data)
+	}
+}
+
 func main() {
 	session, err := mgo.Dial(IP)
 	if err != nil {
@@ -37,7 +52,6 @@ func main() {
 	}
 	defer session.Close()
 	coll := session.DB(DB_NAME).C(BOOKS_COLL)
-	num, _ := coll.Count()
 
 	http.HandleFunc("/book/", bookHandler(coll))
 	http.HandleFunc("/search/", searchHandler(coll))
@@ -46,6 +60,6 @@ func main() {
 	fileHandler("/img/")
 	fileHandler("/cover/")
 	fileHandler("/books/")
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { loadTemplate(w, "index", num) })
+	http.HandleFunc("/", indexHandler(coll))
 	http.ListenAndServe(":8080", nil)
 }

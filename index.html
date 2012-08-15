@@ -1,11 +1,21 @@
 {{template "header.html"}}
 
 <h1>Imperial Library of Trantor</h1>
+<p><img src="/img/library.jpg" alt="library" /></p>
 <form action="/search/">
 	<input type="search" name="q" />
 	<input type="submit" value="Search">
 </form>
-<p>Search on {{.}} books.</p>
-<p><img src="/img/library.jpg" alt="library" /></p>
+<p>Search on {{.Count}} books.</p>
+
+<p>Last books added:
+<ul>
+{{with .Books}}
+	{{range .}}
+	<li><img src="{{.CoverSmall}}" alt="{{.Title}}" /><a href="/book/{{.Title}}">{{.Title}}</a> - {{range .Author}}{{.}}, {{end}}</li>
+	{{end}}
+{{end}}
+</ul>
+</p>
 
 {{template "footer.html"}}
