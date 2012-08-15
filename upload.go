@@ -7,16 +7,16 @@ import (
 	"net/http"
 )
 
-func storeFile(r *http.Request) {
+func storeFile(r *http.Request) error {
 	f, header, err := r.FormFile("epub")
 	if err != nil {
-		panic(err) // FIXME
+		return err
 	}
 	defer f.Close()
 	// FIXME: check the name exist
 	fw, err := os.Create("new/" + header.Filename)
 	if err != nil {
-		panic(err) // FIXME
+		return err
 	}
 	defer fw.Close()
 
@@ -27,12 +27,20 @@ func storeFile(r *http.Request) {
 		n, err = f.Read(buff)
 		fw.Write(buff)
 	}
+
+	return nil
 }
 
 func uploadHandler(coll *mgo.Collection, w http.ResponseWriter, r *http.Request) {
+	status := ""
 	if r.Method == "POST" {
-		storeFile(r)
+		err := storeFile(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		status = "Upload successful."
 	}
 
-	loadTemplate(w, "upload", nil)
+	loadTemplate(w, "upload", status)
 }
