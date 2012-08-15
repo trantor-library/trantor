@@ -39,6 +39,6 @@ func main() {
 	fileHandler("/img/")
 	fileHandler("/cover/")
 	fileHandler("/books/")
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { loadTemplate(w, "front", num) })
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { loadTemplate(w, "index", num) })
 	http.ListenAndServe(":8080", nil)
 }

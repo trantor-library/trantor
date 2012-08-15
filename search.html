@@ -1,3 +1,5 @@
+{{template "header.html"}}
+
 <h1>Search</h1>
 <form action="/search/">
 	<input type="search" name="q" value="{{.Search}}"/>
@@ -17,3 +19,5 @@
 <p>
 {{if .Prev}}<a href="{{.Prev}}">&lt;Prev</a>  {{end}}
 {{if .Next}}<a href="{{.Next}}">Next&gt;</a>{{end}}</p>
+
+{{template "footer.html"}}

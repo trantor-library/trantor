@@ -1,3 +1,5 @@
+{{template "header.html"}}
+
 <h1>{{.Title}}</h1>
 <p>{{.Description}}</p>
 <img src="{{.Cover}}" alt="{{.Title}}" />
@@ -10,3 +12,5 @@
 </ul>
 
 <p><a href="/{{.Path}}">download</a></p>
+
+{{template "footer.html"}}
