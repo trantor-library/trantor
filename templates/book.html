@@ -6,7 +6,7 @@
 <ul>
 	<li><strong>Author:</strong> {{range .Author}}{{.}}, {{end}}</li>
 	<li><strong>Publisher:</strong> {{.Publisher}}</li>
-	<li><strong>Tags:</strong> {{range .Subject}}{{.}}, {{end}}</li>
+	<li><strong>Tags:</strong> {{range .Subject}}<a href="/search/?q=subject:{{.}}">{{.}}</a>, {{end}}</li>
 	<li><strong>Date:</strong> {{.Date}}</li>
 	<li><strong>Lang:</strong> {{range .Lang}}{{.}} {{end}}</li>
 </ul>
