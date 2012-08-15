@@ -12,6 +12,10 @@ const (
 	BOOKS_COLL = "books"
 )
 
+func aboutHandler(w http.ResponseWriter, r *http.Request) {
+	loadTemplate(w, "about", nil)
+}
+
 func bookHandler(coll *mgo.Collection, w http.ResponseWriter, r *http.Request) {
 	var book Book
 	coll.Find(bson.M{"title": r.URL.Path[len("/book/"):]}).One(&book)
@@ -36,6 +40,7 @@ func main() {
 	http.HandleFunc("/book/", func(w http.ResponseWriter, r *http.Request) { bookHandler(coll, w, r) })
 	http.HandleFunc("/search/", func(w http.ResponseWriter, r *http.Request) { searchHandler(coll, w, r) })
 	http.HandleFunc("/upload/", func(w http.ResponseWriter, r *http.Request) { uploadHandler(coll, w, r) })
+	http.HandleFunc("/about/", aboutHandler)
 	fileHandler("/img/")
 	fileHandler("/cover/")
 	fileHandler("/books/")
