@@ -16,10 +16,12 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	loadTemplate(w, "about", nil)
 }
 
-func bookHandler(coll *mgo.Collection, w http.ResponseWriter, r *http.Request) {
-	var book Book
-	coll.Find(bson.M{"title": r.URL.Path[len("/book/"):]}).One(&book)
-	loadTemplate(w, "book", book)
+func bookHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var book Book
+		coll.Find(bson.M{"title": r.URL.Path[len("/book/"):]}).One(&book)
+		loadTemplate(w, "book", book)
+	}
 }
 
 
@@ -37,9 +39,9 @@ func main() {
 	coll := session.DB(DB_NAME).C(BOOKS_COLL)
 	num, _ := coll.Count()
 
-	http.HandleFunc("/book/", func(w http.ResponseWriter, r *http.Request) { bookHandler(coll, w, r) })
-	http.HandleFunc("/search/", func(w http.ResponseWriter, r *http.Request) { searchHandler(coll, w, r) })
-	http.HandleFunc("/upload/", func(w http.ResponseWriter, r *http.Request) { uploadHandler(coll, w, r) })
+	http.HandleFunc("/book/", bookHandler(coll))
+	http.HandleFunc("/search/", searchHandler(coll))
+	http.HandleFunc("/upload/", uploadHandler(coll))
 	http.HandleFunc("/about/", aboutHandler)
 	fileHandler("/img/")
 	fileHandler("/cover/")
