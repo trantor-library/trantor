@@ -22,7 +22,7 @@ const (
 )
 
 func getCover(e *epub.Epub, path string) (string, string) {
-	exp, _ := regexp.Compile("<img.*src=[\"']([^\"']*(\\.[^\\.]*))[\"']")
+	exp, _ := regexp.Compile("<img.*src=[\"']([^\"']*(\\.[^\\.\"']*))[\"']")
 	it := e.Iterator(epub.EITERATOR_SPINE)
 	defer it.Close()
 
