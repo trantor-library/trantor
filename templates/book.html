@@ -2,7 +2,7 @@
 
 <h1>{{.Title}}</h1>
 <p>{{.Description}}</p>
-<img src="{{.Cover}}" alt="{{.Title}}" />
+{{if .Cover}}<img src="{{.Cover}}" alt="{{.Title}}" />{{end}}
 <ul>
 	<li><strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}</li>
 	<li><strong>Publisher:</strong> <a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a></li>
