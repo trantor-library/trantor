@@ -11,7 +11,7 @@
 <ul>
 {{with .Books}}
 	{{range .}}
-	<li><img src="{{.CoverSmall}}" alt="{{.Title}}" /><a href="/book/{{.Title}}">{{.Title}}</a> - {{range .Author}}{{.}}, {{end}}</li>
+	<li><a href="/book/{{.Title}}"><img src="{{.CoverSmall}}" alt="{{.Title}}" /><strong>{{.Title}}</strong></a> - {{range .Author}}{{.}}, {{end}}</li>
 	{{end}}
 {{end}}
 </ul>
