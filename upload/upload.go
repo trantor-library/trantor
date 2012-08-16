@@ -56,6 +56,14 @@ func getCover(e *epub.Epub, path string) (string, string) {
 	if n != 0 {
 		return resize(folder, path, ".jpg")
 	}
+	n, _ = file.Write(e.Data("cover1.jpg"))
+	if n != 0 {
+		return resize(folder, path, ".jpg")
+	}
+	n, _ = file.Write(e.Data("cover1.jpeg"))
+	if n != 0 {
+		return resize(folder, path, ".jpg")
+	}
 	os.Remove(imgPath)
 
 	exp, _ := regexp.Compile("<img.*src=[\"']([^\"']*(\\.[^\\.\"']*))[\"']")
@@ -74,6 +82,9 @@ func getCover(e *epub.Epub, path string) (string, string) {
 				url = strings.Join(urlPart[:len(urlPart)-2], "/")
 			}
 			res[1] = strings.Replace(res[1], "%20", " ", -1)
+			res[1] = strings.Replace(res[1], "%27", "'", -1)
+			res[1] = strings.Replace(res[1], "%28", "(", -1)
+			res[1] = strings.Replace(res[1], "%29", ")", -1)
 			if url == "" {
 				url = res[1]
 			} else {
