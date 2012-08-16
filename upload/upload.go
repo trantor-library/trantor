@@ -73,6 +73,7 @@ func getCover(e *epub.Epub, path string) (string, string) {
 				res[1] = res[1][3:]
 				url = strings.Join(urlPart[:len(urlPart)-2], "/")
 			}
+			res[1] = strings.Replace(res[1], "%20", " ", -1)
 			if url == "" {
 				url = res[1]
 			} else {
@@ -86,6 +87,7 @@ func getCover(e *epub.Epub, path string) (string, string) {
 			if n != 0 {
 				return resize(folder, path, res[2])
 			}
+			panic(url)
 			os.Remove(imgPath)
 		}
 		txt, err = it.Next()
