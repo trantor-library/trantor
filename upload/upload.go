@@ -113,6 +113,13 @@ func parseAuthr(creator []string) []string {
 	return res
 }
 
+func parseDescription(description []string) string {
+	cleanStr(strings.Join(description, ", "))
+	exp, _ := regexp.Compile("<[^>]*>")
+	str = exp.ReplaceAllString(str, "")
+	return str
+}
+
 func parseSubject(subject []string) []string {
 	var res []string
 	for _, s := range subject {
@@ -152,7 +159,7 @@ func store(coll *mgo.Collection, path string) {
 	book.Author = parseAuthr(e.Metadata(epub.EPUB_CREATOR))
 	book.Contributor = cleanStr(strings.Join(e.Metadata(epub.EPUB_CONTRIB), ", "))
 	book.Publisher = cleanStr(strings.Join(e.Metadata(epub.EPUB_PUBLISHER), ", "))
-	book.Description = strings.Join(e.Metadata(epub.EPUB_DESCRIPTION), ", ")
+	book.Description = parseDescription(e.Metadata(epub.EPUB_DESCRIPTION))
 	book.Subject = parseSubject(e.Metadata(epub.EPUB_SUBJECT))
 	book.Date = parseDate(e.Metadata(epub.EPUB_DATE))
 	book.Lang = e.Metadata(epub.EPUB_LANG)
