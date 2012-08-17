@@ -1,24 +1,45 @@
-{{template "header.html"}}
+{{template "header.html" .Search}}
 
-<h1>Search</h1>
-<form action="/search/">
-	<input type="search" name="q" value="{{.Search}}"/>
-	<input type="submit" value="Search">
-</form>
+<p class="centered">Found {{.Found}} books. Page {{.Page}}</p>
 
-<p>Found {{.Found}} books. Page {{.Page}}</p>
-
-<ul>
-{{with .Books}}
-	{{range .}}
-	<li><a href="/book/{{.Title}}">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}
-		<strong>{{.Title}}</strong></a> - {{range .Author}}{{.}}, {{end}}</li>
-	{{end}}
+<ul class="pager">
+{{if .Prev}}
+  <li class="previous">
+    <a href="{{.Prev}}">&larr; Prev</a>
+  </li>
+{{end}}
+{{if .Next}}
+  <li class="next">
+    <a href="{{.Next}}">Next &rarr;</a>
+  </li>
 {{end}}
 </ul>
 
-<p>
-{{if .Prev}}<a href="{{.Prev}}">&lt;Prev</a>  {{end}}
-{{if .Next}}<a href="{{.Next}}">Next&gt;</a>{{end}}</p>
+{{with .Books}}
+	{{range .}}
+	<div class="row">
+		<div class="span2">
+		<p class="pull-right"><a href="/book/{{.Title}}">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</a></p>
+		</div>
+		<div class="span10">
+		<p class="well"><a href="/book/{{.Title}}"><strong>{{.Title}}</strong></a><br />
+		{{range .Author}}{{.}}, {{end}}</p>
+		</div>
+	</div>
+	{{end}}
+{{end}}
+
+<ul class="pager">
+{{if .Prev}}
+  <li class="previous">
+    <a href="{{.Prev}}">&larr; Prev</a>
+  </li>
+{{end}}
+{{if .Next}}
+  <li class="next">
+    <a href="{{.Next}}">Next &rarr;</a>
+  </li>
+{{end}}
+</ul>
 
 {{template "footer.html"}}

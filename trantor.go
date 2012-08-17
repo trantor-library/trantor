@@ -38,7 +38,7 @@ func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request)
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data indexData
 		data.Count, _ = coll.Count()
-		coll.Find(bson.M{}).Sort("-_id").Limit(10).All(&data.Books)
+		coll.Find(bson.M{}).Sort("-_id").Limit(6).All(&data.Books)
 		loadTemplate(w, "index", data)
 	}
 }
@@ -58,6 +58,8 @@ func main() {
 	fileHandler("/img/")
 	fileHandler("/cover/")
 	fileHandler("/books/")
+	fileHandler("/css/")
+	fileHandler("/js/")
 	http.HandleFunc("/", indexHandler(coll))
 	http.ListenAndServe(":8080", nil)
 }

@@ -1,6 +1,33 @@
 <html>
 <head>
+	<link href="/css/bootstrap.css" rel="stylesheet">
+	<link href="/css/bootstrap-responsive.css" rel="stylesheet">
+	<style type="text/css">
+		.centered { text-align:center; }
+		.down { vertical-align:text-bottom; }
+	</style>
 	<title>Imperial Library of Trantor</title>
 </head>
 <body>
-<a href="/">Index</a> || <a href="/about/">About</a> || <a href="/upload/">Upload your epub</a>
+<div class="navbar">
+<div class="navbar-inner">
+	<div class="container">
+		<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+		</a>
+		<a class="brand" href="/">Imperial Library</a>
+		<div class="nav-collapse">
+		<ul class="nav">
+			<li><a href="/">Home</a></li>
+			<li><a href="/about/">About</a></li>
+			<li><a href="/upload/">Upload your epub</a></li>
+		</ul>
+		</div><!--/.nav-collapse -->
+		<form class="navbar-search pull-right" action="/search/">
+			<input type="search" class="search-query span3" name="q" {{if .}}value="{{.}}"{{else}}placeholder="Search"{{end}} />
+		</form>
+	</div>
+</div>
+</div>

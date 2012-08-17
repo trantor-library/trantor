@@ -1,16 +1,41 @@
 {{template "header.html"}}
 
-<h1>{{.Title}}</h1>
-<p>{{.Description}}</p>
-{{if .Cover}}<img src="{{.Cover}}" alt="{{.Title}}" />{{end}}
-<ul>
-	<li><strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}</li>
-	<li><strong>Publisher:</strong> <a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a></li>
-	<li><strong>Tags:</strong> {{range .Subject}}<a href="/search/?q=subject:{{.}}">{{.}}</a>, {{end}}</li>
-	<li><strong>Date:</strong> {{.Date}}</li>
-	<li><strong>Lang:</strong> {{range .Lang}}<a href="/search/?q=lang:{{.}}">{{.}}</a> {{end}}</li>
-</ul>
+<div class="row">
+	<div class="span8 offset4">
+	<h1>{{.Title}}</h1>
+	</div>
+</div>
+<div class="row">
+{{if .Cover}}
+	<div class="span4">
+	<img src="{{.Cover}}" alt="{{.Title}}" class="pull-right" />
+	</div>
+{{end}}
 
-<p><a href="/{{.Path}}">download</a></p>
+	<div class="span8">
+	<div class="row"><p></p></div>
+	<div class="row">
+	<div class="span4">
+		<ul class="unstyled">
+		{{if .Author}}<li><strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}</li>{{end}}
+		{{if .Publisher}}<li><strong>Publisher:</strong> <a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a></li>{{end}}
+		{{if .Subject}}<li><strong>Tags:</strong> {{range .Subject}}<a href="/search/?q=subject:{{.}}">{{.}}</a>, {{end}}</li>{{end}}
+		{{if .Date}}<li><strong>Date:</strong> {{.Date}}</li>{{end}}
+		{{if .Lang}}<li><strong>Lang:</strong> {{range .Lang}}<a href="/search/?q=lang:{{.}}">{{.}}</a> {{end}}</li>{{end}}
+		</ul>
+	</div>
+	<div class="span4">
+		<p><a href="/{{.Path}}" class="btn btn-large btn-inverse pull-right">download</a></p>
+	</div>
+	</div>
+
+	<div class="row">
+	<div class="span8">
+		<p>{{.Description}}</p>
+	</div>
+	</div>
+	</div>
+
+</div>
 
 {{template "footer.html"}}
