@@ -9,24 +9,72 @@
 	<title>Imperial Library of Trantor</title>
 </head>
 <body>
+<!-- login screen -->
+<div class="modal hide" id="login">
+  <div class="modal-header">
+    <a type="button" class="close" data-dismiss="modal">×</a>
+    <h3>Log In</h3>
+  </div>
+  <form class="form-horizontal" method="POST" action="/login/" enctype="application/x-www-form-urlencoded">
+  <div class="modal-body">
+	<fieldset>
+	<div class="control-group">
+	  <div class="controls">
+	  <div class="input-prepend">
+	  <div class="add-on"><i class="icon-user"></i></div>
+	  <input style="height:28px;" type="text" placeholder="Username" size="16" name="user" autofocus="autofocus">
+	  </div>
+	  </div>
+	</div>
+	<div class="control-group">
+	  <div class="controls">
+	  <div class="input-prepend">
+	  <div class="add-on"><i class="icon-lock"></i></div>
+	  <input style="height:28px;" type="password" placeholder="Password" size="16" name="pass">
+	  </div>
+	  </div>
+	</div>
+	</fieldset>
+  </div>
+  <div class="modal-footer">
+	<fieldset>
+	<a href="#" class="btn" data-dismiss="modal">Cancel</a>
+	<input class="btn btn-primary" type="submit" name="submit" value="Log In"/>
+	</fieldset>
+  </div>
+  </form>
+</div>
+
 <div class="navbar">
 <div class="navbar-inner">
 	<div class="container">
-		<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-			<span class="icon-bar"></span>
-			<span class="icon-bar"></span>
-			<span class="icon-bar"></span>
-		</a>
 		<a class="brand" href="/">Imperial Library</a>
 		<div class="nav-collapse">
 		<ul class="nav">
-			<li><a href="/">Home</a></li>
-			<li><a href="/about/">About</a></li>
-			<li><a href="/upload/">Upload your epub</a></li>
+			<li {{if .Home}}class="active"{{end}}><a href="/">Home</a></li>
+			<li {{if .About}}class="active"{{end}}><a href="/about/">About</a></li>
+			<li {{if .Upload}}class="active"{{end}}><a href="/upload/">Upload your epub</a></li>
+		</ul>
+
+		<ul class="nav pull-right">
+			<li class="divider-vertical"></li>
+			{{if .User}}
+			<li class="dropdown">
+				<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+					<i class="icon-user icon-white"></i> {{.User}}<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu">
+					<li class="divider"></li>
+					<li><a href="/logout/"><i class="icon-off"></i> Log Out</a></li>
+				</ul>
+			</li>
+			{{else}}
+			<li><a data-toggle="modal" href="#login"><i class="icon-share-alt icon-white"></i></a></li>
+			{{end}}
 		</ul>
 		</div><!--/.nav-collapse -->
 		<form class="navbar-search pull-right" action="/search/">
-			<input type="search" class="search-query span3" name="q" {{if .}}value="{{.}}"{{else}}placeholder="Search"{{end}} />
+			<input type="search" class="search-query span3" name="q" {{if .Search}}value="{{.Search}}"{{else}}placeholder="Search"{{end}} />
 		</form>
 	</div>
 </div>

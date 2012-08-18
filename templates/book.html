@@ -1,10 +1,27 @@
-{{template "header.html"}}
+{{template "header.html" .S}}
 
-<div class="row">
+{{$user := .S.User}}
+{{with .Book}}
+<script>
+function delBook(){
+	var div = document.getElementById('delete');
+	div.innerHTML = 
+'<div class="alert alert-error fade in"> \
+	<a class="close" data-dismiss="alert">×</a> \
+	<h4 class="alert-heading">Do you really want to delete it?</h4> \
+	<p>Remove a book is permanent, you won\'t be able to get it back</p> \
+	<a class="btn btn-danger" href="/delete/{{.Id}}">Remove it</a> \
+	<a class="btn" href="#" data-dismiss="alert">Cancel</a> \
+</div>';
+}
+</script>
+<div id="delete"></div>
+
+<header class="row">
 	<div class="span8 offset4">
 	<h1>{{.Title}}</h1>
 	</div>
-</div>
+</header>
 <div class="row">
 {{if .Cover}}
 	<div class="span4">
@@ -15,7 +32,7 @@
 	<div class="span8">
 	<div class="row"><p></p></div>
 	<div class="row">
-	<div class="span4">
+	<div class="span6">
 		<ul class="unstyled">
 		{{if .Author}}<li><strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}</li>{{end}}
 		{{if .Publisher}}<li><strong>Publisher:</strong> <a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a></li>{{end}}
@@ -24,8 +41,19 @@
 		{{if .Lang}}<li><strong>Lang:</strong> {{range .Lang}}<a href="/search/?q=lang:{{.}}">{{.}}</a> {{end}}</li>{{end}}
 		</ul>
 	</div>
-	<div class="span4">
+	<div class="span2">
+		{{if $user}}
+		<div class="row">
+		<div class="btn-group pull-right">
+		<a href="/edit/{{.Id}}" class="btn btn-primary"><i class="icon-pencil"></i> Edit</a>
+		<a href="#" onClick="delBook();" class="btn btn-danger"><i class="icon-trash"></i> Delete</a>
+		</div>
+		</div>
+		<div class="row"><p></p></div>
+		{{end}}
+		<div class="row">
 		<p><a href="/{{.Path}}" class="btn btn-large btn-inverse pull-right"><i class="icon-download-alt icon-white"></i> download</a></p>
+		</div>
 	</div>
 	</div>
 
@@ -35,7 +63,7 @@
 	</div>
 	</div>
 	</div>
-
 </div>
+{{end}}
 
 {{template "footer.html"}}

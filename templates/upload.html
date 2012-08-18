@@ -1,6 +1,6 @@
-{{template "header.html"}}
+{{template "header.html" .S}}
 
-{{if .}}<p>{{.}}</p>{{end}}
+{{if .Msg}}<p>{{.Msg}}</p>{{end}}
 
 <form method="POST" enctype="multipart/form-data">
 	<input accept="application/epub+zip" type="file" name="epub" />

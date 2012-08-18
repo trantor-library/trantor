@@ -1,4 +1,4 @@
-{{template "header.html" .Search}}
+{{template "header.html" .S}}
 
 <p class="centered">Found {{.Found}} books. Page {{.Page}}</p>
 
@@ -18,10 +18,10 @@
 {{with .Books}}
 	{{range .}}
 	<div class="row">
-		<div class="span2">
+		<div class="span1">
 		<p class="pull-right"><a href="/book/{{.Title}}">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</a></p>
 		</div>
-		<div class="span10">
+		<div class="span11">
 		<p class="well"><a href="/book/{{.Title}}"><strong>{{.Title}}</strong></a><br />
 		{{range .Author}}{{.}}, {{end}}</p>
 		</div>

@@ -31,7 +31,7 @@ func buildQuery(q string) bson.M {
 }
 
 type searchData struct {
-	Search string
+	S      Status
 	Found  int
 	Books  []Book
 	Page   int
@@ -59,7 +59,8 @@ func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 		}
 
 		var data searchData
-		data.Search = req
+		data.S.User = SessionUser(r)
+		data.S.Search = req
 		data.Found = len(res)
 		if len(res) > ITEMS_PAGE*(page+1) {
 			data.Books = res[ITEMS_PAGE*page : ITEMS_PAGE*(page+1)]

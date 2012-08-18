@@ -42,18 +42,26 @@ func storeFile(r *http.Request) error {
 	return nil
 }
 
+type uploadData struct {
+	S     Status
+	Msg   string
+}
+
 func uploadHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		status := ""
+		var data uploadData
+		data.S.User = SessionUser(r)
+		data.S.Upload = true
+		data.Msg = ""
 		if r.Method == "POST" {
 			err := storeFile(r)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			status = "Upload successful."
+			data.Msg = "Upload successful."
 		}
 
-		loadTemplate(w, "upload", status)
+		loadTemplate(w, "upload", data)
 	}
 }

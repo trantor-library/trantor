@@ -1,6 +1,7 @@
 package main
 
 type Book struct {
+	Id	    string `bson:"_id"`
 	Title       string
 	Author      []string
 	Contributor string

@@ -9,6 +9,14 @@ const (
 	TEMPLATE_DIR = "templates/"
 )
 
+type Status struct {
+	Search string
+	User   string
+	Home   bool
+	About  bool
+	Upload bool
+}
+
 func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	// TODO: when finish devel conver to global:
 	var templates = template.Must(template.ParseFiles(TEMPLATE_DIR+"header.html",
