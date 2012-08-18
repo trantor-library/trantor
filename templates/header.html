@@ -10,12 +10,11 @@
 </head>
 <body>
 <!-- login screen -->
-<div class="modal hide" id="login">
+<form class="form-horizontal modal hide" id="login" method="POST" action="/login/" enctype="application/x-www-form-urlencoded">
   <div class="modal-header">
     <a type="button" class="close" data-dismiss="modal">×</a>
     <h3>Log In</h3>
   </div>
-  <form class="form-horizontal" method="POST" action="/login/" enctype="application/x-www-form-urlencoded">
   <div class="modal-body">
 	<fieldset>
 	<div class="control-group">
@@ -42,8 +41,7 @@
 	<input class="btn btn-primary" type="submit" name="submit" value="Log In"/>
 	</fieldset>
   </div>
-  </form>
-</div>
+</form>
 
 <div class="navbar">
 <div class="navbar-inner">
@@ -80,3 +78,11 @@
 </div>
 </div>
 <div class="container">
+{{with .Notif}}
+{{if .Msg}}
+	<div class="alert alert-{{.Tpe}}">
+	<button class="close" data-dismiss="alert">×</button>
+	<strong>{{.Title}}</strong> {{.Msg}}
+	</div>
+{{end}}
+{{end}}
