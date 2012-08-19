@@ -8,11 +8,12 @@ import (
 )
 
 const (
-	IP         = "127.0.0.1"
-	DB_NAME    = "trantor"
-	BOOKS_COLL = "books"
-	USERS_COLL = "users"
-	PASS_SALT  = "ImperialLibSalt"
+	IP             = "127.0.0.1"
+	DB_NAME        = "trantor"
+	BOOKS_COLL     = "books"
+	NEW_BOOKS_COLL = "new"
+	USERS_COLL     = "users"
+	PASS_SALT      = "ImperialLibSalt"
 )
 
 type aboutData struct {
@@ -103,12 +104,16 @@ func main() {
 	defer session.Close()
 	coll := session.DB(DB_NAME).C(BOOKS_COLL)
 	userColl := session.DB(DB_NAME).C(USERS_COLL)
+	newColl := session.DB(DB_NAME).C(NEW_BOOKS_COLL)
 
 	http.HandleFunc("/book/", bookHandler(coll))
 	http.HandleFunc("/search/", searchHandler(coll))
 	http.HandleFunc("/upload/", uploadHandler(coll))
 	http.HandleFunc("/login/", loginHandler(userColl))
 	http.HandleFunc("/logout/", logoutHandler)
+	http.HandleFunc("/new/", newHandler(newColl))
+	http.HandleFunc("/edit/", editHandler(coll))
+	http.HandleFunc("/save/", saveHandler(coll))
 	http.HandleFunc("/delete/", deleteHandler(coll))
 	http.HandleFunc("/about/", aboutHandler)
 	fileHandler("/img/")

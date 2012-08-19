@@ -35,7 +35,9 @@ func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 		TEMPLATE_DIR+"about.html",
 		TEMPLATE_DIR+"book.html",
 		TEMPLATE_DIR+"search.html",
-		TEMPLATE_DIR+"upload.html"))
+		TEMPLATE_DIR+"upload.html",
+		TEMPLATE_DIR+"edit.html",
+	))
 
 	err := templates.ExecuteTemplate(w, tmpl+".html", data)
 	if err != nil {
