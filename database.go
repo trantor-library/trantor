@@ -1,7 +1,12 @@
 package main
 
+import (
+	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
+)
+
 type Book struct {
-	Id	    string `bson:"_id"`
+	Id          string `bson:"_id"`
 	Title       string
 	Author      []string
 	Contributor string
@@ -21,4 +26,14 @@ type Book struct {
 	Cover       string
 	CoverSmall  string
 	Keywords    []string
+}
+
+func GetBook(coll *mgo.Collection, query bson.M) ([]Book, error) {
+	var books []Book
+	err := coll.Find(query).All(&books)
+	for i, b := range books {
+		books[i].Id = bson.ObjectId(b.Id).Hex()
+	}
+	return books, err
+
 }

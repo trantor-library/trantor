@@ -9,7 +9,8 @@ import (
 
 func deleteHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if SessionUser(r) == "" {
+		sess := GetSession(r)
+		if sess.User == "" {
 			http.NotFound(w, r)
 			return
 		}
@@ -24,7 +25,8 @@ func deleteHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 		os.RemoveAll(book.Cover[1:])
 		os.RemoveAll(book.CoverSmall[1:])
 		coll.Remove(bson.M{"_id": id})
+		sess.Notify("Removed book!", "The book '"+book.Title+"' it's completly removed", "success")
+		sess.Save(w, r)
 		http.Redirect(w, r, "/", 307)
-		//TODO: notify deleted
 	}
 }

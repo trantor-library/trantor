@@ -31,12 +31,12 @@ func buildQuery(q string) bson.M {
 }
 
 type searchData struct {
-	S      Status
-	Found  int
-	Books  []Book
-	Page   int
-	Next   string
-	Prev   string
+	S     Status
+	Found int
+	Books []Book
+	Page  int
+	Next  string
+	Prev  string
 }
 
 func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
@@ -47,8 +47,7 @@ func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 			return
 		}
 		req := strings.Join(r.Form["q"], " ")
-		var res []Book
-		coll.Find(buildQuery(req)).All(&res)
+		res, _ := GetBook(coll, buildQuery(req))
 
 		page := 0
 		if len(r.Form["p"]) != 0 {
@@ -59,7 +58,7 @@ func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 		}
 
 		var data searchData
-		data.S.User = SessionUser(r)
+		data.S = GetStatus(w, r)
 		data.S.Search = req
 		data.Found = len(res)
 		if len(res) > ITEMS_PAGE*(page+1) {

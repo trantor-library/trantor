@@ -21,13 +21,15 @@ type aboutData struct {
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	var data aboutData
-	data.S.User = SessionUser(r)
-	data.S.About = true
+	data.S = GetStatus(w, r)
 	loadTemplate(w, "about", data)
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	LogOut(w, r)
+	sess := GetSession(r)
+	sess.LogOut()
+	sess.Notify("Log out!", "Bye bye "+sess.User, "success")
+	sess.Save(w, r)
 	http.Redirect(w, r, "/", 307)
 }
 
@@ -38,32 +40,35 @@ func loginHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request)
 			pass := r.FormValue("pass")
 			h := md5.New()
 			hash := h.Sum(([]byte)(PASS_SALT + pass))
-			n, _ := coll.Find(bson.M{"user":user, "pass":hash}).Count()
+			n, _ := coll.Find(bson.M{"user": user, "pass": hash}).Count()
+			sess := GetSession(r)
 			if n != 0 {
-				// TODO: display success
-				CreateSession(user, w, r)
+				sess.LogIn(user)
+				sess.Notify("Successful login!", "Welcome "+user, "success")
 			} else {
-				// TODO: display error
+				sess.Notify("Invalid login!", "user or password invalid", "error")
 			}
+			sess.Save(w, r)
 		}
-		http.Redirect(w, r, "/", 307)
+		http.Redirect(w, r, r.Referer(), 307)
 	}
 }
 
 type bookData struct {
-	S     Status
-	Book  Book
+	S    Status
+	Book Book
 }
 
 func bookHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data bookData
-		data.S.User = SessionUser(r)
-		if coll.Find(bson.M{"title": r.URL.Path[len("/book/"):]}).One(&data.Book) != nil {
+		data.S = GetStatus(w, r)
+		books, err := GetBook(coll, bson.M{"title": r.URL.Path[len("/book/"):]})
+		if err != nil || len(books) == 0 {
 			http.NotFound(w, r)
 			return
 		}
-		data.Book.Id = bson.ObjectId(data.Book.Id).Hex()
+		data.Book = books[0]
 		loadTemplate(w, "book", data)
 	}
 }
@@ -82,7 +87,7 @@ type indexData struct {
 func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data indexData
-		data.S.User = SessionUser(r)
+		data.S = GetStatus(w, r)
 		data.S.Home = true
 		data.Count, _ = coll.Count()
 		coll.Find(bson.M{}).Sort("-_id").Limit(6).All(&data.Books)

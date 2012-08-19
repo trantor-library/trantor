@@ -12,9 +12,19 @@ const (
 type Status struct {
 	Search string
 	User   string
+	Notif  []Notification
 	Home   bool
 	About  bool
 	Upload bool
+}
+
+func GetStatus(w http.ResponseWriter, r *http.Request) Status {
+	var s Status
+	sess := GetSession(r)
+	sess.Save(w, r)
+	s.User = sess.User
+	s.Notif = sess.Notif
+	return s
 }
 
 func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {

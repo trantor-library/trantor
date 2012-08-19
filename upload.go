@@ -43,14 +43,14 @@ func storeFile(r *http.Request) error {
 }
 
 type uploadData struct {
-	S     Status
-	Msg   string
+	S   Status
+	Msg string
 }
 
 func uploadHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data uploadData
-		data.S.User = SessionUser(r)
+		data.S = GetStatus(w, r)
 		data.S.Upload = true
 		data.Msg = ""
 		if r.Method == "POST" {
