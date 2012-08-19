@@ -130,6 +130,10 @@ func parseDescription(description []string) string {
 	str := cleanStr(strings.Join(description, ", "))
 	exp, _ := regexp.Compile("<[^>]*>")
 	str = exp.ReplaceAllString(str, "")
+	str = strings.Replace(str, "&amp;", "&", -1)
+	str = strings.Replace(str, "&lt;", "<", -1)
+	str = strings.Replace(str, "&gt;", ">", -1)
+	str = strings.Replace(str, "\\n", "\n", -1)
 	return str
 }
 
