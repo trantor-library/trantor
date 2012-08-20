@@ -122,7 +122,11 @@ func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request)
 		_, err := coll.Find(nil).MapReduce(&mr, &result)
 		if err == nil {
 			sort.Sort(result)
-			data.Tags = make([]string, len(result))
+			length := len(result)
+			if length > 50 {
+				length = 50
+			}
+			data.Tags = make([]string, length)
 			for i, tag := range result {
 				if i == 50 {
 					break /* display only 50 */
