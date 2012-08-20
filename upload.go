@@ -3,7 +3,6 @@ package main
 import (
 	"git.gitorious.org/go-pkg/epub.git"
 	"labix.org/v2/mgo"
-	//"labix.org/v2/mgo/bson"
 	"net/http"
 	"os"
 	"os/exec"
