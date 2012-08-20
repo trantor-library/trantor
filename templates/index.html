@@ -28,4 +28,8 @@
 {{end}}
 </div>
 
+<div class="row">
+	<p class="centered">{{range .Tags}}<a class="label" href="/search/?q=subject:{{.}}">{{.}}</a> {{end}}</p>
+</div>
+
 {{template "footer.html"}}

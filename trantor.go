@@ -5,6 +5,7 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
+	"sort"
 )
 
 const (
@@ -83,11 +84,52 @@ type indexData struct {
 	S     Status
 	Books []Book
 	Count int
+	Tags  []string
+}
+
+type tagsList []struct {
+	Subject string "_id"
+	Count int "value"
+}
+func (t tagsList) Len() int {
+	return len(t)
+}
+func (t tagsList) Less(i, j int) bool {
+	return t[i].Count > t[j].Count
+}
+func (t tagsList) Swap(i, j int) {
+	aux := t[i]
+	t[i] = t[j]
+	t[j] = aux
 }
 
 func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data indexData
+
+		/* get the tags */
+		// TODO: cache the tags
+		var mr mgo.MapReduce
+		mr.Map = "function() { " +
+			"this.subject.forEach(function(s) { emit(s, 1); });" +
+		"}"
+		mr.Reduce = "function(tag, vals) { " +
+			"var count = 0;" +
+			"vals.forEach(function() { count += 1; });" +
+			"return count;" +
+		"}"
+		var result tagsList
+		_, err := coll.Find(nil).MapReduce(&mr, &result)
+		if err == nil {
+			sort.Sort(result)
+			data.Tags = make([]string, len(result))
+			for i, tag := range result {
+				if tag.Subject != "" {
+					data.Tags[i] = tag.Subject
+				}
+			}
+		}
+
 		data.S = GetStatus(w, r)
 		data.S.Home = true
 		data.Count, _ = coll.Count()
