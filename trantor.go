@@ -124,6 +124,9 @@ func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request)
 			sort.Sort(result)
 			data.Tags = make([]string, len(result))
 			for i, tag := range result {
+				if i == 50 {
+					break /* display only 50 */
+				}
 				if tag.Subject != "" {
 					data.Tags[i] = tag.Subject
 				}
