@@ -1,10 +1,10 @@
 {{template "header.html" .S}}
 
-{{if .Msg}}<p>{{.Msg}}</p>{{end}}
+<p>Upload your epubs to help the library.</p>
 
-<form method="POST" enctype="multipart/form-data">
+<form class="well form-inline" method="POST" enctype="multipart/form-data">
 	<input accept="application/epub+zip" type="file" name="epub" />
-	<input type="submit" />
+	<button type="submit" class="btn">Submit</button>
 </form>
 
 {{template "footer.html"}}

@@ -1,0 +1,41 @@
+{{template "header.html" .S}}
+
+<p class="centered">Found {{.Found}} books.</p>
+
+{{with .Books}}
+	{{range .}}
+	<div class="row">
+		<div class="span1">
+		<p class="pull-right">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</p>
+		</div>
+		<div class="span9">
+		<p><a href="/search/?q=title:{{.Title}}"><strong>{{.Title}}</strong></a><br />
+		{{if .Author}}<strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}<br />{{end}}
+		{{if .Publisher}}<strong>Publisher:</strong> <a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a><br />{{end}}
+		{{if .Subject}}<strong>Tags:</strong> {{range .Subject}}<a href="/search/?q=subject:{{.}}">{{.}}</a>, {{end}}<br />{{end}}
+		{{if .Date}}<strong>Date:</strong> {{.Date}}<br />{{end}}
+		{{if .Lang}}<strong>Lang:</strong> {{range .Lang}}<a href="/search/?q=lang:{{.}}">{{.}}</a> {{end}}<br />{{end}}
+		{{.Description}}
+		</p>
+		</div>
+		<div class="span2">
+		<div class="row">
+		<p><a href="/{{.Path}}" class="btn btn-inverse pull-right"><i class="icon-download-alt icon-white"></i> download</a></p>
+		</div>
+		<div class="row"><p></p></div>
+		<div class="row btn-group pull-right">
+			<a href="/store/{{.Id}}" class="btn btn-success"><i class="icon-ok"></i> Save</a>
+			<a href="/delnew/{{.Id}}" class="btn btn-danger"><i class="icon-remove"></i> Delete</a>
+		</div>
+		</div>
+	</div>
+	{{end}}
+{{end}}
+<div class="row">
+<div class="span12">
+<button type="submit" class="btn btn-large btn-primary pull-right">Save changes</button>
+</div>
+</div>
+</form>
+
+{{template "footer.html"}}

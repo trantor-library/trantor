@@ -5,9 +5,15 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"os"
+	"os/exec"
+	"strconv"
 )
 
-func deleteHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
+const (
+	PATH = "books/"
+)
+
+func deleteHandler(coll *mgo.Collection, url string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sess := GetSession(r)
 		if sess.User == "" {
@@ -15,6 +21,7 @@ func deleteHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 			return
 		}
 
+		// cutre hack: /delete/ and /delnew/ have the same lenght:
 		id := bson.ObjectIdHex(r.URL.Path[len("/delete/"):])
 		books, err := GetBook(coll, bson.M{"_id": id})
 		if err != nil {
@@ -28,7 +35,7 @@ func deleteHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 		coll.Remove(bson.M{"_id": id})
 		sess.Notify("Removed book!", "The book '"+book.Title+"' it's completly removed", "success")
 		sess.Save(w, r)
-		http.Redirect(w, r, "/", 307)
+		http.Redirect(w, r, url, 307)
 	}
 }
 
@@ -101,6 +108,12 @@ func saveHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 	}
 }
 
+type newData struct {
+	S     Status
+	Found int
+	Books []Book
+}
+
 func newHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sess := GetSession(r)
@@ -108,5 +121,47 @@ func newHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
+
+		res, _ := GetBook(coll, bson.M{})
+		var data newData
+		data.S = GetStatus(w, r)
+		data.Found = len(res)
+		data.Books = res
+		loadTemplate(w, "new", data)
+	}
+}
+
+func storeHandler(newColl, coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sess := GetSession(r)
+		if sess.User == "" {
+			http.NotFound(w, r)
+			return
+		}
+
+		id := bson.ObjectIdHex(r.URL.Path[len("/store/"):])
+		books, err := GetBook(newColl, bson.M{"_id": id})
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		book := books[0]
+
+		path := PATH + book.Title[:1] + "/" + book.Title + ".epub"
+		_, err = os.Stat(path)
+		for i := 0; err == nil; i++ {
+			path := PATH + book.Title[:1] + "/" + book.Title + "_" + strconv.Itoa(i) + ".epub"
+			_, err = os.Stat(path)
+		}
+
+		os.Mkdir(PATH+book.Title[:1], os.ModePerm)
+		cmd := exec.Command("mv", book.Path, path)
+		cmd.Run()
+		book.Path = path
+		coll.Insert(book)
+		newColl.Remove(bson.M{"_id": id})
+		sess.Notify("Store book!", "The book '"+book.Title+"' it's stored for public download", "success")
+		sess.Save(w, r)
+		http.Redirect(w, r, "/new/", 307)
 	}
 }
