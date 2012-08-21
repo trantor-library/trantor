@@ -66,7 +66,7 @@ func bookHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data bookData
 		data.S = GetStatus(w, r)
-		books, err := GetBook(coll, bson.M{"title": r.URL.Path[len("/book/"):]})
+		books, _, err := GetBook(coll, bson.M{"title": r.URL.Path[len("/book/"):]})
 		if err != nil || len(books) == 0 {
 			http.NotFound(w, r)
 			return

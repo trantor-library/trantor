@@ -23,7 +23,7 @@ func deleteHandler(coll *mgo.Collection, url string) func(http.ResponseWriter, *
 
 		// cutre hack: /delete/ and /delnew/ have the same lenght:
 		id := bson.ObjectIdHex(r.URL.Path[len("/delete/"):])
-		books, err := GetBook(coll, bson.M{"_id": id})
+		books, _, err := GetBook(coll, bson.M{"_id": id})
 		if err != nil {
 			http.NotFound(w, r)
 			return
@@ -47,7 +47,7 @@ func editHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 			return
 		}
 		id := bson.ObjectIdHex(r.URL.Path[len("/edit/"):])
-		books, err := GetBook(coll, bson.M{"_id": id})
+		books, _, err := GetBook(coll, bson.M{"_id": id})
 		if err != nil {
 			http.NotFound(w, r)
 			return
@@ -122,10 +122,10 @@ func newHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		res, _ := GetBook(coll, bson.M{})
+		res, num, _ := GetBook(coll, bson.M{})
 		var data newData
 		data.S = GetStatus(w, r)
-		data.Found = len(res)
+		data.Found = num
 		data.Books = res
 		loadTemplate(w, "new", data)
 	}
@@ -140,7 +140,7 @@ func storeHandler(newColl, coll *mgo.Collection) func(http.ResponseWriter, *http
 		}
 
 		id := bson.ObjectIdHex(r.URL.Path[len("/store/"):])
-		books, err := GetBook(newColl, bson.M{"_id": id})
+		books, _, err := GetBook(newColl, bson.M{"_id": id})
 		if err != nil {
 			http.NotFound(w, r)
 			return

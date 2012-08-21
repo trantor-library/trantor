@@ -47,27 +47,22 @@ func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 			return
 		}
 		req := strings.Join(r.Form["q"], " ")
-		res, _ := GetBook(coll, buildQuery(req))
-
 		page := 0
 		if len(r.Form["p"]) != 0 {
 			page, err = strconv.Atoi(r.Form["p"][0])
-			if err != nil || len(res) < ITEMS_PAGE*page {
+			if err != nil {
 				page = 0
 			}
 		}
+		res, num, _ := GetBook(coll, buildQuery(req), ITEMS_PAGE, page)
 
 		var data searchData
 		data.S = GetStatus(w, r)
 		data.S.Search = req
-		data.Found = len(res)
-		if len(res) > ITEMS_PAGE*(page+1) {
-			data.Books = res[ITEMS_PAGE*page : ITEMS_PAGE*(page+1)]
-		} else {
-			data.Books = res[ITEMS_PAGE*page:]
-		}
+		data.Books = res
+		data.Found = num
 		data.Page = page + 1
-		if len(res) > (page+1)*ITEMS_PAGE {
+		if num > (page+1)*ITEMS_PAGE {
 			data.Next = "/search/?q=" + req + "&p=" + strconv.Itoa(page+1)
 		}
 		if page > 0 {
