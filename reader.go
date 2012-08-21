@@ -91,7 +91,7 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		if ext == "html" || ext == "htm" {
+		if ext == "html" || ext == "htm" || ext == "xhtml" {
 			var data readData
 			data.S = GetStatus(w, r)
 			data.Book = book
