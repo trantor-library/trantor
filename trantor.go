@@ -24,6 +24,7 @@ type aboutData struct {
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
 	var data aboutData
 	data.S = GetStatus(w, r)
+	data.S.About = true
 	loadTemplate(w, "about", data)
 }
 
