@@ -187,7 +187,7 @@ func parseDate(date []string) string {
 	return strings.Replace(date[0], "Unspecified: ", "", -1)
 }
 
-func keywords(b map[string] interface{}) (k []string) {
+func keywords(b map[string]interface{}) (k []string) {
 	title, _ := b["title"].(string)
 	k = strings.Split(title, " ")
 	author, _ := b["author"].([]string)
@@ -202,7 +202,7 @@ func keywords(b map[string] interface{}) (k []string) {
 }
 
 func parseFile(coll *mgo.Collection, path string) (string, error) {
-	book := map[string] interface{}{}
+	book := map[string]interface{}{}
 
 	e, err := epub.Open(path, 0)
 	if err != nil {

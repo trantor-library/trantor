@@ -5,7 +5,6 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
-	"sort"
 )
 
 const (
@@ -15,6 +14,7 @@ const (
 	NEW_BOOKS_COLL = "new"
 	USERS_COLL     = "users"
 	PASS_SALT      = "ImperialLibSalt"
+	TAGS_DISPLAY   = 50
 )
 
 type aboutData struct {
@@ -88,48 +88,20 @@ type indexData struct {
 	Tags  []string
 }
 
-type tagsList []struct {
-	Subject string "_id"
-	Count int "value"
-}
-func (t tagsList) Len() int {
-	return len(t)
-}
-func (t tagsList) Less(i, j int) bool {
-	return t[i].Count > t[j].Count
-}
-func (t tagsList) Swap(i, j int) {
-	aux := t[i]
-	t[i] = t[j]
-	t[j] = aux
-}
-
 func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data indexData
 
 		/* get the tags */
-		// TODO: cache the tags
-		var mr mgo.MapReduce
-		mr.Map = "function() { " +
-			"this.subject.forEach(function(s) { emit(s, 1); });" +
-		"}"
-		mr.Reduce = "function(tag, vals) { " +
-			"var count = 0;" +
-			"vals.forEach(function() { count += 1; });" +
-			"return count;" +
-		"}"
-		var result tagsList
-		_, err := coll.Find(nil).MapReduce(&mr, &result)
+		tags, err := GetTags(coll)
 		if err == nil {
-			sort.Sort(result)
-			length := len(result)
-			if length > 50 {
-				length = 50
+			length := len(tags)
+			if length > TAGS_DISPLAY {
+				length = TAGS_DISPLAY
 			}
 			data.Tags = make([]string, length)
-			for i, tag := range result {
-				if i == 50 {
+			for i, tag := range tags {
+				if i == TAGS_DISPLAY {
 					break /* display only 50 */
 				}
 				if tag.Subject != "" {
