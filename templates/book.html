@@ -32,7 +32,7 @@ function delBook(){
 	<div class="span8">
 	<div class="row"><p></p></div>
 	<div class="row">
-	<div class="span6">
+	<div class="span5">
 		<ul class="unstyled">
 		{{if .Author}}<li><strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}</li>{{end}}
 		{{if .Publisher}}<li><strong>Publisher:</strong> <a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a></li>{{end}}
@@ -41,7 +41,7 @@ function delBook(){
 		{{if .Lang}}<li><strong>Lang:</strong> {{range .Lang}}<a href="/search/?q=lang:{{.}}">{{.}}</a> {{end}}</li>{{end}}
 		</ul>
 	</div>
-	<div class="span2">
+	<div class="span3">
 		{{if $user}}
 		<div class="row">
 		<div class="btn-group pull-right">
@@ -52,7 +52,10 @@ function delBook(){
 		<div class="row"><p></p></div>
 		{{end}}
 		<div class="row">
-		<p><a href="/{{.Path}}" class="btn btn-large btn-inverse pull-right"><i class="icon-download-alt icon-white"></i> download</a></p>
+		<div class="btn-group pull-right">
+		<a href="/{{.Path}}" class="btn btn-large btn-inverse"><i class="icon-download-alt icon-white"></i> download</a>
+		<a href="/read/{{.Title}}" class="btn btn-large btn-warning"><i class="icon-eye-open icon-white"></i> read it!</a>
+		</div>
 		</div>
 	</div>
 	</div>
