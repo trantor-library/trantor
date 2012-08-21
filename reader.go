@@ -16,19 +16,21 @@ type readData struct {
 	Txt  template.HTML
 	Next  string
 	Prev  string
+	Back string
 }
 
-func parseUrl(url string) (string, string, string) {
-	exp, _ := regexp.Compile("^\\/read\\/([^\\/]*)\\/?(.*\\.([^\\.]*))?$")
+func parseUrl(url string) (string, string, string, string) {
+	exp, _ := regexp.Compile("^(\\/read[^\\/]*\\/)([^\\/]*)\\/?(.*\\.([^\\.]*))?$")
 	res := exp.FindStringSubmatch(url)
-	title := res[1]
+	base := res[1]
+	title := res[2]
 	file := ""
 	ext := ""
-	if len(res) == 4 {
-		file = res[2]
-		ext = res[3]
+	if len(res) == 5 {
+		file = res[3]
+		ext = res[4]
 	}
-	return title, file, ext
+	return base, title, file, ext
 }
 
 func cleanHtml(html string) string {
@@ -45,7 +47,7 @@ func cleanHtml(html string) string {
 }
 
 /* return next and prev urls from document */
-func nextPrev(e *epub.Epub, file string, title string) (string, string) {
+func nextPrev(e *epub.Epub, file string, title string, base string) (string, string) {
 	it := e.Iterator(epub.EITERATOR_LINEAR)
 	defer it.Close()
 
@@ -65,17 +67,17 @@ func nextPrev(e *epub.Epub, file string, title string) (string, string) {
 		}
 	}
 	if prev != "" {
-		prev = "/read/" + title + "/" + prev
+		prev = base + title + "/" + prev
 	}
 	if next != "" {
-		next = "/read/" + title + "/" + next
+		next = base + title + "/" + next
 	}
 	return next, prev
 }
 
 func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		title, file, ext := parseUrl(r.URL.Path)
+		base, title, file, ext := parseUrl(r.URL.Path)
 		books, _, err := GetBook(coll, bson.M{"title": title})
 		if err != nil || len(books) == 0 {
 			http.NotFound(w, r)
@@ -87,7 +89,7 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 		if file == "" {
 			it := e.Iterator(epub.EITERATOR_LINEAR)
 			defer it.Close()
-			http.Redirect(w, r, "/read/" + title + "/" + it.CurrUrl(), 307)
+			http.Redirect(w, r, base + title + "/" + it.CurrUrl(), 307)
 			return
 		}
 
@@ -95,7 +97,12 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 			var data readData
 			data.S = GetStatus(w, r)
 			data.Book = book
-			data.Next, data.Prev = nextPrev(e, file, title)
+			data.Next, data.Prev = nextPrev(e, file, title, base)
+			if base == "/readnew/" {
+				data.Back = "/new/"
+			} else {
+				data.Back = "/book/" + title
+			}
 			page := string(e.Data(file))
 			data.Txt = template.HTML(cleanHtml(page))
 			loadTemplate(w, "read", data)
