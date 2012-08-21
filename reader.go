@@ -78,6 +78,13 @@ func nextPrev(e *epub.Epub, file string, id string, base string) (string, string
 func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		base, id, file, ext := parseUrl(r.URL.Path)
+		if base == "/readnew/" {
+			sess := GetSession(r)
+			if sess.User == "" {
+				http.NotFound(w, r)
+				return
+			}
+		}
 		books, _, err := GetBook(coll, bson.M{"_id": bson.ObjectIdHex(id)})
 		if err != nil || len(books) == 0 {
 			http.NotFound(w, r)
