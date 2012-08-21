@@ -1,0 +1,31 @@
+{{template "header.html" .S}}
+
+<ul class="pager">
+{{if .Prev}}
+  <li class="previous">
+    <a href="{{.Prev}}">&larr; Prev</a>
+  </li>
+{{end}}
+{{if .Next}}
+  <li class="next">
+    <a href="{{.Next}}">Next &rarr;</a>
+  </li>
+{{end}}
+</ul>
+
+{{.Txt}}
+
+<ul class="pager">
+{{if .Prev}}
+  <li class="previous">
+    <a href="{{.Prev}}">&larr; Prev</a>
+  </li>
+{{end}}
+{{if .Next}}
+  <li class="next">
+    <a href="{{.Next}}">Next &rarr;</a>
+  </li>
+{{end}}
+</ul>
+
+{{template "footer.html"}}

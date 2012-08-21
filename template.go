@@ -37,6 +37,7 @@ func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 		TEMPLATE_DIR+"search.html",
 		TEMPLATE_DIR+"upload.html",
 		TEMPLATE_DIR+"new.html",
+		TEMPLATE_DIR+"read.html",
 		TEMPLATE_DIR+"edit.html",
 	))
 
