@@ -19,18 +19,18 @@
 	{{range .}}
 	<div class="row">
 		<div class="span1">
-		<p class="pull-right"><a href="/book/{{.Title}}">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</a></p>
+		<p class="pull-right"><a href="/book/{{.Id}}">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</a></p>
 		</div>
 		<div class="span10 well">
 		<div class="row">
 		<div class="span7">
-		<p><a href="/book/{{.Title}}"><strong>{{.Title}}</strong></a><br />
+		<p><a href="/book/{{.Id}}"><strong>{{.Title}}</strong></a><br />
 		{{range .Author}}{{.}}, {{end}}</p>
 		</div>
 		<div class="span3">
 		<div class="btn-group pull-right">
 		<a href="/{{.Path}}" class="btn btn-inverse"><i class="icon-download-alt icon-white"></i> download</a>
-		<a href="/read/{{.Title}}" class="btn btn-warning"><i class="icon-eye-open icon-white"></i> read it!</a>
+		<a href="/read/{{.Id}}" class="btn btn-warning"><i class="icon-eye-open icon-white"></i> read it!</a>
 		</div>
 		</div>
 		</div>

@@ -23,14 +23,14 @@ func parseUrl(url string) (string, string, string, string) {
 	exp, _ := regexp.Compile("^(\\/read[^\\/]*\\/)([^\\/]*)\\/?(.*\\.([^\\.]*))?$")
 	res := exp.FindStringSubmatch(url)
 	base := res[1]
-	title := res[2]
+	id := res[2]
 	file := ""
 	ext := ""
 	if len(res) == 5 {
 		file = res[3]
 		ext = res[4]
 	}
-	return base, title, file, ext
+	return base, id, file, ext
 }
 
 func cleanHtml(html string) string {
@@ -47,7 +47,7 @@ func cleanHtml(html string) string {
 }
 
 /* return next and prev urls from document */
-func nextPrev(e *epub.Epub, file string, title string, base string) (string, string) {
+func nextPrev(e *epub.Epub, file string, id string, base string) (string, string) {
 	it := e.Iterator(epub.EITERATOR_LINEAR)
 	defer it.Close()
 
@@ -67,18 +67,18 @@ func nextPrev(e *epub.Epub, file string, title string, base string) (string, str
 		}
 	}
 	if prev != "" {
-		prev = base + title + "/" + prev
+		prev = base + id + "/" + prev
 	}
 	if next != "" {
-		next = base + title + "/" + next
+		next = base + id + "/" + next
 	}
 	return next, prev
 }
 
 func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		base, title, file, ext := parseUrl(r.URL.Path)
-		books, _, err := GetBook(coll, bson.M{"title": title})
+		base, id, file, ext := parseUrl(r.URL.Path)
+		books, _, err := GetBook(coll, bson.M{"_id": bson.ObjectIdHex(id)})
 		if err != nil || len(books) == 0 {
 			http.NotFound(w, r)
 			return
@@ -89,7 +89,7 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 		if file == "" {
 			it := e.Iterator(epub.EITERATOR_LINEAR)
 			defer it.Close()
-			http.Redirect(w, r, base + title + "/" + it.CurrUrl(), 307)
+			http.Redirect(w, r, base + id + "/" + it.CurrUrl(), 307)
 			return
 		}
 
@@ -97,11 +97,11 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 			var data readData
 			data.S = GetStatus(w, r)
 			data.Book = book
-			data.Next, data.Prev = nextPrev(e, file, title, base)
+			data.Next, data.Prev = nextPrev(e, file, id, base)
 			if base == "/readnew/" {
 				data.Back = "/new/"
 			} else {
-				data.Back = "/book/" + title
+				data.Back = "/book/" + id
 			}
 			page := string(e.Data(file))
 			data.Txt = template.HTML(cleanHtml(page))

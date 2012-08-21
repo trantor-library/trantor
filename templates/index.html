@@ -13,7 +13,7 @@
 {{with .Books}}
 	{{range .}}
 		<div class="span2">
-		<p class="centered down"><a href="/book/{{.Title}}">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</a></p>
+		<p class="centered down"><a href="/book/{{.Id}}">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</a></p>
 		</div>
 	{{end}}
 {{end}}
@@ -22,7 +22,7 @@
 {{with .Books}}
 	{{range .}}
 		<div class="span2">
-		<p class="centered"><a href="/book/{{.Title}}"><strong>{{.Title}}</strong></a></p>
+		<p class="centered"><a href="/book/{{.Id}}"><strong>{{.Title}}</strong></a></p>
 		</div>
 	{{end}}
 {{end}}

@@ -66,7 +66,8 @@ func bookHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 	return func(w http.ResponseWriter, r *http.Request) {
 		var data bookData
 		data.S = GetStatus(w, r)
-		books, _, err := GetBook(coll, bson.M{"title": r.URL.Path[len("/book/"):]})
+		id := bson.ObjectIdHex(r.URL.Path[len("/book/"):])
+		books, _, err := GetBook(coll, bson.M{"_id": id})
 		if err != nil || len(books) == 0 {
 			http.NotFound(w, r)
 			return
@@ -114,6 +115,9 @@ func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request)
 		data.S.Home = true
 		data.Count, _ = coll.Count()
 		coll.Find(bson.M{}).Sort("-_id").Limit(6).All(&data.Books)
+		for i, b := range data.Books {
+			data.Books[i].Id = bson.ObjectId(b.Id).Hex()
+		}
 		loadTemplate(w, "index", data)
 	}
 }
