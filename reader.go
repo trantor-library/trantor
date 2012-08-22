@@ -1,8 +1,8 @@
 package main
 
 import (
-	"html/template"
 	"git.gitorious.org/go-pkg/epub.git"
+	"html/template"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
@@ -14,8 +14,8 @@ type readData struct {
 	S    Status
 	Book Book
 	Txt  template.HTML
-	Next  string
-	Prev  string
+	Next string
+	Prev string
 	Back string
 }
 
@@ -96,7 +96,7 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 		if file == "" {
 			it := e.Iterator(epub.EITERATOR_LINEAR)
 			defer it.Close()
-			http.Redirect(w, r, base + id + "/" + it.CurrUrl(), 307)
+			http.Redirect(w, r, base+id+"/"+it.CurrUrl(), 307)
 			return
 		}
 

@@ -27,29 +27,34 @@ func storePath(name string) string {
 	return path
 }
 
-func storeFile(r *http.Request) (string, error) {
-	f, header, err := r.FormFile("epub")
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
+func storeFiles(r *http.Request) ([]string, error) {
+	r.ParseMultipartForm(20000000)
+	filesForm := r.MultipartForm.File["epub"]
+	paths := make([]string, 0, len(filesForm))
+	for _, f := range filesForm {
+		file, err := f.Open()
+		if err != nil {
+			return paths, err
+		}
+		defer file.Close()
 
-	path := storePath(header.Filename)
-	fw, err := os.Create(path)
-	if err != nil {
-		return "", err
-	}
-	defer fw.Close()
+		path := storePath(f.Filename)
+		fw, err := os.Create(path)
+		if err != nil {
+			return paths, err
+		}
+		defer fw.Close()
 
-	const size = 1024
-	var n int = size
-	buff := make([]byte, size)
-	for n == size {
-		n, err = f.Read(buff)
-		fw.Write(buff)
+		const size = 1024
+		var n int = size
+		buff := make([]byte, size)
+		for n == size {
+			n, err = file.Read(buff)
+			fw.Write(buff)
+		}
+		paths = append(paths, path)
 	}
-
-	return path, nil
+	return paths, nil
 }
 
 func cleanStr(str string) string {
@@ -243,18 +248,24 @@ type uploadData struct {
 func uploadHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
-			path, err := storeFile(r)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			title, err := parseFile(coll, path)
 			sess := GetSession(r)
+			paths, err := storeFiles(r)
 			if err != nil {
-				os.Remove(path)
-				sess.Notify("Problem uploading!", "The file is not a well formed epub", "error")
-			} else {
-				sess.Notify("Upload successful!", "Added '"+title+"'. Thank you for your contribution", "success")
+				sess.Notify("Problem uploading!", "Some files were not stored. Try again or contact us if it keeps happening", "error")
+			}
+
+			uploaded := ""
+			for _, path := range paths {
+				title, err := parseFile(coll, path)
+				if err != nil {
+					os.Remove(path)
+					sess.Notify("Problem uploading!", "The file '"+path[len("new/"):]+"' is not a well formed epub", "error")
+				} else {
+					uploaded = uploaded + " '" + title + "'"
+				}
+			}
+			if uploaded != "" {
+				sess.Notify("Upload successful!", "Added the books:"+uploaded+". Thank you for your contribution", "success")
 			}
 		}
 
