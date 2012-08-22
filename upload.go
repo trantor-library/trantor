@@ -149,17 +149,17 @@ func getCover(e *epub.Epub, title string) (string, string) {
 func parseAuthr(creator []string) []string {
 	exp1, _ := regexp.Compile("^(.*\\( *([^\\)]*) *\\))*$")
 	exp2, _ := regexp.Compile("^[^:]*: *(.*)$")
-	var res []string //TODO: can be predicted the lenght
-	for _, s := range creator {
+	res := make([]string, len(creator))
+	for i, s := range creator {
 		auth := exp1.FindStringSubmatch(s)
 		if auth != nil {
-			res = append(res, cleanStr(strings.Join(auth[2:], ", ")))
+			res[i] = cleanStr(strings.Join(auth[2:], ", "))
 		} else {
 			auth := exp2.FindStringSubmatch(s)
 			if auth != nil {
-				res = append(res, cleanStr(auth[1]))
+				res[i] = cleanStr(auth[1])
 			} else {
-				res = append(res, cleanStr(s))
+				res[i] = cleanStr(s)
 			}
 		}
 	}
