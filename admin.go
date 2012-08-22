@@ -29,9 +29,13 @@ func deleteHandler(coll *mgo.Collection, url string) func(http.ResponseWriter, *
 			return
 		}
 		book := books[0]
+		if book.Cover != "" {
+			os.RemoveAll(book.Cover[1:])
+		}
+		if book.CoverSmall != "" {
+			os.RemoveAll(book.CoverSmall[1:])
+		}
 		os.RemoveAll(book.Path)
-		os.RemoveAll(book.Cover[1:])
-		os.RemoveAll(book.CoverSmall[1:])
 		coll.Remove(bson.M{"_id": id})
 		sess.Notify("Removed book!", "The book '"+book.Title+"' it's completly removed", "success")
 		sess.Save(w, r)
