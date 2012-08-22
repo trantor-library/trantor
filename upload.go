@@ -59,7 +59,9 @@ func storeFiles(r *http.Request) ([]string, error) {
 
 func cleanStr(str string) string {
 	str = strings.Replace(str, "&#39;", "'", -1)
-	exp, _ := regexp.Compile("[ ,]*$")
+	exp, _ := regexp.Compile("&[^;]*;")
+	str = exp.ReplaceAllString(str, "")
+	exp, _ = regexp.Compile("[ ,]*$")
 	str = exp.ReplaceAllString(str, "")
 	return str
 }
