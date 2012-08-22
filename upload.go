@@ -11,17 +11,11 @@ import (
 	"strings"
 )
 
-const (
-	COVER_PATH   = "cover/"
-	RESIZE       = "/usr/bin/convert -resize 300 -quality 60 "
-	RESIZE_THUMB = "/usr/bin/convert -resize 60 -quality 60 "
-)
-
 func storePath(name string) string {
-	path := "new/" + name
+	path := NEW_PATH + name
 	_, err := os.Stat(path)
 	for i := 0; err == nil; i++ {
-		path = "new/" + strconv.Itoa(i) + "_" + name
+		path = NEW_PATH + strconv.Itoa(i) + "_" + name
 		_, err = os.Stat(path)
 	}
 	return path
@@ -84,11 +78,11 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	file.Write(img)
 
 	/* resize img */
-	resize := append(strings.Split(RESIZE, " "), imgPath, imgPath)
+	resize := append(strings.Split(RESIZE_CMD, " "), imgPath, imgPath)
 	cmd := exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
 	imgPathSmall := folder + name + "_small" + extension
-	resize = append(strings.Split(RESIZE_THUMB, " "), imgPath, imgPathSmall)
+	resize = append(strings.Split(RESIZE_THUMB_CMD, " "), imgPath, imgPathSmall)
 	cmd = exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
 	return "/" + imgPath, "/" + imgPathSmall

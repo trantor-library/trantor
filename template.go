@@ -5,10 +5,6 @@ import (
 	"net/http"
 )
 
-const (
-	TEMPLATE_DIR = "templates/"
-)
-
 type Status struct {
 	Search string
 	User   string
@@ -29,16 +25,16 @@ func GetStatus(w http.ResponseWriter, r *http.Request) Status {
 
 func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	// TODO: when finish devel conver to global:
-	var templates = template.Must(template.ParseFiles(TEMPLATE_DIR+"header.html",
-		TEMPLATE_DIR+"footer.html",
-		TEMPLATE_DIR+"index.html",
-		TEMPLATE_DIR+"about.html",
-		TEMPLATE_DIR+"book.html",
-		TEMPLATE_DIR+"search.html",
-		TEMPLATE_DIR+"upload.html",
-		TEMPLATE_DIR+"new.html",
-		TEMPLATE_DIR+"read.html",
-		TEMPLATE_DIR+"edit.html",
+	var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
+		TEMPLATE_PATH+"footer.html",
+		TEMPLATE_PATH+"index.html",
+		TEMPLATE_PATH+"about.html",
+		TEMPLATE_PATH+"book.html",
+		TEMPLATE_PATH+"search.html",
+		TEMPLATE_PATH+"upload.html",
+		TEMPLATE_PATH+"new.html",
+		TEMPLATE_PATH+"read.html",
+		TEMPLATE_PATH+"edit.html",
 	))
 
 	err := templates.ExecuteTemplate(w, tmpl+".html", data)

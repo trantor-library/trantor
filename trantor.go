@@ -7,16 +7,6 @@ import (
 	"net/http"
 )
 
-const (
-	IP             = "127.0.0.1"
-	DB_NAME        = "trantor"
-	BOOKS_COLL     = "books"
-	NEW_BOOKS_COLL = "new"
-	USERS_COLL     = "users"
-	PASS_SALT      = "ImperialLibSalt"
-	TAGS_DISPLAY   = 50
-)
-
 type aboutData struct {
 	S Status
 }
@@ -123,7 +113,7 @@ func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request)
 }
 
 func main() {
-	session, err := mgo.Dial(IP)
+	session, err := mgo.Dial(DB_IP)
 	if err != nil {
 		panic(err)
 	}

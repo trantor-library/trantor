@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-const (
-	ITEMS_PAGE = 10
-)
-
 func buildQuery(q string) bson.M {
 	var reg []bson.RegEx
 	query := bson.M{}
@@ -54,7 +50,7 @@ func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 				page = 0
 			}
 		}
-		res, num, _ := GetBook(coll, buildQuery(req), ITEMS_PAGE, page)
+		res, num, _ := GetBook(coll, buildQuery(req), SEARCH_ITEMS_PAGE, page)
 
 		var data searchData
 		data.S = GetStatus(w, r)
@@ -62,7 +58,7 @@ func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 		data.Books = res
 		data.Found = num
 		data.Page = page + 1
-		if num > (page+1)*ITEMS_PAGE {
+		if num > (page+1)*SEARCH_ITEMS_PAGE {
 			data.Next = "/search/?q=" + req + "&p=" + strconv.Itoa(page+1)
 		}
 		if page > 0 {

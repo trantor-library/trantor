@@ -9,10 +9,6 @@ import (
 	"strconv"
 )
 
-const (
-	PATH = "books/"
-)
-
 func deleteHandler(coll *mgo.Collection, url string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sess := GetSession(r)
@@ -151,14 +147,14 @@ func storeHandler(newColl, coll *mgo.Collection) func(http.ResponseWriter, *http
 		}
 		book := books[0]
 
-		path := PATH + book.Title[:1] + "/" + book.Title + ".epub"
+		path := BOOKS_PATH + book.Title[:1] + "/" + book.Title + ".epub"
 		_, err = os.Stat(path)
 		for i := 0; err == nil; i++ {
-			path := PATH + book.Title[:1] + "/" + book.Title + "_" + strconv.Itoa(i) + ".epub"
+			path := BOOKS_PATH + book.Title[:1] + "/" + book.Title + "_" + strconv.Itoa(i) + ".epub"
 			_, err = os.Stat(path)
 		}
 
-		os.Mkdir(PATH+book.Title[:1], os.ModePerm)
+		os.Mkdir(BOOKS_PATH+book.Title[:1], os.ModePerm)
 		cmd := exec.Command("mv", book.Path, path)
 		cmd.Run()
 		book.Path = path
