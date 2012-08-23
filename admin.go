@@ -82,7 +82,8 @@ func saveHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		id := bson.ObjectIdHex(r.URL.Path[len("/save/"):])
+		idStr := r.URL.Path[len("/save/"):]
+		id := bson.ObjectIdHex(idStr)
 		title := r.FormValue("title")
 		publisher := r.FormValue("publisher")
 		date := r.FormValue("date")
@@ -104,7 +105,7 @@ func saveHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 
 		sess.Notify("Book Modified!", "", "success")
 		sess.Save(w, r)
-		http.Redirect(w, r, "/book/"+title, 307)
+		http.Redirect(w, r, "/book/"+idStr, 307)
 	}
 }
 
