@@ -14,7 +14,7 @@
 	<div class="control-group">
 		<label class="control-label" for="title">Title</label>
 		<div class="controls">
-		<input style="height:28px;" class="input-xlarge" type="text" id="title" value="{{.Title}}" name="title">
+		<input class="input-xlarge" type="text" id="title" value="{{.Title}}" name="title">
 		</div>
 	</div>
 	</fieldset>
@@ -23,39 +23,39 @@
 		<label class="control-label" for="author">Author</label>
 		<div class="controls">
 		{{range .Author}}
-		<input style="height:28px;" class="input-xlarge" type="text" id="author" value="{{.}}" name="author">
+		<input class="input-xlarge" type="text" id="author" value="{{.}}" name="author">
 		{{end}}
-		<input style="height:28px;" class="input-xlarge" type="text" id="author" placeholder="Add author" name="author">
+		<input class="input-xlarge" type="text" id="author" placeholder="Add author" name="author">
 		</div>
 	</div>
 	<div class="control-group">
 		<label class="control-label" for="publisher">Publisher</label>
 		<div class="controls">
-		<input style="height:28px;" class="input-xlarge" type="text" id="publisher" value="{{.Publisher}}" name="publisher">
+		<input class="input-xlarge" type="text" id="publisher" value="{{.Publisher}}" name="publisher">
 		</div>
 	</div>
 	<div class="control-group">
 		<label class="control-label" for="tags">Tags</label>
 		<div class="controls">
 		{{range .Subject}}
-		<input style="height:28px;" class="input-xlarge" type="text" id="tags" value="{{.}}" name="subject">
+		<input class="input-xlarge" type="text" id="tags" value="{{.}}" name="subject">
 		{{end}}
-		<input style="height:28px;" class="input-xlarge" type="text" id="tags" placeholder="Add tags" name="subject">
+		<input class="input-xlarge" type="text" id="tags" placeholder="Add tags" name="subject">
 		</div>
 	</div>
 	<div class="control-group">
 		<label class="control-label" for="date">Date</label>
 		<div class="controls">
-		<input style="height:28px;" class="input-xlarge" type="text" id="date" value="{{.Date}}" name="date">
+		<input class="input-xlarge" type="text" id="date" value="{{.Date}}" name="date">
 		</div>
 	</div>
 	<div class="control-group">
 		<label class="control-label" for="langs">Langs</label>
 		<div class="controls">
 		{{range .Lang}}
-		<input style="height:28px;" class="input-xlarge" type="text" id="langs" value="{{.}}" name="lang">
+		<input class="input-xlarge" type="text" id="langs" value="{{.}}" name="lang">
 		{{end}}
-		<input style="height:28px;" class="input-xlarge" type="text" id="langs" placeholder="Add langs" name="lang">
+		<input class="input-xlarge" type="text" id="langs" placeholder="Add langs" name="lang">
 		</div>
 	</div>
 	</fieldset>
