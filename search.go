@@ -50,7 +50,7 @@ func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request
 				page = 0
 			}
 		}
-		res, num, _ := GetBook(coll, buildQuery(req), SEARCH_ITEMS_PAGE, page)
+		res, num, _ := GetBook(coll, buildQuery(req), SEARCH_ITEMS_PAGE, page*SEARCH_ITEMS_PAGE)
 
 		var data searchData
 		data.S = GetStatus(w, r)

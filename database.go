@@ -41,7 +41,7 @@ func GetBook(coll *mgo.Collection, query bson.M, r ...int) (books []Book, num in
 			start = r[1]
 		}
 	}
-	q := coll.Find(query)
+	q := coll.Find(query).Sort("-_id")
 	num, err = q.Count()
 	if err != nil {
 		return

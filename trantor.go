@@ -103,11 +103,7 @@ func indexHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request)
 
 		data.S = GetStatus(w, r)
 		data.S.Home = true
-		data.Count, _ = coll.Count()
-		coll.Find(bson.M{}).Sort("-_id").Limit(6).All(&data.Books)
-		for i, b := range data.Books {
-			data.Books[i].Id = bson.ObjectId(b.Id).Hex()
-		}
+		data.Books, data.Count, _ = GetBook(coll, bson.M{}, 6)
 		loadTemplate(w, "index", data)
 	}
 }
