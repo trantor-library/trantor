@@ -141,27 +141,29 @@ func storeHandler(newColl, coll *mgo.Collection) func(http.ResponseWriter, *http
 		}
 
 		id := bson.ObjectIdHex(r.URL.Path[len("/store/"):])
-		books, _, err := GetBook(newColl, bson.M{"_id": id})
+		var book bson.M
+		err := newColl.Find(bson.M{"_id": id}).One(&book)
 		if err != nil {
 			http.NotFound(w, r)
 			return
 		}
-		book := books[0]
 
-		path := BOOKS_PATH + book.Title[:1] + "/" + book.Title + ".epub"
+		title, _ := book["title"].(string)
+		path := BOOKS_PATH + title[:1] + "/" + title + ".epub"
 		_, err = os.Stat(path)
 		for i := 0; err == nil; i++ {
-			path := BOOKS_PATH + book.Title[:1] + "/" + book.Title + "_" + strconv.Itoa(i) + ".epub"
+			path := BOOKS_PATH + title[:1] + "/" + title + "_" + strconv.Itoa(i) + ".epub"
 			_, err = os.Stat(path)
 		}
 
-		os.Mkdir(BOOKS_PATH+book.Title[:1], os.ModePerm)
-		cmd := exec.Command("mv", book.Path, path)
+		oldPath, _ := book["path"].(string)
+		os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
+		cmd := exec.Command("mv", oldPath, path)
 		cmd.Run()
-		book.Path = path
+		book["path"] = path
 		coll.Insert(book)
 		newColl.Remove(bson.M{"_id": id})
-		sess.Notify("Store book!", "The book '"+book.Title+"' it's stored for public download", "success")
+		sess.Notify("Store book!", "The book '"+title+"' it's stored for public download", "success")
 		sess.Save(w, r)
 		http.Redirect(w, r, "/new/", 307)
 	}
