@@ -117,6 +117,11 @@ type newData struct {
 
 func newHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if len(r.URL.Path) > len("/new/") {
+			http.ServeFile(w, r, r.URL.Path[1:])
+			return
+		}
+
 		sess := GetSession(r)
 		if sess.User == "" {
 			http.NotFound(w, r)
