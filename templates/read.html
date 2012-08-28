@@ -19,13 +19,13 @@
 <div class="row">
 <div class="span4">
 {{range .Chapters}}
-{{if .In}}
+{{range .Out}}
+</ul>
+{{end}}
+{{range .In}}
 <ul class="nav nav-list">
 {{end}}
 	<li {{if .Active}}class="active"{{end}}><a href="{{.Link}}">{{.Label}}</a></li>
-{{if .Out}}
-</ul>
-{{end}}
 {{end}}
 {{if .Chapters}}
 </ul>

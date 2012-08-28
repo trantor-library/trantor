@@ -73,7 +73,7 @@ func cleanLink(link string) string {
 
 /* return next and prev urls from document and the list of chapters */
 func chapterList(e *epub.Epub, file string, id string, base string) (string, string, []chapter) {
-	chapters := make([]chapter, 0)
+	var chapters []chapter
 	prev := ""
 	next := ""
 	tit := e.Titerator(epub.TITERATOR_NAVMAP)
@@ -90,13 +90,13 @@ func chapterList(e *epub.Epub, file string, id string, base string) (string, str
 			activeIndx = len(chapters)
 		}
 		c.Depth = tit.Depth()
-		if c.Depth > depth {
-			c.In = true
-			depth = c.Depth
+		for c.Depth > depth {
+			c.In = append(c.In, true)
+			depth++
 		}
-		if c.Depth < depth {
-			c.Out = true
-			depth = c.Depth
+		for c.Depth < depth {
+			c.Out = append(c.Out, true)
+			depth--
 		}
 		chapters = append(chapters, c)
 	}
