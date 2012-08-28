@@ -103,10 +103,10 @@ func chapterList(e *epub.Epub, file string, id string, base string) (string, str
 
 	/* if is the same chapter check the previous */
 	i := activeIndx-1
-	for i > 0 && strings.Contains(chapters[i].Link, "#") {
+	for i >= 0 && strings.Contains(chapters[i].Link, "#") {
 		i--
 	}
-	if i > 0 {
+	if i >= 0 {
 		prev = chapters[i].Link
 	}
 	i = activeIndx+1
