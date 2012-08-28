@@ -59,33 +59,6 @@ func genLink(id string, base string, link string) string {
 	return base + id + "/" + link
 }
 
-/* return next and prev urls from document */
-func nextPrev(e *epub.Epub, file string, id string, base string) (string, string) {
-	it := e.Iterator(epub.EITERATOR_LINEAR)
-	defer it.Close()
-
-	prev := ""
-	next := ""
-	for it.CurrUrl() != file {
-		prev = it.CurrUrl()
-		_, err := it.Next()
-		if err != nil {
-			break
-		}
-	}
-	if it.CurrUrl() == file {
-		it.Next()
-		next = it.CurrUrl()
-	}
-	if prev != "" {
-		prev = base + id + "/" + prev
-	}
-	if next != "" {
-		next = base + id + "/" + next
-	}
-	return next, prev
-}
-
 func cleanLink(link string) string {
 	for i := 0; i < len(link); i++ {
 		if link[i] == '%' {
@@ -96,19 +69,43 @@ func cleanLink(link string) string {
 	return link
 }
 
-func listChapters(e *epub.Epub, file string, id string, base string) []chapter {
+/* return next and prev urls from document and the list of chapters */
+func chapterList(e *epub.Epub, file string, id string, base string) (string, string, []chapter) {
 	chapters := make([]chapter, 0)
+	prev := ""
+	next := ""
 	tit := e.Titerator(epub.TITERATOR_NAVMAP)
 	defer tit.Close()
+
+	activeIndx := -1
 	for ; tit.Valid(); tit.Next() {
 		var c chapter
 		c.Label = tit.Label()
 		c.Link = genLink(id, base, tit.Link())
 		c.Depth = tit.Depth()
-		c.Active = cleanLink(tit.Link()) == file
+		if cleanLink(tit.Link()) == file {
+			c.Active = true
+			activeIndx = len(chapters)
+		}
 		chapters = append(chapters, c)
 	}
-	return chapters
+
+	/* if is the same chapter check the previous */
+	i := activeIndx-1
+	for i > 0 && strings.Contains(chapters[i].Link, "#") {
+		i--
+	}
+	if i > 0 {
+		prev = chapters[i].Link
+	}
+	i = activeIndx+1
+	for i < len(chapters) && strings.Contains(chapters[i].Link, "#") {
+		i++
+	}
+	if i < len(chapters) {
+		next = chapters[i].Link
+	}
+	return next, prev, chapters
 }
 
 func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
@@ -140,8 +137,7 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 			var data readData
 			data.S = GetStatus(w, r)
 			data.Book = book
-			data.Chapters = listChapters(e, file, id, base)
-			data.Next, data.Prev = nextPrev(e, file, id, base)
+			data.Next, data.Prev, data.Chapters = chapterList(e, file, id, base)
 			if base == "/readnew/" {
 				data.Back = "/new/"
 			} else {
