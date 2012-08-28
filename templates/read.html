@@ -16,7 +16,19 @@
 {{end}}
 </ul>
 
+<div class="row">
+<div class="span4">
+<ul class="nav nav-pills nav-stacked">
+{{range .Chapters}}
+	<li {{if .Active}}class="active"{{end}}><a href="{{.Link}}">{{.Label}}</a></li>
+{{end}}
+</ul>
+</div>
+
+<div class="span8">
 {{.Txt}}
+</div>
+</div>
 
 <ul class="pager">
 {{if .Prev}}

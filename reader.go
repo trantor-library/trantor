@@ -8,12 +8,21 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"strconv"
 )
+
+type chapter struct {
+	Label string
+	Link  string
+	Depth int
+	Active bool
+}
 
 type readData struct {
 	S    Status
 	Book Book
 	Txt  template.HTML
+	Chapters []chapter
 	Next string
 	Prev string
 	Back string
@@ -46,6 +55,10 @@ func cleanHtml(html string) string {
 	return "<div " + str[0] + ">" + strings.Split(str[1], "</body>")[0] + "</div>"
 }
 
+func genLink(id string, base string, link string) string {
+	return base + id + "/" + link
+}
+
 /* return next and prev urls from document */
 func nextPrev(e *epub.Epub, file string, id string, base string) (string, string) {
 	it := e.Iterator(epub.EITERATOR_LINEAR)
@@ -71,6 +84,31 @@ func nextPrev(e *epub.Epub, file string, id string, base string) (string, string
 		next = base + id + "/" + next
 	}
 	return next, prev
+}
+
+func cleanLink(link string) string {
+	for i := 0; i < len(link); i++ {
+		if link[i] == '%' {
+			c, _ := strconv.ParseInt(link[i+1:i+3], 16, 0)
+			link = link[:i] + string(c) + link[i+3:]
+		}
+	}
+	return link
+}
+
+func listChapters(e *epub.Epub, file string, id string, base string) []chapter {
+	chapters := make([]chapter, 0)
+	tit := e.Titerator(epub.TITERATOR_NAVMAP)
+	defer tit.Close()
+	for ; tit.Valid(); tit.Next() {
+		var c chapter
+		c.Label = tit.Label()
+		c.Link = genLink(id, base, tit.Link())
+		c.Depth = tit.Depth()
+		c.Active = cleanLink(tit.Link()) == file
+		chapters = append(chapters, c)
+	}
+	return chapters
 }
 
 func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
@@ -102,6 +140,7 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 			var data readData
 			data.S = GetStatus(w, r)
 			data.Book = book
+			data.Chapters = listChapters(e, file, id, base)
 			data.Next, data.Prev = nextPrev(e, file, id, base)
 			if base == "/readnew/" {
 				data.Back = "/new/"
