@@ -61,10 +61,8 @@ func nextPrev(e *epub.Epub, file string, id string, base string) (string, string
 		}
 	}
 	if it.CurrUrl() == file {
-		_, err := it.Next()
-		if err == nil {
-			next = it.CurrUrl()
-		}
+		it.Next()
+		next = it.CurrUrl()
 	}
 	if prev != "" {
 		prev = base + id + "/" + prev
