@@ -16,6 +16,8 @@ type chapter struct {
 	Link  string
 	Depth int
 	Active bool
+	In bool  // one level in depth
+	Out bool // one level out depth
 }
 
 type readData struct {
@@ -78,14 +80,23 @@ func chapterList(e *epub.Epub, file string, id string, base string) (string, str
 	defer tit.Close()
 
 	activeIndx := -1
+	depth := 0
 	for ; tit.Valid(); tit.Next() {
 		var c chapter
 		c.Label = tit.Label()
 		c.Link = genLink(id, base, tit.Link())
-		c.Depth = tit.Depth()
 		if cleanLink(tit.Link()) == file {
 			c.Active = true
 			activeIndx = len(chapters)
+		}
+		c.Depth = tit.Depth()
+		if c.Depth > depth {
+			c.In = true
+			depth = c.Depth
+		}
+		if c.Depth < depth {
+			c.Out = true
+			depth = c.Depth
 		}
 		chapters = append(chapters, c)
 	}
