@@ -16,8 +16,8 @@ type chapter struct {
 	Link  string
 	Depth int
 	Active bool
-	In bool  // one level in depth
-	Out bool // one level out depth
+	In []bool  // one level in depth
+	Out []bool // one level out depth
 }
 
 type readData struct {
