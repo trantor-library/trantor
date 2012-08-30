@@ -6,27 +6,27 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"regexp"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type chapter struct {
-	Label string
-	Link  string
-	Depth int
+	Label  string
+	Link   string
+	Depth  int
 	Active bool
-	In []bool  // one level in depth
-	Out []bool // one level out depth
+	In     []bool // one level in depth
+	Out    []bool // one level out depth
 }
 
 type readData struct {
-	S    Status
-	Book Book
-	Content string
+	S        Status
+	Book     Book
+	Content  string
 	Chapters []chapter
-	Next string
-	Prev string
-	Back string
+	Next     string
+	Prev     string
+	Back     string
 }
 
 func parseUrl(url string) (string, string, string) {
@@ -99,14 +99,14 @@ func chapterList(e *epub.Epub, file string, id string, base string) (string, str
 	}
 
 	/* if is the same chapter check the previous */
-	i := activeIndx-1
+	i := activeIndx - 1
 	for i >= 0 && strings.Contains(chapters[i].Link, "#") {
 		i--
 	}
 	if i >= 0 {
 		prev = chapters[i].Link
 	}
-	i = activeIndx+1
+	i = activeIndx + 1
 	for i < len(chapters) && strings.Contains(chapters[i].Link, "#") {
 		i++
 	}
