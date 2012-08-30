@@ -5,6 +5,7 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
+	"os"
 )
 
 type aboutData struct {
@@ -117,6 +118,19 @@ func main() {
 	coll := session.DB(DB_NAME).C(BOOKS_COLL)
 	userColl := session.DB(DB_NAME).C(USERS_COLL)
 	newColl := session.DB(DB_NAME).C(NEW_BOOKS_COLL)
+
+	_, err = os.Stat(BOOKS_PATH)
+	if err != nil {
+		os.Mkdir(BOOKS_PATH, os.ModePerm)
+	}
+	_, err = os.Stat(COVER_PATH)
+	if err != nil {
+		os.Mkdir(COVER_PATH, os.ModePerm)
+	}
+	_, err = os.Stat(NEW_PATH)
+	if err != nil {
+		os.Mkdir(NEW_PATH, os.ModePerm)
+	}
 
 	http.HandleFunc("/book/", bookHandler(coll))
 	http.HandleFunc("/search/", searchHandler(coll))
