@@ -1,8 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"code.google.com/p/gopass"
 	"crypto/md5"
+	"fmt"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"os"
@@ -24,11 +25,14 @@ func main() {
 	coll := session.DB(DB_NAME).C(USERS_COLL)
 
 	user := os.Args[1]
-	pass := os.Args[2]
+	pass, err := gopass.GetPass("Password: ")
+	if err != nil {
+		panic(err)
+	}
 	h := md5.New()
 	hash := h.Sum(([]byte)(PASS_SALT + pass))
 	fmt.Println(user, " - ", hash)
-	err = coll.Insert(bson.M{"user":user, "pass":hash})
+	err = coll.Insert(bson.M{"user": user, "pass": hash})
 	if err != nil {
 		panic(err)
 	}
