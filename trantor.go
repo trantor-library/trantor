@@ -154,5 +154,5 @@ func main() {
 	fileHandler("/css/")
 	fileHandler("/js/")
 	http.HandleFunc("/", indexHandler(coll))
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(PORT, nil)
 }
