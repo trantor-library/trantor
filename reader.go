@@ -2,7 +2,6 @@ package main
 
 import (
 	"git.gitorious.org/go-pkg/epub.git"
-	"html/template"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
@@ -23,25 +22,23 @@ type chapter struct {
 type readData struct {
 	S    Status
 	Book Book
-	Txt  template.HTML
+	Content string
 	Chapters []chapter
 	Next string
 	Prev string
 	Back string
 }
 
-func parseUrl(url string) (string, string, string, string) {
-	exp, _ := regexp.Compile("^(\\/read[^\\/]*\\/)([^\\/]*)\\/?(.*\\.([^\\.]*))?$")
+func parseUrl(url string) (string, string, string) {
+	exp, _ := regexp.Compile("^(\\/[^\\/]*\\/)([^\\/]*)\\/?(.*)?$")
 	res := exp.FindStringSubmatch(url)
 	base := res[1]
 	id := res[2]
 	file := ""
-	ext := ""
-	if len(res) == 5 {
+	if len(res) == 4 {
 		file = res[3]
-		ext = res[4]
 	}
-	return base, id, file, ext
+	return base, id, file
 }
 
 func cleanHtml(html string) string {
@@ -121,7 +118,7 @@ func chapterList(e *epub.Epub, file string, id string, base string) (string, str
 
 func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		base, id, file, ext := parseUrl(r.URL.Path)
+		base, id, file := parseUrl(r.URL.Path)
 		if base == "/readnew/" {
 			sess := GetSession(r)
 			if sess.User == "" {
@@ -144,21 +141,47 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 			return
 		}
 
-		if ext == "html" || ext == "htm" || ext == "xhtml" || ext == "xml" {
-			var data readData
-			data.S = GetStatus(w, r)
-			data.Book = book
-			data.Next, data.Prev, data.Chapters = chapterList(e, file, id, base)
-			if base == "/readnew/" {
-				data.Back = "/new/"
-			} else {
-				data.Back = "/book/" + id
-			}
-			page := string(e.Data(file))
-			data.Txt = template.HTML(cleanHtml(page))
-			loadTemplate(w, "read", data)
+		var data readData
+		data.S = GetStatus(w, r)
+		data.Book = book
+		data.Next, data.Prev, data.Chapters = chapterList(e, file, id, base)
+		if base == "/readnew/" {
+			data.Back = "/new/"
 		} else {
-			w.Write(e.Data(file))
+			data.Back = "/book/" + id
 		}
+		baseContent := "/content/"
+		if base == "/readnew/" {
+			base = "/contentnew/"
+		}
+		data.Content = genLink(id, baseContent, file)
+		loadTemplate(w, "read", data)
+	}
+}
+
+func contentHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		base, id, file := parseUrl(r.URL.Path)
+		if base == "/contentnew/" {
+			sess := GetSession(r)
+			if sess.User == "" {
+				http.NotFound(w, r)
+				return
+			}
+		}
+		books, _, err := GetBook(coll, bson.M{"_id": bson.ObjectIdHex(id)})
+		if err != nil || len(books) == 0 {
+			http.NotFound(w, r)
+			return
+		}
+		book := books[0]
+		e, _ := epub.Open(book.Path, 0)
+		defer e.Close()
+		if file == "" {
+			http.NotFound(w, r)
+			return
+		}
+
+		w.Write(e.Data(file))
 	}
 }
