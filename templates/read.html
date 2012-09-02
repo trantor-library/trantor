@@ -38,7 +38,7 @@ function resizeIframe() {
 	$("#bookContent").height($("#bookContent").contents().find("html").height());
 }
 </script>
-<iframe id="bookContent" onload="resizeIframe();" style="width: 100%; border: none;" src="{{.Content}}" seamless="seamless"></iframe>
+<iframe id="bookContent" onload="resizeIframe();" style="width: 100%; border: none;" scrolling="no" src="{{.Content}}" seamless="seamless"></iframe>
 </div>
 </div>
 
