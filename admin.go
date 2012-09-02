@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 )
 
 func deleteHandler(coll *mgo.Collection, url string) func(http.ResponseWriter, *http.Request) {
@@ -137,6 +138,17 @@ func newHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
+func ValidFileName(path string, title string, extension string) string {
+	title = strings.Replace(title, "/", "_", -1)
+	file := path + "/" + title + extension
+	_, err := os.Stat(file)
+	for i := 0; err == nil; i++ {
+		file := path + "/" + title + "_" + strconv.Itoa(i) + extension
+		_, err = os.Stat(file)
+	}
+	return file
+}
+
 func storeHandler(newColl, coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sess := GetSession(r)
@@ -154,12 +166,7 @@ func storeHandler(newColl, coll *mgo.Collection) func(http.ResponseWriter, *http
 		}
 
 		title, _ := book["title"].(string)
-		path := BOOKS_PATH + title[:1] + "/" + title + ".epub"
-		_, err = os.Stat(path)
-		for i := 0; err == nil; i++ {
-			path := BOOKS_PATH + title[:1] + "/" + title + "_" + strconv.Itoa(i) + ".epub"
-			_, err = os.Stat(path)
-		}
+		path := ValidFileName(BOOKS_PATH + title[:1], title, ".epub")
 
 		oldPath, _ := book["path"].(string)
 		os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)

@@ -61,19 +61,15 @@ func cleanStr(str string) string {
 }
 
 func storeImg(img []byte, title, extension string) (string, string) {
-	name := title
-	folder := COVER_PATH + name[:1] + "/"
+	folder := COVER_PATH + title[:1]
 	os.Mkdir(folder, os.ModePerm)
-	imgPath := folder + name + extension
-	_, err := os.Stat(imgPath)
-	for i := 0; err == nil; i++ {
-		name = title + "_" + strconv.Itoa(i)
-		imgPath = folder + name + extension
-		_, err = os.Stat(imgPath)
-	}
+	imgPath := ValidFileName(folder, title, extension)
 
 	/* store img on disk */
-	file, _ := os.Create(imgPath)
+	file, err := os.Create(imgPath)
+	if err != nil {
+		return "", ""
+	}
 	defer file.Close()
 	file.Write(img)
 
@@ -81,7 +77,7 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	resize := append(strings.Split(RESIZE_CMD, " "), imgPath, imgPath)
 	cmd := exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
-	imgPathSmall := folder + name + "_small" + extension
+	imgPathSmall := ValidFileName(folder, title, "_small" + extension)
 	resize = append(strings.Split(RESIZE_THUMB_CMD, " "), imgPath, imgPathSmall)
 	cmd = exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
