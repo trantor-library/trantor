@@ -152,7 +152,7 @@ func readHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 		}
 		baseContent := "/content/"
 		if base == "/readnew/" {
-			base = "/contentnew/"
+			baseContent = "/contentnew/"
 		}
 		data.Content = genLink(id, baseContent, file)
 		loadTemplate(w, "read", data)
