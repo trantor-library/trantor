@@ -32,23 +32,14 @@
 {{end}}
 </div>
 
+<div class="span8">
 <script type="text/javascript">
-function iframedoc(aID){ 
-	var framecont = null;
-	var frame=document.getElementById(aID);
-	if(frame.contentDocument)
-	framecont = frame.contentDocument;
-	else 
-	framecont = document.frames[aID].document;
-	return framecont;
-}
-function iframe_resize(){
-	var myframe = document.getElementById('txt');
-	var frameDoc = iframedoc('txt');
-	myframe.height = frameDoc.body.offsetHeight+20;
+function resizeIframe() {
+	$("#bookContent").height($("#bookContent").contents().find("html").height());
 }
 </script>
-<iframe class="span8" id="txt" onload="iframe_resize();" scrolling="no" src="{{.Content}}" seamless="seamless"></iframe>
+<iframe id="bookContent" onload="resizeIframe();" style="width: 100%; border: none;" src="{{.Content}}" seamless="seamless"></iframe>
+</div>
 </div>
 
 <ul class="pager">
