@@ -92,13 +92,15 @@ func saveHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 		author := cleanEmptyStr(r.Form["author"])
 		subject := cleanEmptyStr(r.Form["subject"])
 		lang := cleanEmptyStr(r.Form["lang"])
-		err := coll.Update(bson.M{"_id": id}, bson.M{"$set": bson.M{"title": title,
+		book := map[string]interface{}{"title": title,
 			"publisher":   publisher,
 			"date":        date,
 			"description": description,
 			"author":      author,
 			"subject":     subject,
-			"lang":        lang}})
+			"lang":        lang}
+		book["keywords"] = keywords(book)
+		err := coll.Update(bson.M{"_id": id}, bson.M{"$set": book})
 		if err != nil {
 			http.NotFound(w, r)
 			return
