@@ -33,13 +33,13 @@ function delBook(){
 	<div class="row"><p></p></div>
 	<div class="row">
 	<div class="span5">
-		<ul class="unstyled">
-		{{if .Author}}<li><strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}</li>{{end}}
-		{{if .Publisher}}<li><strong>Publisher:</strong> <a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a></li>{{end}}
-		{{if .Subject}}<li><strong>Tags:</strong> {{range .Subject}}<a href="/search/?q=subject:{{.}}">{{.}}</a>, {{end}}</li>{{end}}
-		{{if .Date}}<li><strong>Date:</strong> {{.Date}}</li>{{end}}
-		{{if .Lang}}<li><strong>Lang:</strong> {{range .Lang}}<a href="/search/?q=lang:{{.}}">{{.}}</a> {{end}}</li>{{end}}
-		</ul>
+		<dl class="dl-horizontal">
+		{{if .Author}}<dt>Author</dt> <dd>{{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}</dd>{{end}}
+		{{if .Publisher}}<dt>Publisher</dt> <dd><a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a></dd>{{end}}
+		{{if .Subject}}<dt>Tags</dt> <dd>{{range .Subject}}<a href="/search/?q=subject:{{.}}">{{.}}</a>, {{end}}</dd>{{end}}
+		{{if .Date}}<dt>Date</dt> <dd>{{.Date}}</dd>{{end}}
+		{{if .Lang}}<dt>Lang</dt> <dd>{{range .Lang}}<a href="/search/?q=lang:{{.}}">{{.}}</a> {{end}}</dd>{{end}}
+		</dl>
 	</div>
 	<div class="span3">
 		{{if $user}}
