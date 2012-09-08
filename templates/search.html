@@ -24,8 +24,12 @@
 		<div class="span10 well">
 		<div class="row">
 		<div class="span7">
-		<p><a href="/book/{{.Id}}"><strong>{{.Title}}</strong></a><br />
-		{{range .Author}}{{.}}, {{end}}</p>
+		<p>
+		<span class="muted">{{if .Lang}}{{.Lang}}{{end}}</span>
+		<a href="/book/{{.Id}}"><strong>{{.Title}}</strong></a>
+		<span class="muted">{{if .Publisher}}{{.Publisher}}{{end}}</span><br />
+		{{range .Author}}{{.}}, {{end}}
+		</p>
 		</div>
 		<div class="span3">
 		<div class="btn-group pull-right">
