@@ -23,7 +23,7 @@
 </ul>
 {{end}}
 {{range .In}}
-<ul class="nav nav-list hidden-phone">
+<ul id="bookMenu" class="nav nav-list hidden-phone">
 {{end}}
 	<li {{if .Active}}class="active"{{end}}><a href="{{.Link}}">{{.Label}}</a></li>
 {{end}}
@@ -35,7 +35,13 @@
 <div class="span8">
 <script type="text/javascript">
 function resizeIframe() {
-	$("#bookContent").height($("#bookContent").contents().find("html").height());
+	var contentHeight = $("#bookContent").contents().find("html").height();
+	var menuHeight =  $("#bookMenu").height();
+	if (contentHeight < menuHeight) {
+		$("#bookContent").height(menuHeight);
+	} else {
+		$("#bookContent").height(contentHeight);
+	}
 }
 </script>
 <iframe id="bookContent" onload="resizeIframe();" style="width: 100%; border: none;" scrolling="no" src="{{.Content}}" seamless="seamless"></iframe>
