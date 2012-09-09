@@ -2,15 +2,17 @@
 
 <p class="centered">Found {{.Found}} books.</p>
 
-{{with .Books}}
-	{{range .}}
+{{range .Books}}
+	{{$titleFound  := .TitleFound}}
+	{{$authorFound := .AuthorFound}}
+	{{with .B}}
 	<div class="row">
 		<div class="span1">
 		<p class="pull-right">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</p>
 		</div>
 		<div class="span9">
-		<p><a href="/search/?q=title:{{.Title}}"><strong>{{.Title}}</strong></a><br />
-		{{if .Author}}<strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}<br />{{end}}
+		<p><a href="/search/?q=title:{{.Title}}"><strong>{{.Title}}</strong></a> <small>({{$titleFound}})</small><br />
+		{{if .Author}}<strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}} <small>({{$authorFound}})</small><br />{{end}}
 		{{if .Publisher}}<strong>Publisher:</strong> <a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a><br />{{end}}
 		{{if .Subject}}<strong>Tags:</strong> {{range .Subject}}<a href="/search/?q=subject:{{.}}">{{.}}</a>, {{end}}<br />{{end}}
 		{{if .Date}}<strong>Date:</strong> {{.Date}}<br />{{end}}

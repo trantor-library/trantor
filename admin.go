@@ -112,13 +112,18 @@ func saveHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) 
 	}
 }
 
+type newBook struct {
+	TitleFound int
+	AuthorFound int
+	B Book
+}
 type newData struct {
 	S     Status
 	Found int
-	Books []Book
+	Books []newBook
 }
 
-func newHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
+func newHandler(coll *mgo.Collection, booksColl *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if len(r.URL.Path) > len("/new/") {
 			http.ServeFile(w, r, r.URL.Path[1:])
@@ -135,7 +140,12 @@ func newHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
 		var data newData
 		data.S = GetStatus(w, r)
 		data.Found = num
-		data.Books = res
+		data.Books = make([]newBook, num)
+		for i, b := range res {
+			data.Books[i].B = b
+			_, data.Books[i].TitleFound, _ = GetBook(booksColl, buildQuery("title:" + b.Title), 1)
+			_, data.Books[i].AuthorFound, _ = GetBook(booksColl, buildQuery("author:" + strings.Join(b.Author, " author:")), 1)
+		}
 		loadTemplate(w, "new", data)
 	}
 }

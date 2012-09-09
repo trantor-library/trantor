@@ -137,7 +137,7 @@ func main() {
 	http.HandleFunc("/upload/", uploadHandler(newColl))
 	http.HandleFunc("/login/", loginHandler(userColl))
 	http.HandleFunc("/logout/", logoutHandler)
-	http.HandleFunc("/new/", newHandler(newColl))
+	http.HandleFunc("/new/", newHandler(newColl, coll))
 	http.HandleFunc("/delnew/", deleteHandler(newColl, "/new/"))
 	http.HandleFunc("/store/", storeHandler(newColl, coll))
 	http.HandleFunc("/read/", readHandler(coll))
