@@ -145,7 +145,7 @@ func ValidFileName(path string, title string, extension string) string {
 	file := path + "/" + title + extension
 	_, err := os.Stat(file)
 	for i := 0; err == nil; i++ {
-		file := path + "/" + title + "_" + strconv.Itoa(i) + extension
+		file = path + "/" + title + "_" + strconv.Itoa(i) + extension
 		_, err = os.Stat(file)
 	}
 	return file
