@@ -61,9 +61,11 @@ function delBook(){
 	</div>
 
 	<div class="row">
+	{{if .Description}}
 	<div class="span8">
-		<p>{{.Description}}</p>
+		<pre>{{.Description}}</pre>
 	</div>
+	{{end}}
 	</div>
 	</div>
 </div>
