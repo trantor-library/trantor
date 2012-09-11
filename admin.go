@@ -1,7 +1,6 @@
 package main
 
 import (
-	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"os"
@@ -10,55 +9,51 @@ import (
 	"strings"
 )
 
-func deleteHandler(coll *mgo.Collection, url string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		sess := GetSession(r)
-		if sess.User == "" {
-			http.NotFound(w, r)
-			return
-		}
-
-		// cutre hack: /delete/ and /delnew/ have the same lenght:
-		id := bson.ObjectIdHex(r.URL.Path[len("/delete/"):])
-		books, _, err := GetBook(coll, bson.M{"_id": id})
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		book := books[0]
-		if book.Cover != "" {
-			os.RemoveAll(book.Cover[1:])
-		}
-		if book.CoverSmall != "" {
-			os.RemoveAll(book.CoverSmall[1:])
-		}
-		os.RemoveAll(book.Path)
-		coll.Remove(bson.M{"_id": id})
-		sess.Notify("Removed book!", "The book '"+book.Title+"' it's completly removed", "success")
-		sess.Save(w, r)
-		http.Redirect(w, r, url, 307)
+func deleteHandler(w http.ResponseWriter, r *http.Request) {
+	sess := GetSession(r)
+	if sess.User == "" {
+		http.NotFound(w, r)
+		return
 	}
+
+	// cutre hack: /delete/ and /delnew/ have the same lenght:
+	id := bson.ObjectIdHex(r.URL.Path[len("/delete/"):])
+	books, _, err := db.GetBooks(bson.M{"_id": id})
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	book := books[0]
+	if book.Cover != "" {
+		os.RemoveAll(book.Cover[1:])
+	}
+	if book.CoverSmall != "" {
+		os.RemoveAll(book.CoverSmall[1:])
+	}
+	os.RemoveAll(book.Path)
+	db.RemoveBook(id)
+	sess.Notify("Removed book!", "The book '"+book.Title+"' it's completly removed", "success")
+	sess.Save(w, r)
+	http.Redirect(w, r, "/", 307) //FIXME: if new return to /new/
 }
 
-func editHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		sess := GetSession(r)
-		if sess.User == "" {
-			http.NotFound(w, r)
-			return
-		}
-		id := bson.ObjectIdHex(r.URL.Path[len("/edit/"):])
-		books, _, err := GetBook(coll, bson.M{"_id": id})
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		var data bookData
-		data.Book = books[0]
-		data.S = GetStatus(w, r)
-		loadTemplate(w, "edit", data)
+func editHandler(w http.ResponseWriter, r *http.Request) {
+	sess := GetSession(r)
+	if sess.User == "" {
+		http.NotFound(w, r)
+		return
 	}
+	id := bson.ObjectIdHex(r.URL.Path[len("/edit/"):])
+	books, _, err := db.GetBooks(bson.M{"_id": id})
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	var data bookData
+	data.Book = books[0]
+	data.S = GetStatus(w, r)
+	loadTemplate(w, "edit", data)
 }
 
 func cleanEmptyStr(s []string) []string {
@@ -71,45 +66,43 @@ func cleanEmptyStr(s []string) []string {
 	return res
 }
 
-func saveHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			http.NotFound(w, r)
-			return
-		}
-		sess := GetSession(r)
-		if sess.User == "" {
-			http.NotFound(w, r)
-			return
-		}
-
-		idStr := r.URL.Path[len("/save/"):]
-		id := bson.ObjectIdHex(idStr)
-		title := r.FormValue("title")
-		publisher := r.FormValue("publisher")
-		date := r.FormValue("date")
-		description := r.FormValue("description")
-		author := cleanEmptyStr(r.Form["author"])
-		subject := cleanEmptyStr(r.Form["subject"])
-		lang := cleanEmptyStr(r.Form["lang"])
-		book := map[string]interface{}{"title": title,
-			"publisher":   publisher,
-			"date":        date,
-			"description": description,
-			"author":      author,
-			"subject":     subject,
-			"lang":        lang}
-		book["keywords"] = keywords(book)
-		err := coll.Update(bson.M{"_id": id}, bson.M{"$set": book})
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		sess.Notify("Book Modified!", "", "success")
-		sess.Save(w, r)
-		http.Redirect(w, r, "/book/"+idStr, 307)
+func saveHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.NotFound(w, r)
+		return
 	}
+	sess := GetSession(r)
+	if sess.User == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	idStr := r.URL.Path[len("/save/"):]
+	id := bson.ObjectIdHex(idStr)
+	title := r.FormValue("title")
+	publisher := r.FormValue("publisher")
+	date := r.FormValue("date")
+	description := r.FormValue("description")
+	author := cleanEmptyStr(r.Form["author"])
+	subject := cleanEmptyStr(r.Form["subject"])
+	lang := cleanEmptyStr(r.Form["lang"])
+	book := map[string]interface{}{"title": title,
+		"publisher":   publisher,
+		"date":        date,
+		"description": description,
+		"author":      author,
+		"subject":     subject,
+		"lang":        lang}
+	book["keywords"] = keywords(book)
+	err := db.UpdateBook(id, book)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	sess.Notify("Book Modified!", "", "success")
+	sess.Save(w, r)
+	http.Redirect(w, r, "/book/"+idStr, 307)
 }
 
 type newBook struct {
@@ -123,31 +116,29 @@ type newData struct {
 	Books []newBook
 }
 
-func newHandler(coll *mgo.Collection, booksColl *mgo.Collection) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if len(r.URL.Path) > len("/new/") {
-			http.ServeFile(w, r, r.URL.Path[1:])
-			return
-		}
-
-		sess := GetSession(r)
-		if sess.User == "" {
-			http.NotFound(w, r)
-			return
-		}
-
-		res, num, _ := GetBook(coll, bson.M{})
-		var data newData
-		data.S = GetStatus(w, r)
-		data.Found = num
-		data.Books = make([]newBook, num)
-		for i, b := range res {
-			data.Books[i].B = b
-			_, data.Books[i].TitleFound, _ = GetBook(booksColl, buildQuery("title:" + b.Title), 1)
-			_, data.Books[i].AuthorFound, _ = GetBook(booksColl, buildQuery("author:" + strings.Join(b.Author, " author:")), 1)
-		}
-		loadTemplate(w, "new", data)
+func newHandler(w http.ResponseWriter, r *http.Request) {
+	sess := GetSession(r)
+	if sess.User == "" {
+		http.NotFound(w, r)
+		return
 	}
+
+	if len(r.URL.Path) > len("/new/") {
+		http.ServeFile(w, r, r.URL.Path[1:])
+		return
+	}
+
+	res, num, _ := db.GetNewBooks()
+	var data newData
+	data.S = GetStatus(w, r)
+	data.Found = num
+	data.Books = make([]newBook, num)
+	for i, b := range res {
+		data.Books[i].B = b
+		_, data.Books[i].TitleFound, _ = db.GetBooks(buildQuery("title:" + b.Title), 1)
+		_, data.Books[i].AuthorFound, _ = db.GetBooks(buildQuery("author:" + strings.Join(b.Author, " author:")), 1)
+	}
+	loadTemplate(w, "new", data)
 }
 
 func ValidFileName(path string, title string, extension string) string {
@@ -162,34 +153,30 @@ func ValidFileName(path string, title string, extension string) string {
 	return file
 }
 
-func storeHandler(newColl, coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		sess := GetSession(r)
-		if sess.User == "" {
-			http.NotFound(w, r)
-			return
-		}
-
-		id := bson.ObjectIdHex(r.URL.Path[len("/store/"):])
-		var book bson.M
-		err := newColl.Find(bson.M{"_id": id}).One(&book)
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-
-		title, _ := book["title"].(string)
-		path := ValidFileName(BOOKS_PATH + title[:1], title, ".epub")
-
-		oldPath, _ := book["path"].(string)
-		os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
-		cmd := exec.Command("mv", oldPath, path)
-		cmd.Run()
-		book["path"] = path
-		coll.Insert(book)
-		newColl.Remove(bson.M{"_id": id})
-		sess.Notify("Store book!", "The book '"+title+"' it's stored for public download", "success")
-		sess.Save(w, r)
-		http.Redirect(w, r, "/new/", 307)
+func storeHandler(w http.ResponseWriter, r *http.Request) {
+	sess := GetSession(r)
+	if sess.User == "" {
+		http.NotFound(w, r)
+		return
 	}
+
+	id := bson.ObjectIdHex(r.URL.Path[len("/store/"):])
+	books, _, err := db.GetBooks(bson.M{"_id": id})
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	book := books[0]
+
+	title := book.Title
+	path := ValidFileName(BOOKS_PATH + title[:1], title, ".epub")
+
+	oldPath := book.Path
+	os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
+	cmd := exec.Command("mv", oldPath, path)
+	cmd.Run()
+	db.UpdateBook(id, bson.M{"active": true, "path": path})
+	sess.Notify("Store book!", "The book '"+title+"' it's stored for public download", "success")
+	sess.Save(w, r)
+	http.Redirect(w, r, "/new/", 307)
 }

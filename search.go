@@ -1,7 +1,6 @@
 package main
 
 import (
-	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"strconv"
@@ -10,7 +9,7 @@ import (
 
 func buildQuery(q string) bson.M {
 	var reg []bson.RegEx
-	query := bson.M{}
+	query := bson.M{"active": true}
 	words := strings.Split(q, " ")
 	for _, w := range words {
 		tag := strings.SplitN(w, ":", 2)
@@ -35,35 +34,33 @@ type searchData struct {
 	Prev  string
 }
 
-func searchHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		err := r.ParseForm()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		req := strings.Join(r.Form["q"], " ")
-		page := 0
-		if len(r.Form["p"]) != 0 {
-			page, err = strconv.Atoi(r.Form["p"][0])
-			if err != nil {
-				page = 0
-			}
-		}
-		res, num, _ := GetBook(coll, buildQuery(req), SEARCH_ITEMS_PAGE, page*SEARCH_ITEMS_PAGE)
-
-		var data searchData
-		data.S = GetStatus(w, r)
-		data.S.Search = req
-		data.Books = res
-		data.Found = num
-		data.Page = page + 1
-		if num > (page+1)*SEARCH_ITEMS_PAGE {
-			data.Next = "/search/?q=" + req + "&p=" + strconv.Itoa(page+1)
-		}
-		if page > 0 {
-			data.Prev = "/search/?q=" + req + "&p=" + strconv.Itoa(page-1)
-		}
-		loadTemplate(w, "search", data)
+func searchHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+	req := strings.Join(r.Form["q"], " ")
+	page := 0
+	if len(r.Form["p"]) != 0 {
+		page, err = strconv.Atoi(r.Form["p"][0])
+		if err != nil {
+			page = 0
+		}
+	}
+	res, num, _ := db.GetBooks(buildQuery(req), SEARCH_ITEMS_PAGE, page*SEARCH_ITEMS_PAGE)
+
+	var data searchData
+	data.S = GetStatus(w, r)
+	data.S.Search = req
+	data.Books = res
+	data.Found = num
+	data.Page = page + 1
+	if num > (page+1)*SEARCH_ITEMS_PAGE {
+		data.Next = "/search/?q=" + req + "&p=" + strconv.Itoa(page+1)
+	}
+	if page > 0 {
+		data.Prev = "/search/?q=" + req + "&p=" + strconv.Itoa(page-1)
+	}
+	loadTemplate(w, "search", data)
 }

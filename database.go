@@ -1,10 +1,14 @@
 package main
 
 import (
+	"crypto/md5"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"sort"
 )
+
+var db *DB
+
 
 type Book struct {
 	Id          string `bson:"_id"`
@@ -26,14 +30,60 @@ type Book struct {
 	Path        string
 	Cover       string
 	CoverSmall  string
+	Active      bool
 	Keywords    []string
+}
+
+type DB struct {
+	session *mgo.Session
+	books *mgo.Collection
+	user *mgo.Collection
+}
+
+func initDB() *DB {
+	var err error
+	d := new(DB)
+	d.session, err = mgo.Dial(DB_IP)
+	if err != nil {
+		panic(err)
+	}
+
+	d.books = d.session.DB(DB_NAME).C(BOOKS_COLL)
+	d.user = d.session.DB(DB_NAME).C(USERS_COLL)
+	return d
+}
+
+func (d *DB) Close() {
+	d.session.Close()
+}
+
+func (d *DB) UserValid(user string, pass string) bool {
+	h := md5.New()
+	hash := h.Sum(([]byte)(PASS_SALT + pass))
+	n, err := d.user.Find(bson.M{"user": user, "pass": hash}).Count()
+	if err != nil {
+		return false
+	}
+	return n != 0
+}
+
+func (d *DB) InsertBook(book interface{}) error {
+	return d.books.Insert(book)
+}
+
+func (d *DB) RemoveBook(id bson.ObjectId) error {
+	return d.books.Remove(bson.M{"_id": id})
+}
+
+func (d *DB) UpdateBook(id bson.ObjectId, book interface{}) error {
+	return d.books.Update(bson.M{"_id": id}, bson.M{"$set": book})
 }
 
 /* optional parameters: length and start index
  * 
  * Returns: list of books, number found and err
  */
-func GetBook(coll *mgo.Collection, query bson.M, r ...int) (books []Book, num int, err error) {
+func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error) {
 	var start, length int
 	if len(r) > 0 {
 		length = r[0]
@@ -41,7 +91,7 @@ func GetBook(coll *mgo.Collection, query bson.M, r ...int) (books []Book, num in
 			start = r[1]
 		}
 	}
-	q := coll.Find(query).Sort("-_id")
+	q := d.books.Find(query).Sort("-_id")
 	num, err = q.Count()
 	if err != nil {
 		return
@@ -58,7 +108,23 @@ func GetBook(coll *mgo.Collection, query bson.M, r ...int) (books []Book, num in
 		books[i].Id = bson.ObjectId(b.Id).Hex()
 	}
 	return
+}
 
+/* Returns: list of books, number found and err
+ */
+func (d *DB) GetNewBooks()(books []Book, num int, err error) {
+	var q *mgo.Query
+	q = d.books.Find(bson.M{"$nor": []bson.M{{"active": true}}}).Sort("-_id")
+	num, err = q.Count()
+	if err != nil {
+		return
+	}
+
+	err = q.All(&books)
+	for i, b := range books {
+		books[i].Id = bson.ObjectId(b.Id).Hex()
+	}
+	return
 }
 
 type tagsList []struct {
@@ -78,11 +144,11 @@ func (t tagsList) Swap(i, j int) {
 	t[j] = aux
 }
 
-func GetTags(coll *mgo.Collection) (tagsList, error) {
+func (d *DB) GetTags() (tagsList, error) {
 	// TODO: cache the tags
 	var mr mgo.MapReduce
 	mr.Map = "function() { " +
-		"this.subject.forEach(function(s) { emit(s, 1); });" +
+		"if (this.active) { this.subject.forEach(function(s) { emit(s, 1); }); }" +
 		"}"
 	mr.Reduce = "function(tag, vals) { " +
 		"var count = 0;" +
@@ -90,7 +156,7 @@ func GetTags(coll *mgo.Collection) (tagsList, error) {
 		"return count;" +
 		"}"
 	var result tagsList
-	_, err := coll.Find(nil).MapReduce(&mr, &result)
+	_, err := d.books.Find(nil).MapReduce(&mr, &result)
 	if err == nil {
 		sort.Sort(result)
 	}

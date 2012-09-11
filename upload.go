@@ -2,7 +2,6 @@ package main
 
 import (
 	"git.gitorious.org/go-pkg/epub.git"
-	"labix.org/v2/mgo"
 	"net/http"
 	"os"
 	"os/exec"
@@ -198,7 +197,7 @@ func keywords(b map[string]interface{}) (k []string) {
 	return
 }
 
-func parseFile(coll *mgo.Collection, path string) (string, error) {
+func parseFile(path string) (string, error) {
 	book := map[string]interface{}{}
 
 	e, err := epub.Open(path, 0)
@@ -229,7 +228,7 @@ func parseFile(coll *mgo.Collection, path string) (string, error) {
 	book["coversmall"] = coverSmall
 	book["keywords"] = keywords(book)
 
-	coll.Insert(book)
+	db.InsertBook(book)
 	return title, nil
 }
 
@@ -237,33 +236,31 @@ type uploadData struct {
 	S Status
 }
 
-func uploadHandler(coll *mgo.Collection) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" {
-			sess := GetSession(r)
-			paths, err := storeFiles(r)
-			if err != nil {
-				sess.Notify("Problem uploading!", "Some files were not stored. Try again or contact us if it keeps happening", "error")
-			}
-
-			uploaded := ""
-			for _, path := range paths {
-				title, err := parseFile(coll, path)
-				if err != nil {
-					os.Remove(path)
-					sess.Notify("Problem uploading!", "The file '"+path[len("new/"):]+"' is not a well formed epub", "error")
-				} else {
-					uploaded = uploaded + " '" + title + "'"
-				}
-			}
-			if uploaded != "" {
-				sess.Notify("Upload successful!", "Added the books:"+uploaded+". Thank you for your contribution", "success")
-			}
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		sess := GetSession(r)
+		paths, err := storeFiles(r)
+		if err != nil {
+			sess.Notify("Problem uploading!", "Some files were not stored. Try again or contact us if it keeps happening", "error")
 		}
 
-		var data uploadData
-		data.S = GetStatus(w, r)
-		data.S.Upload = true
-		loadTemplate(w, "upload", data)
+		uploaded := ""
+		for _, path := range paths {
+			title, err := parseFile(path)
+			if err != nil {
+				os.Remove(path)
+				sess.Notify("Problem uploading!", "The file '"+path[len("new/"):]+"' is not a well formed epub", "error")
+			} else {
+				uploaded = uploaded + " '" + title + "'"
+			}
+		}
+		if uploaded != "" {
+			sess.Notify("Upload successful!", "Added the books:"+uploaded+". Thank you for your contribution", "success")
+		}
 	}
+
+	var data uploadData
+	data.S = GetStatus(w, r)
+	data.S.Upload = true
+	loadTemplate(w, "upload", data)
 }

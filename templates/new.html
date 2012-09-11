@@ -21,14 +21,15 @@
 		</p>
 		</div>
 		<div class="span2">
-		<div class="row">
-		<p><a href="/readnew/{{.Id}}" class="btn btn-warning pull-right"><i class="icon-eye-open icon-white"></i> read it!</a>
-		<a href="/{{.Path}}" class="btn btn-inverse pull-right"><i class="icon-download-alt icon-white"></i> download</a></p>
+		<div class="row btn-group pull-right">
+			<a href="/store/{{.Id}}" class="btn btn-success"><i class="icon-ok"></i> Save</a>
+			<a href="/edit/{{.Id}}" class="btn btn-primary"><i class="icon-pencil"></i> Edit</a>
+			<a href="/delete/{{.Id}}" class="btn btn-danger"><i class="icon-remove"></i> Delete</a>
 		</div>
 		<div class="row"><p></p></div>
 		<div class="row btn-group pull-right">
-			<a href="/store/{{.Id}}" class="btn btn-success"><i class="icon-ok"></i> Save</a>
-			<a href="/delnew/{{.Id}}" class="btn btn-danger"><i class="icon-remove"></i> Delete</a>
+			<a href="/{{.Path}}" class="btn btn-inverse"><i class="icon-download-alt icon-white"></i> download</a>
+			<a href="/read/{{.Id}}" class="btn btn-warning"><i class="icon-eye-open icon-white"></i> read it!</a>
 		</div>
 		</div>
 	</div>
