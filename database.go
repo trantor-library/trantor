@@ -127,6 +127,15 @@ func (d *DB) GetNewBooks()(books []Book, num int, err error) {
 	return
 }
 
+func (d *DB) BookActive(id bson.ObjectId) bool {
+	var book Book
+	err := d.books.Find(bson.M{"_id": id}).One(&book)
+	if err != nil {
+		return false
+	}
+	return book.Active
+}
+
 type tagsList []struct {
 	Subject string "_id"
 	Count   int    "value"

@@ -34,7 +34,11 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	db.RemoveBook(id)
 	sess.Notify("Removed book!", "The book '"+book.Title+"' it's completly removed", "success")
 	sess.Save(w, r)
-	http.Redirect(w, r, "/", 307) //FIXME: if new return to /new/
+	if book.Active {
+		http.Redirect(w, r, "/", 307)
+	} else {
+		http.Redirect(w, r, "/new/", 307)
+	}
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +106,11 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 
 	sess.Notify("Book Modified!", "", "success")
 	sess.Save(w, r)
-	http.Redirect(w, r, "/book/"+idStr, 307)
+	if db.BookActive(id) {
+		http.Redirect(w, r, "/book/"+idStr, 307)
+	} else {
+		http.Redirect(w, r, "/new/", 307)
+	}
 }
 
 type newBook struct {
