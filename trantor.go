@@ -55,8 +55,15 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	db.IncVisit(id)
 	data.Book = books[0]
 	loadTemplate(w, "book", data)
+}
+
+func downloadHandler(w http.ResponseWriter, r *http.Request) {
+	file := r.URL.Path[1:]
+	db.IncDownload(file)
+	http.ServeFile(w, r, file)
 }
 
 func fileHandler(path string) {
@@ -131,9 +138,9 @@ func main() {
 	http.HandleFunc("/save/", saveHandler)
 	http.HandleFunc("/delete/", deleteHandler)
 	http.HandleFunc("/about/", aboutHandler)
+	http.HandleFunc("/books/", downloadHandler)
 	fileHandler("/img/")
 	fileHandler("/cover/")
-	fileHandler("/books/")
 	fileHandler("/css/")
 	fileHandler("/js/")
 	http.HandleFunc("/", indexHandler)

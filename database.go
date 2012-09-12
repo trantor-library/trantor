@@ -75,8 +75,16 @@ func (d *DB) RemoveBook(id bson.ObjectId) error {
 	return d.books.Remove(bson.M{"_id": id})
 }
 
-func (d *DB) UpdateBook(id bson.ObjectId, book interface{}) error {
-	return d.books.Update(bson.M{"_id": id}, bson.M{"$set": book})
+func (d *DB) UpdateBook(id bson.ObjectId, data interface{}) error {
+	return d.books.Update(bson.M{"_id": id}, bson.M{"$set": data})
+}
+
+func (d *DB) IncVisit(id bson.ObjectId) error {
+	return d.books.Update(bson.M{"_id": id}, bson.M{"$inc": bson.M{"VisitsCount": 1}})
+}
+
+func (d *DB) IncDownload(path string) error {
+	return d.books.Update(bson.M{"path": path}, bson.M{"$inc": bson.M{"DownloadCount": 1}})
 }
 
 /* optional parameters: length and start index
