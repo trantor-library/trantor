@@ -16,28 +16,41 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// cutre hack: /delete/ and /delnew/ have the same lenght:
-	id := bson.ObjectIdHex(r.URL.Path[len("/delete/"):])
-	books, _, err := db.GetBooks(bson.M{"_id": id})
-	if err != nil {
-		http.NotFound(w, r)
-		return
+	var titles []string
+	var isNew bool
+	ids:= strings.Split(r.URL.Path[len("/delete/"):], "/")
+	for _, idStr := range ids {
+		if idStr == "" {
+			continue
+		}
+
+		id := bson.ObjectIdHex(idStr)
+		books, _, err := db.GetBooks(bson.M{"_id": id})
+		if err != nil {
+			sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
+			return
+		}
+		book := books[0]
+		if book.Cover != "" {
+			os.RemoveAll(book.Cover[1:])
+		}
+		if book.CoverSmall != "" {
+			os.RemoveAll(book.CoverSmall[1:])
+		}
+		os.RemoveAll(book.Path)
+		db.RemoveBook(id)
+
+		if ! book.Active {
+			isNew = true
+		}
+		titles = append(titles, book.Title)
 	}
-	book := books[0]
-	if book.Cover != "" {
-		os.RemoveAll(book.Cover[1:])
-	}
-	if book.CoverSmall != "" {
-		os.RemoveAll(book.CoverSmall[1:])
-	}
-	os.RemoveAll(book.Path)
-	db.RemoveBook(id)
-	sess.Notify("Removed book!", "The book '"+book.Title+"' it's completly removed", "success")
+	sess.Notify("Removed books!", "The books "+ strings.Join(titles, ", ") +" are completly removed", "success")
 	sess.Save(w, r)
-	if book.Active {
-		http.Redirect(w, r, "/", 307)
-	} else {
+	if isNew {
 		http.Redirect(w, r, "/new/", 307)
+	} else {
+		http.Redirect(w, r, "/", 307)
 	}
 }
 
@@ -168,23 +181,32 @@ func storeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := bson.ObjectIdHex(r.URL.Path[len("/store/"):])
-	books, _, err := db.GetBooks(bson.M{"_id": id})
-	if err != nil {
-		http.NotFound(w, r)
-		return
+	var titles []string
+	ids := strings.Split(r.URL.Path[len("/store/"):], "/")
+	for _, idStr := range ids {
+		if idStr == "" {
+			continue
+		}
+
+		id := bson.ObjectIdHex(idStr)
+		books, _, err := db.GetBooks(bson.M{"_id": id})
+		if err != nil {
+			sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
+			return
+		}
+		book := books[0]
+
+		title := book.Title
+		path := ValidFileName(BOOKS_PATH + title[:1], title, ".epub")
+
+		oldPath := book.Path
+		os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
+		cmd := exec.Command("mv", oldPath, path)
+		cmd.Run()
+		db.UpdateBook(id, bson.M{"active": true, "path": path})
+		titles = append(titles, book.Title)
 	}
-	book := books[0]
-
-	title := book.Title
-	path := ValidFileName(BOOKS_PATH + title[:1], title, ".epub")
-
-	oldPath := book.Path
-	os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
-	cmd := exec.Command("mv", oldPath, path)
-	cmd.Run()
-	db.UpdateBook(id, bson.M{"active": true, "path": path})
-	sess.Notify("Store book!", "The book '"+title+"' it's stored for public download", "success")
+	sess.Notify("Store books!", "The books '"+ strings.Join(titles, ", ") +"' are stored for public download", "success")
 	sess.Save(w, r)
 	http.Redirect(w, r, "/new/", 307)
 }

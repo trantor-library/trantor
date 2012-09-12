@@ -1,6 +1,12 @@
 {{template "header.html" .S}}
 
-<p class="centered">Found {{.Found}} books.</p>
+{{if .Books}}
+<div class="centered btn-group">
+	<a href="/store/{{range .Books}}{{.B.Id}}/{{end}}" class="btn btn-large btn-success"><i class="icon-ok"></i> Save All</a>
+	<a href="/delete/{{range .Books}}{{.B.Id}}/{{end}}" class="btn btn-large btn-danger"><i class="icon-remove"></i> Delete All</a>
+</div>
+{{end}}
+<p class="centered">Found {{.Found}} books.<br /></p>
 
 {{range .Books}}
 	{{$titleFound  := .TitleFound}}
@@ -34,6 +40,12 @@
 		</div>
 	</div>
 	{{end}}
+{{end}}
+{{if .Books}}
+<div class="centered btn-group">
+	<a href="/store/{{range .Books}}{{.B.Id}}/{{end}}" class="btn btn-large btn-success"><i class="icon-ok"></i> Save All</a>
+	<a href="/delete/{{range .Books}}{{.B.Id}}/{{end}}" class="btn btn-large btn-danger"><i class="icon-remove"></i> Delete All</a>
+</div>
 {{end}}
 
 {{template "footer.html"}}
