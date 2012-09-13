@@ -125,7 +125,7 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 
 	var data readData
 	data.Book = books[0]
-	if ! data.Book.Active {
+	if !data.Book.Active {
 		sess := GetSession(r)
 		if sess.User == "" {
 			http.NotFound(w, r)
@@ -158,7 +158,7 @@ func contentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	book := books[0]
-	if ! book.Active {
+	if !book.Active {
 		sess := GetSession(r)
 		if sess.User == "" {
 			http.NotFound(w, r)

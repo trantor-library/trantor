@@ -9,7 +9,6 @@ import (
 
 var db *DB
 
-
 type Book struct {
 	Id          string `bson:"_id"`
 	Title       string
@@ -36,8 +35,8 @@ type Book struct {
 
 type DB struct {
 	session *mgo.Session
-	books *mgo.Collection
-	user *mgo.Collection
+	books   *mgo.Collection
+	user    *mgo.Collection
 }
 
 func initDB() *DB {
@@ -120,7 +119,7 @@ func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error)
 
 /* Returns: list of books, number found and err
  */
-func (d *DB) GetNewBooks()(books []Book, num int, err error) {
+func (d *DB) GetNewBooks() (books []Book, num int, err error) {
 	var q *mgo.Query
 	q = d.books.Find(bson.M{"$nor": []bson.M{{"active": true}}}).Sort("-_id")
 	num, err = q.Count()

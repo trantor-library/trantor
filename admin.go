@@ -18,7 +18,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	var titles []string
 	var isNew bool
-	ids:= strings.Split(r.URL.Path[len("/delete/"):], "/")
+	ids := strings.Split(r.URL.Path[len("/delete/"):], "/")
 	for _, idStr := range ids {
 		if idStr == "" {
 			continue
@@ -40,12 +40,12 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		os.RemoveAll(book.Path)
 		db.RemoveBook(id)
 
-		if ! book.Active {
+		if !book.Active {
 			isNew = true
 		}
 		titles = append(titles, book.Title)
 	}
-	sess.Notify("Removed books!", "The books "+ strings.Join(titles, ", ") +" are completly removed", "success")
+	sess.Notify("Removed books!", "The books "+strings.Join(titles, ", ")+" are completly removed", "success")
 	sess.Save(w, r)
 	if isNew {
 		http.Redirect(w, r, "/new/", 307)
@@ -127,9 +127,9 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type newBook struct {
-	TitleFound int
+	TitleFound  int
 	AuthorFound int
-	B Book
+	B           Book
 }
 type newData struct {
 	S     Status
@@ -156,8 +156,8 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	data.Books = make([]newBook, num)
 	for i, b := range res {
 		data.Books[i].B = b
-		_, data.Books[i].TitleFound, _ = db.GetBooks(buildQuery("title:" + b.Title), 1)
-		_, data.Books[i].AuthorFound, _ = db.GetBooks(buildQuery("author:" + strings.Join(b.Author, " author:")), 1)
+		_, data.Books[i].TitleFound, _ = db.GetBooks(buildQuery("title:"+b.Title), 1)
+		_, data.Books[i].AuthorFound, _ = db.GetBooks(buildQuery("author:"+strings.Join(b.Author, " author:")), 1)
 	}
 	loadTemplate(w, "new", data)
 }
@@ -197,7 +197,7 @@ func storeHandler(w http.ResponseWriter, r *http.Request) {
 		book := books[0]
 
 		title := book.Title
-		path := ValidFileName(BOOKS_PATH + title[:1], title, ".epub")
+		path := ValidFileName(BOOKS_PATH+title[:1], title, ".epub")
 
 		oldPath := book.Path
 		os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
@@ -206,7 +206,7 @@ func storeHandler(w http.ResponseWriter, r *http.Request) {
 		db.UpdateBook(id, bson.M{"active": true, "path": path})
 		titles = append(titles, book.Title)
 	}
-	sess.Notify("Store books!", "The books '"+ strings.Join(titles, ", ") +"' are stored for public download", "success")
+	sess.Notify("Store books!", "The books '"+strings.Join(titles, ", ")+"' are stored for public download", "success")
 	sess.Save(w, r)
 	http.Redirect(w, r, "/new/", 307)
 }

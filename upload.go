@@ -76,7 +76,7 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	resize := append(strings.Split(RESIZE_CMD, " "), imgPath, imgPath)
 	cmd := exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
-	imgPathSmall := ValidFileName(folder, title, "_small" + extension)
+	imgPathSmall := ValidFileName(folder, title, "_small"+extension)
 	resize = append(strings.Split(RESIZE_THUMB_CMD, " "), imgPath, imgPathSmall)
 	cmd = exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
