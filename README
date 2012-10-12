@@ -1,0 +1,86 @@
+Imperial Library of Trantor
+
+The Imperial Library of Trantor (also known as Galactic Library) is a repository management system of ebooks on ePub format.
+
+You can check out the main development branch from Gitorious at:
+
+https://gitorious.org/trantor/
+
+(We still in pre-beta fase)
+
+== Dependences ==
+
+In order to run Trantor, you need to install the following packages:
+
+* Go language
+* Epub development library
+* Mongodb
+* Imagemagick (for resize covers)
+* Bazaar
+* Mercurial
+* Git (necessary only if you want to deal with the repository)
+
+Under Debian Wheezy you can simply run:
+
+# aptitude install golang-go git mercurial bzr libepub-dev mongodb imagemagick
+
+Yo also need to install go dependences:
+
+# go get labix.org/v2/mgo/bson labix.org/v2/mgo/ code.google.com/p/gorilla/sessions
+
+== Installation ==
+=== For admins ("for developers" below) ===
+
+Now you can install Trantor itself:
+
+# go get git.gitorious.org/trantor/trantor.git
+
+You can run trantor in /srv/www/trantor i.e. For this:
+
+# mkdir -p /srv/www/trantor
+
+# cd /srv/www/trantor
+
+# ln -s /usr/lib/go/src/pkg/git.gitorious.org/trantor/trantor.git/templates/ templates
+# ln -s /usr/lib/go/src/pkg/git.gitorious.org/trantor/trantor.git/css/ css
+# ln -s /usr/lib/go/src/pkg/git.gitorious.org/trantor/trantor.git/js/ js
+# ln -s /usr/lib/go/src/pkg/git.gitorious.org/trantor/trantor.git/img/ img
+
+Now you can run it:
+# /usr/lib/go/bin/trantor.git
+
+Go to your browser to: http://localhost:8080
+
+=== For developers ===
+
+Login to gitorius: https://gitorious.org/login
+and clone your own Trantor: https://gitorious.org/trantor/trantor/clone
+
+In your shell
+$ git clone git://gitorious.org/~yourname/trantor/yournames-trantor.git 
+$ cd yournames-trantor
+
+You can edit config.go if you want to change the port and other configuration, by default is 8080
+
+Now you can compile Trantor:
+$ go build
+
+Now you can run it:
+$ ./yourname-trantor
+
+Go to your browser to: http://localhost:8080
+
+== Bugs ==
+
+Please, report bugs to zenow@tormail.org
+
+== Patches ==
+Make your enhacements and sent it by git:
+
+$ git commit -m "comment"
+$ git remote set-url --push origin git@gitorious.org:~yournames/trantor/alfinals-trantor.git
+$ git push origin master
+$ git push
+
+Go to "merge-requests"
+ https://gitorious.org/trantor/yournames-trantor/merge_requests/new
