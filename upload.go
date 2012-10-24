@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"log"
 )
 
 func storePath(name string) string {
@@ -25,6 +26,7 @@ func storeFiles(r *http.Request) ([]string, error) {
 	filesForm := r.MultipartForm.File["epub"]
 	paths := make([]string, 0, len(filesForm))
 	for _, f := range filesForm {
+		log.Println("File uploaded:", f.Filename)
 		file, err := f.Open()
 		if err != nil {
 			return paths, err
@@ -85,21 +87,11 @@ func storeImg(img []byte, title, extension string) (string, string) {
 
 func getCover(e *epub.Epub, title string) (string, string) {
 	/* Try first common names */
-	img := e.Data("cover.jpg")
-	if len(img) != 0 {
-		return storeImg(img, title, ".jpg")
-	}
-	img = e.Data("cover.jpeg")
-	if len(img) != 0 {
-		return storeImg(img, title, ".jpg")
-	}
-	img = e.Data("cover1.jpg")
-	if len(img) != 0 {
-		return storeImg(img, title, ".jpg")
-	}
-	img = e.Data("cover1.jpeg")
-	if len(img) != 0 {
-		return storeImg(img, title, ".jpg")
+	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
+		img := e.Data(p)
+		if len(img) != 0 {
+			return storeImg(img, title, ".jpg")
+		}
 	}
 
 	/* search for img on the text */
