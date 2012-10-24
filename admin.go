@@ -165,6 +165,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 func ValidFileName(path string, title string, extension string) string {
 	title = strings.Replace(title, "/", "_", -1)
 	title = strings.Replace(title, "?", "_", -1)
+	title = strings.Replace(title, "#", "_", -1)
 	file := path + "/" + title + extension
 	_, err := os.Stat(file)
 	for i := 0; err == nil; i++ {
