@@ -2,7 +2,7 @@
 
 <div class="row">
 <div class="span8">
-	<p>Last books added:</p>
+	<h4>Last books added:</h4>
 </div>
 <div class="span4">
 	<p class="pull-right">{{.Count}} books</p>
@@ -11,6 +11,46 @@
 
 <ul class="row thumbnails">
 {{with .Books}}
+	{{range .}}
+	<li class="span2">
+		<div class="thumbnail centered" style="border:none;">
+		<a href="/book/{{.Id}}">
+		{{if .CoverSmall}}<div class="down"><img  class="img-rounded" src="{{.CoverSmall}}" alt="{{.Title}}" /></div>{{end}}
+		<p><strong>{{.Title}}</strong></p>
+		</a>
+		</div>
+	</li>
+	{{end}}
+{{end}}
+</ul>
+
+<div class="row">
+<div class="span8">
+	<h4>Most visited books:</h4>
+</div>
+</div>
+<ul class="row thumbnails">
+{{with .VisitedBooks}}
+	{{range .}}
+	<li class="span2">
+		<div class="thumbnail centered" style="border:none;">
+		<a href="/book/{{.Id}}">
+		{{if .CoverSmall}}<div class="down"><img  class="img-rounded" src="{{.CoverSmall}}" alt="{{.Title}}" /></div>{{end}}
+		<p><strong>{{.Title}}</strong></p>
+		</a>
+		</div>
+	</li>
+	{{end}}
+{{end}}
+</ul>
+
+<div class="row">
+<div class="span8">
+	<h4>Most downloaded books:</h4>
+</div>
+</div>
+<ul class="row thumbnails">
+{{with .DownloadedBooks}}
 	{{range .}}
 	<li class="span2">
 		<div class="thumbnail centered" style="border:none;">

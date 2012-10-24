@@ -74,6 +74,8 @@ func fileHandler(path string) {
 type indexData struct {
 	S     Status
 	Books []Book
+	VisitedBooks []Book
+	DownloadedBooks []Book
 	Count int
 	Tags  []string
 }
@@ -102,6 +104,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	data.S = GetStatus(w, r)
 	data.S.Home = true
 	data.Books, data.Count, _ = db.GetBooks(bson.M{"active": true}, 6)
+	data.VisitedBooks, _ = db.GetVisitedBooks(6)
+	data.DownloadedBooks, _ = db.GetDownloadedBooks(6)
 	loadTemplate(w, "index", data)
 }
 

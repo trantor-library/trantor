@@ -117,6 +117,30 @@ func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error)
 	return
 }
 
+/* Get the most visited books
+ */
+func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
+	var q *mgo.Query
+	q = d.books.Find(bson.M{"active": true}).Sort("-VisitsCount").Limit(num)
+	err = q.All(&books)
+	for i, b := range books {
+		books[i].Id = bson.ObjectId(b.Id).Hex()
+	}
+	return
+}
+
+/* Get the most downloaded books
+ */
+func (d *DB) GetDownloadedBooks(num int) (books []Book, err error) {
+	var q *mgo.Query
+	q = d.books.Find(bson.M{"active": true}).Sort("-DownloadCount").Limit(num)
+	err = q.All(&books)
+	for i, b := range books {
+		books[i].Id = bson.ObjectId(b.Id).Hex()
+	}
+	return
+}
+
 /* Returns: list of books, number found and err
  */
 func (d *DB) GetNewBooks() (books []Book, num int, err error) {
