@@ -23,20 +23,19 @@ func GetStatus(w http.ResponseWriter, r *http.Request) Status {
 	return s
 }
 
-func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
-	// TODO: when finish devel conver to global:
-	var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
-		TEMPLATE_PATH+"footer.html",
-		TEMPLATE_PATH+"index.html",
-		TEMPLATE_PATH+"about.html",
-		TEMPLATE_PATH+"book.html",
-		TEMPLATE_PATH+"search.html",
-		TEMPLATE_PATH+"upload.html",
-		TEMPLATE_PATH+"new.html",
-		TEMPLATE_PATH+"read.html",
-		TEMPLATE_PATH+"edit.html",
-	))
+var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
+	TEMPLATE_PATH+"footer.html",
+	TEMPLATE_PATH+"index.html",
+	TEMPLATE_PATH+"about.html",
+	TEMPLATE_PATH+"book.html",
+	TEMPLATE_PATH+"search.html",
+	TEMPLATE_PATH+"upload.html",
+	TEMPLATE_PATH+"new.html",
+	TEMPLATE_PATH+"read.html",
+	TEMPLATE_PATH+"edit.html",
+))
 
+func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	err := templates.ExecuteTemplate(w, tmpl+".html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
