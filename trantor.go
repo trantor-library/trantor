@@ -72,12 +72,12 @@ func fileHandler(path string) {
 }
 
 type indexData struct {
-	S     Status
-	Books []Book
-	VisitedBooks []Book
+	S               Status
+	Books           []Book
+	VisitedBooks    []Book
 	DownloadedBooks []Book
-	Count int
-	Tags  []string
+	Count           int
+	Tags            []string
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {

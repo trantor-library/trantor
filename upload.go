@@ -2,13 +2,13 @@ package main
 
 import (
 	"git.gitorious.org/go-pkg/epub.git"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
-	"log"
 )
 
 func storePath(name string) string {
