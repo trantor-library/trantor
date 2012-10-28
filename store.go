@@ -77,6 +77,16 @@ func StoreBook(book Book) (path string, err error) {
 	return
 }
 
+func DeleteBook(book Book) {
+	if book.Cover != "" {
+		os.RemoveAll(book.Cover[1:])
+	}
+	if book.CoverSmall != "" {
+		os.RemoveAll(book.CoverSmall[1:])
+	}
+	os.RemoveAll(book.Path)
+}
+
 func validFileName(path string, title string, extension string) string {
 	title = strings.Replace(title, "/", "_", -1)
 	title = strings.Replace(title, "?", "_", -1)

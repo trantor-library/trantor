@@ -3,7 +3,6 @@ package main
 import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -29,13 +28,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		book := books[0]
-		if book.Cover != "" {
-			os.RemoveAll(book.Cover[1:])
-		}
-		if book.CoverSmall != "" {
-			os.RemoveAll(book.CoverSmall[1:])
-		}
-		os.RemoveAll(book.Path)
+		DeleteBook(book)
 		db.RemoveBook(id)
 
 		if !book.Active {
