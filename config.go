@@ -14,6 +14,9 @@ const (
 	BOOKS_PATH        = "books/"
 	COVER_PATH        = "cover/"
 	NEW_PATH          = "new/"
+	CSS_PATH          = "css/"
+	JS_PATH           = "js/"
+	IMG_PATH          = "img/"
 	RESIZE_CMD        = "/usr/bin/convert -resize 300 -quality 60 "
 	RESIZE_THUMB_CMD  = "/usr/bin/convert -resize 60 -quality 60 "
 )

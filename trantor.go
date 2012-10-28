@@ -66,11 +66,6 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, file)
 }
 
-func fileHandler(path string) {
-	h := http.FileServer(http.Dir(path[1:]))
-	http.Handle(path, http.StripPrefix(path, h))
-}
-
 type indexData struct {
 	S               Status
 	Books           []Book
@@ -144,10 +139,14 @@ func main() {
 	http.HandleFunc("/about/", aboutHandler)
 	http.HandleFunc("/books/", downloadHandler)
 	http.HandleFunc("/settings/", settingsHandler)
-	fileHandler("/img/")
-	fileHandler("/cover/")
-	fileHandler("/css/")
-	fileHandler("/js/")
+	h := http.FileServer(http.Dir(IMG_PATH))
+	http.Handle("/img/", http.StripPrefix("/img/", h))
+	h = http.FileServer(http.Dir(COVER_PATH))
+	http.Handle("/cover/", http.StripPrefix("/cover/", h))
+	h = http.FileServer(http.Dir(CSS_PATH))
+	http.Handle("/css/", http.StripPrefix("/css/", h))
+	h = http.FileServer(http.Dir(JS_PATH))
+	http.Handle("/js/", http.StripPrefix("/js/", h))
 	http.HandleFunc("/", indexHandler)
 	panic(http.ListenAndServe(":"+PORT, nil))
 }
