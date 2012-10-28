@@ -14,7 +14,7 @@
 	{{with .B}}
 	<div class="row">
 		<div class="span1">
-		<p class="pull-right">{{if .CoverSmall}}<img src="{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</p>
+		<p class="pull-right">{{if .CoverSmall}}<img src="/cover/{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</p>
 		</div>
 		<div class="span9">
 		<p><a href="/search/?q=title:{{.Title}}"><strong>{{.Title}}</strong></a> <small>({{$titleFound}})</small><br />
@@ -34,7 +34,7 @@
 		</div>
 		<div class="row"><p></p></div>
 		<div class="row btn-group pull-right">
-			<a href="/{{.Path}}" class="btn btn-inverse"><i class="icon-download-alt icon-white"></i> download</a>
+			<a href="/new/{{.Path}}" class="btn btn-inverse"><i class="icon-download-alt icon-white"></i> download</a>
 			<a href="/read/{{.Id}}" class="btn btn-warning"><i class="icon-eye-open icon-white"></i> read it!</a>
 		</div>
 		</div>

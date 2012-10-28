@@ -13,7 +13,7 @@ import (
 func ParseFile(path string) (string, error) {
 	book := map[string]interface{}{}
 
-	e, err := epub.Open(path, 0)
+	e, err := epub.Open(NEW_PATH + path, 0)
 	if err != nil {
 		return "", err
 	}
@@ -47,7 +47,7 @@ func ParseFile(path string) (string, error) {
 
 func StoreNewFile(name string, file io.Reader) (string, error) {
 	path := storePath(name)
-	fw, err := os.Create(path)
+	fw, err := os.Create(NEW_PATH + path)
 	if err != nil {
 		return "", err
 	}
@@ -65,14 +65,14 @@ func StoreNewFile(name string, file io.Reader) (string, error) {
 
 func StoreBook(book Book) (path string, err error) {
 	title := book.Title
-	path = validFileName(BOOKS_PATH+title[:1], title, ".epub")
+	path = validFileName(BOOKS_PATH, title, ".epub")
 
-	oldPath := book.Path
+	oldPath := NEW_PATH+book.Path
 	err = os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
 	if err != nil {
 		return
 	}
-	cmd := exec.Command("mv", oldPath, path)
+	cmd := exec.Command("mv", oldPath, BOOKS_PATH+path)
 	err = cmd.Run()
 	return
 }
@@ -91,21 +91,21 @@ func validFileName(path string, title string, extension string) string {
 	title = strings.Replace(title, "/", "_", -1)
 	title = strings.Replace(title, "?", "_", -1)
 	title = strings.Replace(title, "#", "_", -1)
-	file := path + "/" + title + extension
-	_, err := os.Stat(file)
+	file := title[:1] + "/" + title + extension
+	_, err := os.Stat(path + file)
 	for i := 0; err == nil; i++ {
-		file = path + "/" + title + "_" + strconv.Itoa(i) + extension
-		_, err = os.Stat(file)
+		file = title[:1] + "/" + title + "_" + strconv.Itoa(i) + extension
+		_, err = os.Stat(path + file)
 	}
 	return file
 }
 
 func storePath(name string) string {
-	path := NEW_PATH + name
-	_, err := os.Stat(path)
+	path := name
+	_, err := os.Stat(NEW_PATH + path)
 	for i := 0; err == nil; i++ {
-		path = NEW_PATH + strconv.Itoa(i) + "_" + name
-		_, err = os.Stat(path)
+		path = strconv.Itoa(i) + "_" + name
+		_, err = os.Stat(NEW_PATH + path)
 	}
 	return path
 }
@@ -120,12 +120,11 @@ func cleanStr(str string) string {
 }
 
 func storeImg(img []byte, title, extension string) (string, string) {
-	folder := COVER_PATH + title[:1]
-	os.Mkdir(folder, os.ModePerm)
-	imgPath := validFileName(folder, title, extension)
+	os.Mkdir(COVER_PATH + title[:1], os.ModePerm)
+	imgPath := validFileName(COVER_PATH, title, extension)
 
 	/* store img on disk */
-	file, err := os.Create(imgPath)
+	file, err := os.Create(COVER_PATH + imgPath)
 	if err != nil {
 		return "", ""
 	}
@@ -133,14 +132,14 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	file.Write(img)
 
 	/* resize img */
-	resize := append(strings.Split(RESIZE_CMD, " "), imgPath, imgPath)
+	resize := append(strings.Split(RESIZE_CMD, " "), COVER_PATH + imgPath, COVER_PATH +  imgPath)
 	cmd := exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
-	imgPathSmall := validFileName(folder, title, "_small"+extension)
-	resize = append(strings.Split(RESIZE_THUMB_CMD, " "), imgPath, imgPathSmall)
+	imgPathSmall := validFileName(COVER_PATH, title, "_small"+extension)
+	resize = append(strings.Split(RESIZE_THUMB_CMD, " "), COVER_PATH + imgPath, COVER_PATH + imgPathSmall)
 	cmd = exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
-	return "/" + imgPath, "/" + imgPathSmall
+	return imgPath, imgPathSmall
 }
 
 func getCover(e *epub.Epub, title string) (string, string) {

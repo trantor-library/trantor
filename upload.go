@@ -43,7 +43,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		for _, path := range paths {
 			title, err := ParseFile(path)
 			if err != nil {
-				os.Remove(path)
+				os.Remove(NEW_PATH + path)
 				sess.Notify("Problem uploading!", "The file '"+path[len("new/"):]+"' is not a well formed epub", "error")
 			} else {
 				uploaded = uploaded + " '" + title + "'"

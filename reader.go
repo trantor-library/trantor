@@ -125,6 +125,7 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 
 	var data readData
 	data.Book = books[0]
+	var bookPath string
 	if !data.Book.Active {
 		sess := GetSession(r)
 		if sess.User == "" {
@@ -132,10 +133,12 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data.Back = "/new/"
+		bookPath = NEW_PATH + data.Book.Path
 	} else {
 		data.Back = "/book/" + id
+		bookPath = BOOKS_PATH + data.Book.Path
 	}
-	e, _ := epub.Open(data.Book.Path, 0)
+	e, _ := epub.Open(bookPath, 0)
 	defer e.Close()
 	if file == "" {
 		it := e.Iterator(epub.EITERATOR_LINEAR)
@@ -158,14 +161,18 @@ func contentHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	book := books[0]
+	var bookPath string
 	if !book.Active {
 		sess := GetSession(r)
 		if sess.User == "" {
 			http.NotFound(w, r)
 			return
 		}
+		bookPath = NEW_PATH + book.Path
+	} else {
+		bookPath = BOOKS_PATH + book.Path
 	}
-	e, _ := epub.Open(book.Path, 0)
+	e, _ := epub.Open(bookPath, 0)
 	defer e.Close()
 	if file == "" {
 		http.NotFound(w, r)
