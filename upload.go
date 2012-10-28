@@ -18,7 +18,7 @@ func storeFiles(r *http.Request) ([]string, error) {
 		}
 		defer file.Close()
 
-		path, err := StoreFile(f.Filename, file)
+		path, err := StoreNewFile(f.Filename, file)
 		if err != nil {
 			return paths, err
 		}

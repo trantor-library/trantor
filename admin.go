@@ -4,7 +4,6 @@ import (
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
 )
 
@@ -182,14 +181,11 @@ func storeHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		book := books[0]
-
-		title := book.Title
-		path := ValidFileName(BOOKS_PATH+title[:1], title, ".epub")
-
-		oldPath := book.Path
-		os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
-		cmd := exec.Command("mv", oldPath, path)
-		cmd.Run()
+		path, err := StoreBook(book)
+		if err != nil {
+			sess.Notify("An error ocurred!", err.Error(), "error")
+			return
+		}
 		db.UpdateBook(id, bson.M{"active": true, "path": path})
 		titles = append(titles, book.Title)
 	}

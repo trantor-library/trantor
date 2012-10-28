@@ -45,7 +45,7 @@ func ParseFile(path string) (string, error) {
 	return title, nil
 }
 
-func StoreFile(name string, file io.Reader) (string, error) {
+func StoreNewFile(name string, file io.Reader) (string, error) {
 	path := storePath(name)
 	fw, err := os.Create(path)
 	if err != nil {
@@ -63,7 +63,21 @@ func StoreFile(name string, file io.Reader) (string, error) {
 	return path, nil
 }
 
-func ValidFileName(path string, title string, extension string) string {
+func StoreBook(book Book) (path string, err error) {
+	title := book.Title
+	path = validFileName(BOOKS_PATH+title[:1], title, ".epub")
+
+	oldPath := book.Path
+	err = os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
+	if err != nil {
+		return
+	}
+	cmd := exec.Command("mv", oldPath, path)
+	err = cmd.Run()
+	return
+}
+
+func validFileName(path string, title string, extension string) string {
 	title = strings.Replace(title, "/", "_", -1)
 	title = strings.Replace(title, "?", "_", -1)
 	title = strings.Replace(title, "#", "_", -1)
@@ -98,7 +112,7 @@ func cleanStr(str string) string {
 func storeImg(img []byte, title, extension string) (string, string) {
 	folder := COVER_PATH + title[:1]
 	os.Mkdir(folder, os.ModePerm)
-	imgPath := ValidFileName(folder, title, extension)
+	imgPath := validFileName(folder, title, extension)
 
 	/* store img on disk */
 	file, err := os.Create(imgPath)
@@ -112,7 +126,7 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	resize := append(strings.Split(RESIZE_CMD, " "), imgPath, imgPath)
 	cmd := exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
-	imgPathSmall := ValidFileName(folder, title, "_small"+extension)
+	imgPathSmall := validFileName(folder, title, "_small"+extension)
 	resize = append(strings.Split(RESIZE_THUMB_CMD, " "), imgPath, imgPathSmall)
 	cmd = exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
