@@ -6,6 +6,36 @@ import (
 	"strings"
 )
 
+type settingsData struct {
+	S     Status
+}
+
+func settingsHandler(w http.ResponseWriter, r *http.Request) {
+	sess := GetSession(r)
+	if sess.User == "" {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method == "POST" {
+		current_pass := r.FormValue("currpass")
+		pass1 := r.FormValue("password1")
+		pass2 := r.FormValue("password2")
+		switch {
+		case !db.UserValid(sess.User, current_pass):
+			sess.Notify("Password error!", "The current password given don't match with the user password. Try again", "error")
+		case pass1 != pass2:
+			sess.Notify("Passwords don't match!", "The new password and the confirmation password don't match. Try again", "error")
+		default:
+			db.SetPassword(sess.User, pass1)
+			sess.Notify("Password updated!", "Your new password is correctly set.", "success")
+		}
+	}
+
+	var data settingsData
+	data.S = GetStatus(w, r)
+	loadTemplate(w, "settings", data)
+}
+
 func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	sess := GetSession(r)
 	if sess.User == "" {

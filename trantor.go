@@ -143,6 +143,7 @@ func main() {
 	http.HandleFunc("/delete/", deleteHandler)
 	http.HandleFunc("/about/", aboutHandler)
 	http.HandleFunc("/books/", downloadHandler)
+	http.HandleFunc("/settings/", settingsHandler)
 	fileHandler("/img/")
 	fileHandler("/cover/")
 	fileHandler("/css/")

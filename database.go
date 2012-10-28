@@ -56,9 +56,19 @@ func (d *DB) Close() {
 	d.session.Close()
 }
 
-func (d *DB) UserValid(user string, pass string) bool {
+func md5Pass(pass string) []byte {
 	h := md5.New()
 	hash := h.Sum(([]byte)(PASS_SALT + pass))
+	return hash
+}
+
+func (d *DB) SetPassword(user string, pass string) error {
+	hash := md5Pass(pass)
+	return d.user.Update(bson.M{"user": user}, bson.M{"$set": bson.M{"pass": hash}})
+}
+
+func (d *DB) UserValid(user string, pass string) bool {
+	hash := md5Pass(pass)
 	n, err := d.user.Find(bson.M{"user": user, "pass": hash}).Count()
 	if err != nil {
 		return false
