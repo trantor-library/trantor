@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 )
 
@@ -160,19 +159,6 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 		_, data.Books[i].AuthorFound, _ = db.GetBooks(buildQuery("author:"+strings.Join(b.Author, " author:")), 1)
 	}
 	loadTemplate(w, "new", data)
-}
-
-func ValidFileName(path string, title string, extension string) string {
-	title = strings.Replace(title, "/", "_", -1)
-	title = strings.Replace(title, "?", "_", -1)
-	title = strings.Replace(title, "#", "_", -1)
-	file := path + "/" + title + extension
-	_, err := os.Stat(file)
-	for i := 0; err == nil; i++ {
-		file = path + "/" + title + "_" + strconv.Itoa(i) + extension
-		_, err = os.Stat(file)
-	}
-	return file
 }
 
 func storeHandler(w http.ResponseWriter, r *http.Request) {
