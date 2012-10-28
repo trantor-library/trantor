@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 func ParseFile(path string) (string, error) {
@@ -68,7 +69,9 @@ func StoreBook(book Book) (path string, err error) {
 	path = validFileName(BOOKS_PATH, title, ".epub")
 
 	oldPath := NEW_PATH+book.Path
-	err = os.Mkdir(BOOKS_PATH+title[:1], os.ModePerm)
+	r,_ := utf8.DecodeRuneInString(title)
+	folder := string(r)
+	err = os.Mkdir(BOOKS_PATH+folder, os.ModePerm)
 	if err != nil {
 		return
 	}
@@ -91,10 +94,12 @@ func validFileName(path string, title string, extension string) string {
 	title = strings.Replace(title, "/", "_", -1)
 	title = strings.Replace(title, "?", "_", -1)
 	title = strings.Replace(title, "#", "_", -1)
-	file := title[:1] + "/" + title + extension
+	r,_ := utf8.DecodeRuneInString(title)
+	folder := string(r)
+	file := folder + "/" + title + extension
 	_, err := os.Stat(path + file)
 	for i := 0; err == nil; i++ {
-		file = title[:1] + "/" + title + "_" + strconv.Itoa(i) + extension
+		file = folder + "/" + title + "_" + strconv.Itoa(i) + extension
 		_, err = os.Stat(path + file)
 	}
 	return file
@@ -120,7 +125,9 @@ func cleanStr(str string) string {
 }
 
 func storeImg(img []byte, title, extension string) (string, string) {
-	os.Mkdir(COVER_PATH + title[:1], os.ModePerm)
+	r,_ := utf8.DecodeRuneInString(title)
+	folder := string(r)
+	err := os.Mkdir(COVER_PATH + folder, os.ModePerm)
 	imgPath := validFileName(COVER_PATH, title, extension)
 
 	/* store img on disk */
