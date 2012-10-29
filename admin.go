@@ -2,6 +2,7 @@ package main
 
 import (
 	"labix.org/v2/mgo/bson"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -55,7 +56,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		books, _, err := db.GetBooks(bson.M{"_id": id})
 		if err != nil {
 			sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
-			return
+			continue
 		}
 		book := books[0]
 		DeleteBook(book)
@@ -66,7 +67,9 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		titles = append(titles, book.Title)
 	}
-	sess.Notify("Removed books!", "The books "+strings.Join(titles, ", ")+" are completly removed", "success")
+	if titles != nil {
+		sess.Notify("Removed books!", "The books "+strings.Join(titles, ", ")+" are completly removed", "success")
+	}
 	sess.Save(w, r)
 	if isNew {
 		http.Redirect(w, r, "/new/", 307)
@@ -201,18 +204,21 @@ func storeHandler(w http.ResponseWriter, r *http.Request) {
 		books, _, err := db.GetBooks(bson.M{"_id": id})
 		if err != nil {
 			sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
-			return
+			continue
 		}
 		book := books[0]
 		path, err := StoreBook(book)
 		if err != nil {
 			sess.Notify("An error ocurred!", err.Error(), "error")
-			return
+			log.Println("Error storing book '", book.Title, "': ", err.Error())
+			continue
 		}
 		db.UpdateBook(id, bson.M{"active": true, "path": path})
 		titles = append(titles, book.Title)
 	}
-	sess.Notify("Store books!", "The books '"+strings.Join(titles, ", ")+"' are stored for public download", "success")
+	if titles != nil {
+		sess.Notify("Store books!", "The books '"+strings.Join(titles, ", ")+"' are stored for public download", "success")
+	}
 	sess.Save(w, r)
 	http.Redirect(w, r, "/new/", 307)
 }
