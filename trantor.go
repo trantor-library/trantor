@@ -22,7 +22,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	sess.LogOut()
 	sess.Notify("Log out!", "Bye bye "+sess.User, "success")
 	sess.Save(w, r)
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -31,14 +31,16 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		pass := r.FormValue("pass")
 		sess := GetSession(r)
 		if db.UserValid(user, pass) {
+			log.Println("User", user, "log in")
 			sess.LogIn(user)
 			sess.Notify("Successful login!", "Welcome "+user, "success")
 		} else {
+			log.Println("User", user, "bad user or password")
 			sess.Notify("Invalid login!", "user or password invalid", "error")
 		}
 		sess.Save(w, r)
 	}
-	http.Redirect(w, r, r.Referer(), http.StatusTemporaryRedirect)
+	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }
 
 type bookData struct {
