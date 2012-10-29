@@ -71,9 +71,11 @@ func StoreBook(book Book) (path string, err error) {
 	oldPath := NEW_PATH+book.Path
 	r,_ := utf8.DecodeRuneInString(title)
 	folder := string(r)
-	err = os.Mkdir(BOOKS_PATH+folder, os.ModePerm)
-	if err != nil {
-		return
+	if _, err = os.Stat(BOOKS_PATH + folder); err != nil {
+		err = os.Mkdir(BOOKS_PATH+folder, os.ModePerm)
+		if err != nil {
+			return
+		}
 	}
 	cmd := exec.Command("mv", oldPath, BOOKS_PATH+path)
 	err = cmd.Run()
@@ -127,7 +129,12 @@ func cleanStr(str string) string {
 func storeImg(img []byte, title, extension string) (string, string) {
 	r,_ := utf8.DecodeRuneInString(title)
 	folder := string(r)
-	err := os.Mkdir(COVER_PATH + folder, os.ModePerm)
+	if _, err := os.Stat(COVER_PATH + folder); err != nil {
+		err = os.Mkdir(COVER_PATH + folder, os.ModePerm)
+		if err != nil {
+			return "", ""
+		}
+	}
 	imgPath := validFileName(COVER_PATH, title, extension)
 
 	/* store img on disk */
