@@ -3,6 +3,7 @@ package main
 import (
 	"git.gitorious.org/go-pkg/epub.git"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"regexp"
@@ -74,6 +75,7 @@ func StoreBook(book Book) (path string, err error) {
 	if _, err = os.Stat(BOOKS_PATH + folder); err != nil {
 		err = os.Mkdir(BOOKS_PATH+folder, os.ModePerm)
 		if err != nil {
+			log.Println("Error creating", BOOKS_PATH + folder, ":", err.Error())
 			return
 		}
 	}
@@ -132,6 +134,7 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	if _, err := os.Stat(COVER_PATH + folder); err != nil {
 		err = os.Mkdir(COVER_PATH+folder, os.ModePerm)
 		if err != nil {
+			log.Println("Error creating", COVER_PATH + folder, ":", err.Error())
 			return "", ""
 		}
 	}
@@ -140,6 +143,7 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	/* store img on disk */
 	file, err := os.Create(COVER_PATH + imgPath)
 	if err != nil {
+		log.Println("Error creating", COVER_PATH + imgPath, ":", err.Error())
 		return "", ""
 	}
 	defer file.Close()
