@@ -61,7 +61,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func downloadHandler(w http.ResponseWriter, r *http.Request) {
-	file := r.URL.Path[1:]
+	file := BOOKS_PATH + r.URL.Path[len("/books/"):]
 	db.IncDownload(file)
 	http.ServeFile(w, r, file)
 }
