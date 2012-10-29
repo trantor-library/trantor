@@ -22,7 +22,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	sess.LogOut()
 	sess.Notify("Log out!", "Bye bye "+sess.User, "success")
 	sess.Save(w, r)
-	http.Redirect(w, r, "/", 307)
+	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +38,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		sess.Save(w, r)
 	}
-	http.Redirect(w, r, r.Referer(), 307)
+	http.Redirect(w, r, r.Referer(), http.StatusTemporaryRedirect)
 }
 
 type bookData struct {

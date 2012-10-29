@@ -72,9 +72,9 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	sess.Save(w, r)
 	if isNew {
-		http.Redirect(w, r, "/new/", 307)
+		http.Redirect(w, r, "/new/", http.StatusTemporaryRedirect)
 	} else {
-		http.Redirect(w, r, "/", 307)
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	}
 }
 
@@ -144,9 +144,9 @@ func saveHandler(w http.ResponseWriter, r *http.Request) {
 	sess.Notify("Book Modified!", "", "success")
 	sess.Save(w, r)
 	if db.BookActive(id) {
-		http.Redirect(w, r, "/book/"+idStr, 307)
+		http.Redirect(w, r, "/book/"+idStr, http.StatusTemporaryRedirect)
 	} else {
-		http.Redirect(w, r, "/new/", 307)
+		http.Redirect(w, r, "/new/", http.StatusTemporaryRedirect)
 	}
 }
 
@@ -220,5 +220,5 @@ func storeHandler(w http.ResponseWriter, r *http.Request) {
 		sess.Notify("Store books!", "The books '"+strings.Join(titles, ", ")+"' are stored for public download", "success")
 	}
 	sess.Save(w, r)
-	http.Redirect(w, r, "/new/", 307)
+	http.Redirect(w, r, "/new/", http.StatusTemporaryRedirect)
 }

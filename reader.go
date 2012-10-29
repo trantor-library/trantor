@@ -143,7 +143,7 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 	if file == "" {
 		it := e.Iterator(epub.EITERATOR_LINEAR)
 		defer it.Close()
-		http.Redirect(w, r, base+id+"/"+it.CurrUrl(), 307)
+		http.Redirect(w, r, base+id+"/"+it.CurrUrl(), http.StatusTemporaryRedirect)
 		return
 	}
 
