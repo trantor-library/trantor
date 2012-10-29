@@ -14,7 +14,7 @@ import (
 func ParseFile(path string) (string, error) {
 	book := map[string]interface{}{}
 
-	e, err := epub.Open(NEW_PATH + path, 0)
+	e, err := epub.Open(NEW_PATH+path, 0)
 	if err != nil {
 		return "", err
 	}
@@ -68,8 +68,8 @@ func StoreBook(book Book) (path string, err error) {
 	title := book.Title
 	path = validFileName(BOOKS_PATH, title, ".epub")
 
-	oldPath := NEW_PATH+book.Path
-	r,_ := utf8.DecodeRuneInString(title)
+	oldPath := NEW_PATH + book.Path
+	r, _ := utf8.DecodeRuneInString(title)
 	folder := string(r)
 	if _, err = os.Stat(BOOKS_PATH + folder); err != nil {
 		err = os.Mkdir(BOOKS_PATH+folder, os.ModePerm)
@@ -96,7 +96,7 @@ func validFileName(path string, title string, extension string) string {
 	title = strings.Replace(title, "/", "_", -1)
 	title = strings.Replace(title, "?", "_", -1)
 	title = strings.Replace(title, "#", "_", -1)
-	r,_ := utf8.DecodeRuneInString(title)
+	r, _ := utf8.DecodeRuneInString(title)
 	folder := string(r)
 	file := folder + "/" + title + extension
 	_, err := os.Stat(path + file)
@@ -127,10 +127,10 @@ func cleanStr(str string) string {
 }
 
 func storeImg(img []byte, title, extension string) (string, string) {
-	r,_ := utf8.DecodeRuneInString(title)
+	r, _ := utf8.DecodeRuneInString(title)
 	folder := string(r)
 	if _, err := os.Stat(COVER_PATH + folder); err != nil {
-		err = os.Mkdir(COVER_PATH + folder, os.ModePerm)
+		err = os.Mkdir(COVER_PATH+folder, os.ModePerm)
 		if err != nil {
 			return "", ""
 		}
@@ -146,11 +146,11 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	file.Write(img)
 
 	/* resize img */
-	resize := append(strings.Split(RESIZE_CMD, " "), COVER_PATH + imgPath, COVER_PATH +  imgPath)
+	resize := append(strings.Split(RESIZE_CMD, " "), COVER_PATH+imgPath, COVER_PATH+imgPath)
 	cmd := exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
 	imgPathSmall := validFileName(COVER_PATH, title, "_small"+extension)
-	resize = append(strings.Split(RESIZE_THUMB_CMD, " "), COVER_PATH + imgPath, COVER_PATH + imgPathSmall)
+	resize = append(strings.Split(RESIZE_THUMB_CMD, " "), COVER_PATH+imgPath, COVER_PATH+imgPathSmall)
 	cmd = exec.Command(resize[0], resize[1:]...)
 	cmd.Run()
 	return imgPath, imgPathSmall

@@ -8,7 +8,7 @@ import (
 )
 
 type settingsData struct {
-	S     Status
+	S Status
 }
 
 func settingsHandler(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +169,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(r.URL.Path) > len("/new/") {
-		http.ServeFile(w, r, NEW_PATH + r.URL.Path[len("/new/"):])
+		http.ServeFile(w, r, NEW_PATH+r.URL.Path[len("/new/"):])
 		return
 	}
 
