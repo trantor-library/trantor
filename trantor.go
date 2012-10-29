@@ -2,6 +2,7 @@ package main
 
 import (
 	"labix.org/v2/mgo/bson"
+	"log"
 	"net/http"
 	"os"
 )
@@ -22,6 +23,7 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	sess.LogOut()
 	sess.Notify("Log out!", "Bye bye "+sess.User, "success")
 	sess.Save(w, r)
+	log.Println("User", sess.User, "log out")
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
