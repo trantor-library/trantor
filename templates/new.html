@@ -7,6 +7,18 @@
 </div>
 {{end}}
 <p class="centered">Found {{.Found}} books.<br /></p>
+<ul class="pager">
+{{if .Prev}}
+  <li class="previous">
+    <a href="{{.Prev}}">&larr; Prev</a>
+  </li>
+{{end}}
+{{if .Next}}
+  <li class="next">
+    <a href="{{.Next}}">Next &rarr;</a>
+  </li>
+{{end}}
+</ul>
 
 {{range .Books}}
 	{{$titleFound  := .TitleFound}}
@@ -41,6 +53,18 @@
 	</div>
 	{{end}}
 {{end}}
+<ul class="pager">
+{{if .Prev}}
+  <li class="previous">
+    <a href="{{.Prev}}">&larr; Prev</a>
+  </li>
+{{end}}
+{{if .Next}}
+  <li class="next">
+    <a href="{{.Next}}">Next &rarr;</a>
+  </li>
+{{end}}
+</ul>
 {{if .Books}}
 <div class="centered btn-group">
 	<a href="/store/{{range .Books}}{{.B.Id}}/{{end}}" class="btn btn-large btn-success"><i class="icon-ok"></i> Save All</a>

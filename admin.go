@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"strconv"
 )
 
 type settingsData struct {
@@ -159,6 +160,9 @@ type newData struct {
 	S     Status
 	Found int
 	Books []newBook
+	Page  int
+	Next  string
+	Prev  string
 }
 
 func newHandler(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +177,16 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, num, _ := db.GetNewBooks()
+	page := 0
+	if len(r.Form["p"]) != 0 {
+		var err error
+		page, err = strconv.Atoi(r.Form["p"][0])
+		if err != nil {
+			page = 0
+		}
+	}
+	res, num, _ := db.GetNewBooks(NEW_ITEMS_PAGE, page*NEW_ITEMS_PAGE)
+
 	var data newData
 	data.S = GetStatus(w, r)
 	data.Found = num
@@ -182,6 +195,13 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 		data.Books[i].B = b
 		_, data.Books[i].TitleFound, _ = db.GetBooks(buildQuery("title:"+b.Title), 1)
 		_, data.Books[i].AuthorFound, _ = db.GetBooks(buildQuery("author:"+strings.Join(b.Author, " author:")), 1)
+	}
+	data.Page = page+1
+	if num > (page+1)*NEW_ITEMS_PAGE {
+		data.Next = "/new/?p=" + strconv.Itoa(page+1)
+	}
+	if page > 0 {
+		data.Prev = "/new/?p=" + strconv.Itoa(page-1)
 	}
 	loadTemplate(w, "new", data)
 }

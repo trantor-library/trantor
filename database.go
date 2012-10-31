@@ -151,21 +151,12 @@ func (d *DB) GetDownloadedBooks(num int) (books []Book, err error) {
 	return
 }
 
-/* Returns: list of books, number found and err
+/* optional parameters: length and start index
+ * 
+ * Returns: list of books, number found and err
  */
-func (d *DB) GetNewBooks() (books []Book, num int, err error) {
-	var q *mgo.Query
-	q = d.books.Find(bson.M{"$nor": []bson.M{{"active": true}}}).Sort("-_id")
-	num, err = q.Count()
-	if err != nil {
-		return
-	}
-
-	err = q.All(&books)
-	for i, b := range books {
-		books[i].Id = bson.ObjectId(b.Id).Hex()
-	}
-	return
+func (d *DB) GetNewBooks(r ...int) (books []Book, num int, err error) {
+	return d.GetBooks(bson.M{"$nor": []bson.M{{"active": true}}}, r...)
 }
 
 func (d *DB) BookActive(id bson.ObjectId) bool {

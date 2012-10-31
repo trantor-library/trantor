@@ -10,6 +10,7 @@ const (
 	PASS_SALT         = "ImperialLibSalt"
 	TAGS_DISPLAY      = 50
 	SEARCH_ITEMS_PAGE = 10
+	NEW_ITEMS_PAGE    = 50
 	TEMPLATE_PATH     = "templates/"
 	BOOKS_PATH        = "books/"
 	COVER_PATH        = "cover/"
