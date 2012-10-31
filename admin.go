@@ -177,9 +177,13 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	page := 0
 	if len(r.Form["p"]) != 0 {
-		var err error
 		page, err = strconv.Atoi(r.Form["p"][0])
 		if err != nil {
 			page = 0
@@ -190,7 +194,11 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	var data newData
 	data.S = GetStatus(w, r)
 	data.Found = num
-	data.Books = make([]newBook, num)
+	if num-NEW_ITEMS_PAGE*page < NEW_ITEMS_PAGE {
+		data.Books = make([]newBook, num-NEW_ITEMS_PAGE*page)
+	} else {
+		data.Books = make([]newBook, NEW_ITEMS_PAGE)
+	}
 	for i, b := range res {
 		data.Books[i].B = b
 		_, data.Books[i].TitleFound, _ = db.GetBooks(buildQuery("title:"+b.Title), 1)
