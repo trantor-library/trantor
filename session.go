@@ -1,8 +1,8 @@
 package main
 
 import (
-	"code.google.com/p/gorilla/securecookie"
-	"code.google.com/p/gorilla/sessions"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	"net/http"
 )
 
