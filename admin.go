@@ -4,8 +4,8 @@ import (
 	"labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type settingsData struct {
@@ -204,7 +204,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 		_, data.Books[i].TitleFound, _ = db.GetBooks(buildQuery("title:"+b.Title), 1)
 		_, data.Books[i].AuthorFound, _ = db.GetBooks(buildQuery("author:"+strings.Join(b.Author, " author:")), 1)
 	}
-	data.Page = page+1
+	data.Page = page + 1
 	if num > (page+1)*NEW_ITEMS_PAGE {
 		data.Next = "/new/?p=" + strconv.Itoa(page+1)
 	}
