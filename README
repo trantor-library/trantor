@@ -84,3 +84,16 @@ $ git push
 
 Go to "merge-requests"
  https://gitorious.org/trantor/yournames-trantor/merge_requests/new
+
+
+== Rights ==
+
+All the matterial of this project is under WTFPL as described on the LICENSE 
+file with the exception of:
+- css/bootstrap.min.css css/bootstra-responsive.min.css js/bootstrap.min.js 
+  img/glyphicons-halflings-white.png img/glyphicons-halflings.png
+  From the bootstrap framework: http://twitter.github.com/bootstrap/
+- js/jquery.js
+  From jquery library: http://jquery.com/
+- img/ravenna.png
+  From subtlepatterns: http://subtlepatterns.com/ravenna/
