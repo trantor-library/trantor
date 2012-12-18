@@ -1,5 +1,23 @@
+@font-face {
+  font-family: 'Fredoka One';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Fredoka One'), local('FredokaOne-Regular'), url(/css/FredokaOne.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'PT Serif';
+  font-style: normal;
+  font-weight: 400;
+  src: local('PT Serif'), local('PTSerif-Regular'), url(/css/PTSerif.ttf) format('truetype');
+}
+h1, h2, h3, h4, h5, h6 {
+	font-family: 'Fredoka One', cursive;
+}
+p, div {
+	font-family: 'PT Serif', serif;
+}
+
 body {
-	/*background: url(/img/ravenna.png) repeat 0 0;*/
 	background: url(/img/bright_squares.png) repeat 0 0;
 }
 .centered {
