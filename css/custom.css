@@ -1,5 +1,6 @@
 body {
-	background: url(/img/ravenna.png) repeat 0 0;
+	/*background: url(/img/ravenna.png) repeat 0 0;*/
+	background: url(/img/bright_squares.png) repeat 0 0;
 }
 .centered {
 	text-align:center;
