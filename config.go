@@ -8,7 +8,7 @@ const (
 	USERS_COLL        = "users"
 	PASS_SALT         = "ImperialLibSalt"
 	TAGS_DISPLAY      = 50
-	SEARCH_ITEMS_PAGE = 10
+	SEARCH_ITEMS_PAGE = 20
 	NEW_ITEMS_PAGE    = 50
 	TEMPLATE_PATH     = "templates/"
 	BOOKS_PATH        = "books/"
