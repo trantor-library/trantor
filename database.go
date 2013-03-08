@@ -197,7 +197,7 @@ func (d *DB) GetTags() (tagsList, error) {
 		"return count;" +
 		"}"
 	var result tagsList
-	_, err := d.books.Find(nil).MapReduce(&mr, &result)
+	_, err := d.books.Find(bson.M{"active": true}).MapReduce(&mr, &result)
 	if err == nil {
 		sort.Sort(result)
 	}
