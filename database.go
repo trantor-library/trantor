@@ -47,8 +47,9 @@ func initDB() *DB {
 		panic(err)
 	}
 
-	d.books = d.session.DB(DB_NAME).C(BOOKS_COLL)
-	d.user = d.session.DB(DB_NAME).C(USERS_COLL)
+	database := d.session.DB(DB_NAME)
+	d.books = database.C(BOOKS_COLL)
+	d.user = database.C(USERS_COLL)
 	return d
 }
 
