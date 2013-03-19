@@ -3,8 +3,5 @@ new/
 cover/
 trantor
 .*.swp
-upload/upload
-upload/books
-upload/cover
-upload/new
-adduser/adduser
+tools/adduser/adduser
+tools/update/update
