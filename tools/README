@@ -1,0 +1,7 @@
+Some tools to manage trantor:
+
+- adduser. Used to add users to trantor:
+$ adduser myNick
+Password:
+
+- update. Update the cover of all the books. It might be outdated.
