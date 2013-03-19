@@ -82,24 +82,7 @@ type indexData struct {
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	var data indexData
 
-	/* get the tags */
-	tags, err := db.GetTags()
-	if err == nil {
-		length := len(tags)
-		if length > TAGS_DISPLAY {
-			length = TAGS_DISPLAY
-		}
-		data.Tags = make([]string, length)
-		for i, tag := range tags {
-			if i == TAGS_DISPLAY {
-				break /* display only 50 */
-			}
-			if tag.Subject != "" {
-				data.Tags[i] = tag.Subject
-			}
-		}
-	}
-
+	data.Tags, _ = db.GetTags(TAGS_DISPLAY)
 	data.S = GetStatus(w, r)
 	data.S.Home = true
 	data.Books, data.Count, _ = db.GetBooks(bson.M{"active": true}, 6)

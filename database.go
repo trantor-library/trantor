@@ -4,7 +4,11 @@ import (
 	"crypto/md5"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"sort"
+	"time"
+)
+
+const (
+	META_TYPE_TAGS = "tags updated"
 )
 
 var db *DB
@@ -35,7 +39,9 @@ type Book struct {
 
 type DB struct {
 	session *mgo.Session
+	meta    *mgo.Collection
 	books   *mgo.Collection
+	tags    *mgo.Collection
 	user    *mgo.Collection
 }
 
@@ -48,7 +54,9 @@ func initDB() *DB {
 	}
 
 	database := d.session.DB(DB_NAME)
+	d.meta = database.C(META_COLL)
 	d.books = database.C(BOOKS_COLL)
+	d.tags = database.C(TAGS_COLL)
 	d.user = database.C(USERS_COLL)
 	return d
 }
@@ -169,25 +177,25 @@ func (d *DB) BookActive(id bson.ObjectId) bool {
 	return book.Active
 }
 
-type tagsList []struct {
-	Subject string "_id"
-	Count   int    "value"
+func (d *DB) areTagsOutdated() bool {
+	var result struct {
+		Id bson.ObjectId `bson:"_id"`
+	}
+	err := d.meta.Find(bson.M{"type": META_TYPE_TAGS}).One(&result)
+	if err != nil {
+		return true
+	}
+
+	lastUpdate := result.Id.Time()
+	return time.Since(lastUpdate).Minutes() > MINUTES_UPDATE_TAGS
 }
 
-func (t tagsList) Len() int {
-	return len(t)
-}
-func (t tagsList) Less(i, j int) bool {
-	return t[i].Count > t[j].Count
-}
-func (t tagsList) Swap(i, j int) {
-	aux := t[i]
-	t[i] = t[j]
-	t[j] = aux
-}
+func (d *DB) updateTags() error {
+	_, err := d.meta.RemoveAll(bson.M{"type": META_TYPE_TAGS})
+	if err != nil {
+		return err
+	}
 
-func (d *DB) GetTags() (tagsList, error) {
-	// TODO: cache the tags
 	var mr mgo.MapReduce
 	mr.Map = "function() { " +
 		"if (this.active) { this.subject.forEach(function(s) { emit(s, 1); }); }" +
@@ -197,10 +205,33 @@ func (d *DB) GetTags() (tagsList, error) {
 		"vals.forEach(function() { count += 1; });" +
 		"return count;" +
 		"}"
-	var result tagsList
-	_, err := d.books.Find(bson.M{"active": true}).MapReduce(&mr, &result)
-	if err == nil {
-		sort.Sort(result)
+	mr.Out = bson.M{"replace": TAGS_COLL}
+	_, err = d.books.Find(bson.M{"active": true}).MapReduce(&mr, nil)
+	if err != nil {
+		return err
 	}
-	return result, err
+
+	return d.meta.Insert(bson.M{"type": META_TYPE_TAGS})
+}
+
+func (d *DB) GetTags(numTags int) ([]string, error) {
+	if d.areTagsOutdated() {
+		err := d.updateTags()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var result []struct {
+		Tag string "_id"
+	}
+	err := d.tags.Find(nil).Sort("-value").Limit(numTags).All(&result)
+	if err != nil {
+		return nil, err
+	}
+	tags := make([]string, len(result))
+	for i, r := range result {
+		tags[i] = r.Tag
+	}
+	return tags, nil
 }
