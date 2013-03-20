@@ -15,18 +15,17 @@ In order to run Trantor, you need to install the following packages:
 * Go language
 * Epub development library
 * Mongodb
-* Imagemagick (for resize covers)
 * Bazaar
 * Mercurial
 * Git (necessary only if you want to deal with the repository)
 
 Under Debian Wheezy you can simply run:
 
-# aptitude install golang-go git mercurial bzr libepub-dev mongodb imagemagick
+# aptitude install golang-go git mercurial bzr libepub-dev mongodb
 
 Yo also need to install go dependences:
 
-# go get labix.org/v2/mgo/bson labix.org/v2/mgo/ github.com/gorilla/sessions github.com/gorilla/securecookie
+# go get labix.org/v2/mgo/bson labix.org/v2/mgo/ github.com/gorilla/sessions github.com/gorilla/securecookie github.com/nfnt/resize
 
 == Installation ==
 === For admins ("for developers" below) ===

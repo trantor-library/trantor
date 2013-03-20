@@ -38,7 +38,7 @@ func ParseFile(path string) (string, error) {
 	book["rights"] = strings.Join(e.Metadata(epub.EPUB_RIGHTS), ", ")
 	book["meta"] = strings.Join(e.Metadata(epub.EPUB_META), ", ")
 	book["path"] = path
-	cover, coverSmall := getCover(e, title)
+	cover, coverSmall := GetCover(e, title)
 	book["cover"] = cover
 	book["coversmall"] = coverSmall
 	book["keywords"] = keywords(book)
@@ -126,82 +126,6 @@ func cleanStr(str string) string {
 	exp, _ = regexp.Compile("[ ,]*$")
 	str = exp.ReplaceAllString(str, "")
 	return str
-}
-
-func storeImg(img []byte, title, extension string) (string, string) {
-	r, _ := utf8.DecodeRuneInString(title)
-	folder := string(r)
-	if _, err := os.Stat(COVER_PATH + folder); err != nil {
-		err = os.Mkdir(COVER_PATH+folder, os.ModePerm)
-		if err != nil {
-			log.Println("Error creating", COVER_PATH+folder, ":", err.Error())
-			return "", ""
-		}
-	}
-	imgPath := validFileName(COVER_PATH, title, extension)
-
-	/* store img on disk */
-	file, err := os.Create(COVER_PATH + imgPath)
-	if err != nil {
-		log.Println("Error creating", COVER_PATH+imgPath, ":", err.Error())
-		return "", ""
-	}
-	defer file.Close()
-	file.Write(img)
-
-	/* resize img */
-	resize := append(strings.Split(RESIZE_CMD, " "), COVER_PATH+imgPath, COVER_PATH+imgPath)
-	cmd := exec.Command(resize[0], resize[1:]...)
-	cmd.Run()
-	imgPathSmall := validFileName(COVER_PATH, title, "_small"+extension)
-	resize = append(strings.Split(RESIZE_THUMB_CMD, " "), COVER_PATH+imgPath, COVER_PATH+imgPathSmall)
-	cmd = exec.Command(resize[0], resize[1:]...)
-	cmd.Run()
-	return imgPath, imgPathSmall
-}
-
-func getCover(e *epub.Epub, title string) (string, string) {
-	/* Try first common names */
-	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
-		img := e.Data(p)
-		if len(img) != 0 {
-			return storeImg(img, title, ".jpg")
-		}
-	}
-
-	/* search for img on the text */
-	exp, _ := regexp.Compile("<ima?g.*[(src)(href)]=[\"']([^\"']*(\\.[^\\.\"']*))[\"']")
-	it := e.Iterator(epub.EITERATOR_SPINE)
-	defer it.Close()
-	var err error = nil
-	txt := it.Curr()
-	for err == nil {
-		res := exp.FindStringSubmatch(txt)
-		if res != nil {
-			urlPart := strings.Split(it.CurrUrl(), "/")
-			url := strings.Join(urlPart[:len(urlPart)-1], "/")
-			if res[1][:3] == "../" {
-				res[1] = res[1][3:]
-				url = strings.Join(urlPart[:len(urlPart)-2], "/")
-			}
-			res[1] = strings.Replace(res[1], "%20", " ", -1)
-			res[1] = strings.Replace(res[1], "%27", "'", -1)
-			res[1] = strings.Replace(res[1], "%28", "(", -1)
-			res[1] = strings.Replace(res[1], "%29", ")", -1)
-			if url == "" {
-				url = res[1]
-			} else {
-				url = url + "/" + res[1]
-			}
-
-			img := e.Data(url)
-			if len(img) != 0 {
-				return storeImg(img, title, res[2])
-			}
-		}
-		txt, err = it.Next()
-	}
-	return "", ""
 }
 
 func parseAuthr(creator []string) []string {
