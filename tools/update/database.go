@@ -97,7 +97,7 @@ func (d *DB) IncDownload(path string) error {
 }
 
 /* optional parameters: length and start index
- * 
+ *
  * Returns: list of books, number found and err
  */
 func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error) {
