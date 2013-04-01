@@ -1,7 +1,7 @@
 package main
 
 import (
-	"git.gitorious.org/go-pkg/epub.git"
+	"git.gitorious.org/go-pkg/epubgo.git"
 	"io"
 	"log"
 	"os"
@@ -15,28 +15,35 @@ import (
 func ParseFile(path string) (string, error) {
 	book := map[string]interface{}{}
 
-	e, err := epub.Open(NEW_PATH+path, 0)
+	e, err := epubgo.Open(NEW_PATH + path)
 	if err != nil {
 		return "", err
 	}
 	defer e.Close()
 
-	title := cleanStr(strings.Join(e.Metadata(epub.EPUB_TITLE), ", "))
-	book["title"] = title
-	book["author"] = parseAuthr(e.Metadata(epub.EPUB_CREATOR))
-	book["contributor"] = cleanStr(strings.Join(e.Metadata(epub.EPUB_CONTRIB), ", "))
-	book["publisher"] = cleanStr(strings.Join(e.Metadata(epub.EPUB_PUBLISHER), ", "))
-	book["description"] = parseDescription(e.Metadata(epub.EPUB_DESCRIPTION))
-	book["subject"] = parseSubject(e.Metadata(epub.EPUB_SUBJECT))
-	book["date"] = parseDate(e.Metadata(epub.EPUB_DATE))
-	book["lang"] = e.Metadata(epub.EPUB_LANG)
-	book["type"] = strings.Join(e.Metadata(epub.EPUB_TYPE), ", ")
-	book["format"] = strings.Join(e.Metadata(epub.EPUB_FORMAT), ", ")
-	book["source"] = strings.Join(e.Metadata(epub.EPUB_SOURCE), ", ")
-	book["relation"] = strings.Join(e.Metadata(epub.EPUB_RELATION), ", ")
-	book["coverage"] = strings.Join(e.Metadata(epub.EPUB_COVERAGE), ", ")
-	book["rights"] = strings.Join(e.Metadata(epub.EPUB_RIGHTS), ", ")
-	book["meta"] = strings.Join(e.Metadata(epub.EPUB_META), ", ")
+	for _, m := range e.MetadataFields() {
+		data, err := e.Metadata(m)
+		if err != nil {
+			continue
+		}
+		switch m {
+		case "creator":
+			book["author"] = parseAuthr(data)
+		case "description":
+			book[m] = parseDescription(data)
+		case "subject":
+			book[m] = parseSubject(data)
+		case "date":
+			book[m] = parseDate(data)
+		case "language":
+			book["lang"] = data
+		case "title", "contributor", "publisher":
+			book[m] = cleanStr(strings.Join(data, ", "))
+		default:
+			book[m] = strings.Join(data, ", ")
+		}
+	}
+	title, _ := book["title"].(string)
 	book["path"] = path
 	cover, coverSmall := GetCover(e, title)
 	book["cover"] = cover
@@ -55,14 +62,8 @@ func StoreNewFile(name string, file io.Reader) (string, error) {
 	}
 	defer fw.Close()
 
-	const size = 1024
-	var n int = size
-	buff := make([]byte, size)
-	for n == size {
-		n, err = file.Read(buff)
-		fw.Write(buff)
-	}
-	return path, nil
+	_, err = io.Copy(fw, file)
+	return path, err
 }
 
 func StoreBook(book Book) (path string, err error) {

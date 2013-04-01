@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
-	"git.gitorious.org/go-pkg/epub.git"
+	"git.gitorious.org/go-pkg/epubgo.git"
 	"github.com/nfnt/resize"
 	"image"
 	"image/jpeg"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
@@ -13,51 +15,68 @@ import (
 	"unicode/utf8"
 )
 
-func GetCover(e *epub.Epub, title string) (string, string) {
-	/* Try first common names */
-	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
-		img := e.Data(p)
-		if len(img) != 0 {
-			return storeImg(img, title, ".jpg")
-		}
+func GetCover(e *epubgo.Epub, title string) (string, string) {
+	imgPath, smallPath := searchCommonCoverNames(e, title)
+	if imgPath != "" {
+		return imgPath, smallPath
 	}
 
 	/* search for img on the text */
 	exp, _ := regexp.Compile("<ima?g.*[(src)(href)]=[\"']([^\"']*(\\.[^\\.\"']*))[\"']")
-	it := e.Iterator(epub.EITERATOR_SPINE)
-	defer it.Close()
-	var err error = nil
-	txt := it.Curr()
-	for err == nil {
-		res := exp.FindStringSubmatch(txt)
+	it, errNext := e.Spine()
+	for errNext == nil {
+		file, err := it.Open()
+		if err != nil {
+			break
+		}
+		defer file.Close()
+
+		txt, err := ioutil.ReadAll(file)
+		if err != nil {
+			break
+		}
+		res := exp.FindSubmatch(txt)
 		if res != nil {
-			urlPart := strings.Split(it.CurrUrl(), "/")
+			href := string(res[1])
+			urlPart := strings.Split(it.Url(), "/")
 			url := strings.Join(urlPart[:len(urlPart)-1], "/")
-			if res[1][:3] == "../" {
-				res[1] = res[1][3:]
+			if href[:3] == "../" {
+				href = href[3:]
 				url = strings.Join(urlPart[:len(urlPart)-2], "/")
 			}
-			res[1] = strings.Replace(res[1], "%20", " ", -1)
-			res[1] = strings.Replace(res[1], "%27", "'", -1)
-			res[1] = strings.Replace(res[1], "%28", "(", -1)
-			res[1] = strings.Replace(res[1], "%29", ")", -1)
+			href = strings.Replace(href, "%20", " ", -1)
+			href = strings.Replace(href, "%27", "'", -1)
+			href = strings.Replace(href, "%28", "(", -1)
+			href = strings.Replace(href, "%29", ")", -1)
 			if url == "" {
-				url = res[1]
+				url = href
 			} else {
-				url = url + "/" + res[1]
+				url = url + "/" + href
 			}
 
-			img := e.Data(url)
-			if len(img) != 0 {
-				return storeImg(img, title, res[2])
+			img, err := e.OpenFile(url)
+			if err == nil {
+				defer img.Close()
+				return storeImg(img, title, string(res[2]))
 			}
 		}
-		txt, err = it.Next()
+		errNext = it.Next()
 	}
 	return "", ""
 }
 
-func storeImg(img []byte, title, extension string) (string, string) {
+func searchCommonCoverNames(e *epubgo.Epub, title string) (string, string) {
+	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
+		img, err := e.OpenFile(p)
+		if err == nil {
+			defer img.Close()
+			return storeImg(img, title, ".jpg")
+		}
+	}
+	return "", ""
+}
+
+func storeImg(img io.Reader, title, extension string) (string, string) {
 	r, _ := utf8.DecodeRuneInString(title)
 	folder := string(r)
 	if _, err := os.Stat(COVER_PATH + folder); err != nil {
@@ -86,8 +105,10 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	defer fSmall.Close()
 
 	/* resize img */
+	var img2 bytes.Buffer
+	img1 := io.TeeReader(img, &img2)
 	jpgOptions := jpeg.Options{IMG_QUALITY}
-	imgResized, err := resizeImg(img, IMG_WIDTH_BIG)
+	imgResized, err := resizeImg(img1, IMG_WIDTH_BIG)
 	if err != nil {
 		log.Println("Error resizing big image:", err.Error())
 		return "", ""
@@ -97,7 +118,7 @@ func storeImg(img []byte, title, extension string) (string, string) {
 		log.Println("Error encoding big image:", err.Error())
 		return "", ""
 	}
-	imgSmallResized, err := resizeImg(img, IMG_WIDTH_SMALL)
+	imgSmallResized, err := resizeImg(&img2, IMG_WIDTH_SMALL)
 	if err != nil {
 		log.Println("Error resizing small image:", err.Error())
 		return "", ""
@@ -111,9 +132,8 @@ func storeImg(img []byte, title, extension string) (string, string) {
 	return imgPath, imgPathSmall
 }
 
-func resizeImg(imgBuff []byte, width uint) (image.Image, error) {
-	reader := bytes.NewReader(imgBuff)
-	img, _, err := image.Decode(reader)
+func resizeImg(imgReader io.Reader, width uint) (image.Image, error) {
+	img, _, err := image.Decode(imgReader)
 	if err != nil {
 		return nil, err
 	}

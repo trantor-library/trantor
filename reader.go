@@ -1,7 +1,8 @@
 package main
 
 import (
-	"git.gitorious.org/go-pkg/epub.git"
+	"git.gitorious.org/go-pkg/epubgo.git"
+	"io"
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"regexp"
@@ -67,52 +68,75 @@ func cleanLink(link string) string {
 	return link
 }
 
-/* return next and prev urls from document and the list of chapters */
-func chapterList(e *epub.Epub, file string, id string, base string) (string, string, []chapter) {
-	var chapters []chapter
+func getNextPrev(e *epubgo.Epub, file string, id string, base string) (string, string) {
+	spine, err := e.Spine()
+	if err != nil {
+		return "", ""
+	}
+
 	prev := ""
 	next := ""
-	tit := e.Titerator(epub.TITERATOR_NAVMAP)
-	defer tit.Close()
+	for err == nil {
+		if cleanLink(spine.Url()) == file {
+			break
+		}
+		prev = spine.Url()
+		err = spine.Next()
+	}
+	if err != nil {
+		return "", ""
+	}
 
-	activeIndx := -1
-	depth := 0
-	for ; tit.Valid(); tit.Next() {
+	prev = genLink(id, base, prev)
+	if spine.Next() == nil {
+		next = genLink(id, base, spine.Url())
+	}
+	return next, prev
+}
+
+func getChapters(e *epubgo.Epub, file string, id string, base string) []chapter {
+	nav, err := e.Navigation()
+	if err != nil {
+		return nil
+	}
+	chapters := listChapters(nav, 0)
+
+	for i, c := range chapters {
+		chapters[i].Link = genLink(id, base, c.Link)
+		if cleanLink(c.Link) == file {
+			chapters[i].Active = true
+		}
+	}
+	return chapters
+}
+
+func listChapters(nav *epubgo.NavigationIterator, depth int) []chapter {
+	var chapters []chapter
+	var err error = nil
+	for err == nil {
 		var c chapter
-		c.Label = tit.Label()
-		c.Link = genLink(id, base, tit.Link())
-		if cleanLink(tit.Link()) == file {
-			c.Active = true
-			activeIndx = len(chapters)
-		}
-		c.Depth = tit.Depth()
-		for c.Depth > depth {
-			c.In = append(c.In, true)
-			depth++
-		}
+		c.Label = nav.Title()
+		c.Link = nav.Url()
+		c.Depth = depth
 		for c.Depth < depth {
 			c.Out = append(c.Out, true)
 			depth--
 		}
 		chapters = append(chapters, c)
-	}
 
-	/* if is the same chapter check the previous */
-	i := activeIndx - 1
-	for i >= 0 && strings.Contains(chapters[i].Link, "#") {
-		i--
+		if nav.HasChildren() {
+			nav.In()
+			children := listChapters(nav, depth+1)
+			children[0].In = []bool{true}
+			children[len(children)-1].Out = []bool{true}
+			chapters = append(chapters, children...)
+			nav.Out()
+		}
+		err = nav.Next()
 	}
-	if i >= 0 {
-		prev = chapters[i].Link
-	}
-	i = activeIndx + 1
-	for i < len(chapters) && strings.Contains(chapters[i].Link, "#") {
-		i++
-	}
-	if i < len(chapters) {
-		next = chapters[i].Link
-	}
-	return next, prev, chapters
+	chapters[0].In = []bool{true}
+	chapters[len(chapters)-1].Out = []bool{true}
+	return chapters
 }
 
 func readHandler(w http.ResponseWriter, r *http.Request) {
@@ -138,17 +162,25 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 		data.Back = "/book/" + id
 		bookPath = BOOKS_PATH + data.Book.Path
 	}
-	e, _ := epub.Open(bookPath, 0)
+	e, err := epubgo.Open(bookPath)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
 	defer e.Close()
 	if file == "" {
-		it := e.Iterator(epub.EITERATOR_LINEAR)
-		defer it.Close()
-		http.Redirect(w, r, base+id+"/"+it.CurrUrl(), http.StatusTemporaryRedirect)
+		it, err := e.Spine()
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		http.Redirect(w, r, base+id+"/"+it.Url(), http.StatusTemporaryRedirect)
 		return
 	}
 
 	data.S = GetStatus(w, r)
-	data.Next, data.Prev, data.Chapters = chapterList(e, file, id, base)
+	data.Next, data.Prev = getNextPrev(e, file, id, base)
+	data.Chapters = getChapters(e, file, id, base)
 	data.Content = genLink(id, "/content/", file)
 	loadTemplate(w, "read", data)
 }
@@ -172,12 +204,18 @@ func contentHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		bookPath = BOOKS_PATH + book.Path
 	}
-	e, _ := epub.Open(bookPath, 0)
+	e, _ := epubgo.Open(bookPath)
 	defer e.Close()
 	if file == "" {
 		http.NotFound(w, r)
 		return
 	}
 
-	w.Write(e.Data(file))
+	html, err := e.OpenFile(file)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	defer html.Close()
+	io.Copy(w, html)
 }
