@@ -37,6 +37,7 @@ function delBook(){
 		{{if .Author}}<dt>Author</dt> <dd>{{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}}</dd>{{end}}
 		{{if .Publisher}}<dt>Publisher</dt> <dd><a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a></dd>{{end}}
 		{{if .Subject}}<dt>Tags</dt> <dd>{{range .Subject}}<a href="/search/?q=subject:{{.}}">{{.}}</a>, {{end}}</dd>{{end}}
+		{{if .Isbn}}<dt>ISBN</dt> <dd>{{.Isbn}}</dd>{{end}}
 		{{if .Date}}<dt>Date</dt> <dd>{{.Date}}</dd>{{end}}
 		{{if .Lang}}<dt>Lang</dt> <dd>{{range .Lang}}<a href="/search/?q=lang:{{.}}">{{.}}</a> {{end}}</dd>{{end}}
 		</dl>

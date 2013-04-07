@@ -39,6 +39,13 @@ func ParseFile(path string) (string, error) {
 			book["lang"] = data
 		case "title", "contributor", "publisher":
 			book[m] = cleanStr(strings.Join(data, ", "))
+		case "identifier":
+			attr, _ := e.MetadataAttr(m)
+			for i, d := range data {
+				if attr[i]["scheme"] == "ISBN" {
+					book["isbn"] = d
+				}
+			}
 		default:
 			book[m] = strings.Join(data, ", ")
 		}

@@ -33,6 +33,7 @@
 		{{if .Author}}<strong>Author:</strong> {{range .Author}}<a href="/search/?q=author:{{.}}">{{.}}</a>, {{end}} <small>({{$authorFound}})</small><br />{{end}}
 		{{if .Publisher}}<strong>Publisher:</strong> <a href="/search/?q=publisher:{{.Publisher}}">{{.Publisher}}</a><br />{{end}}
 		{{if .Subject}}<strong>Tags:</strong> {{range .Subject}}<a href="/search/?q=subject:{{.}}">{{.}}</a>, {{end}}<br />{{end}}
+		{{if .Isbn}}<strong>ISBN:</strong> {{.Isbn}}<br />{{end}}
 		{{if .Date}}<strong>Date:</strong> {{.Date}}<br />{{end}}
 		{{if .Lang}}<strong>Lang:</strong> {{range .Lang}}<a href="/search/?q=lang:{{.}}">{{.}}</a> {{end}}<br />{{end}}
 		{{.Description}}

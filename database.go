@@ -23,6 +23,7 @@ type Book struct {
 	Subject     []string
 	Date        string
 	Lang        []string
+	Isbn        string
 	Type        string
 	Format      string
 	Source      string
