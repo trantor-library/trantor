@@ -3,19 +3,19 @@ package main
 import (
 	"git.gitorious.org/go-pkg/epubgo.git"
 	"io"
-	"log"
+	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 )
 
-func ParseFile(path string) (string, error) {
+func ParseFile(id bson.ObjectId) (string, error) {
 	book := map[string]interface{}{}
 
-	e, err := epubgo.Open(NEW_PATH + path)
+	e, err := OpenBook(id)
 	if err != nil {
 		return "", err
 	}
@@ -51,7 +51,7 @@ func ParseFile(path string) (string, error) {
 		}
 	}
 	title, _ := book["title"].(string)
-	book["path"] = path
+	book["file"] = id
 	cover, coverSmall := GetCover(e, title)
 	book["cover"] = cover
 	book["coversmall"] = coverSmall
@@ -61,35 +61,47 @@ func ParseFile(path string) (string, error) {
 	return title, nil
 }
 
-func StoreNewFile(name string, file io.Reader) (string, error) {
-	path := storePath(name)
-	fw, err := os.Create(NEW_PATH + path)
+func OpenBook(id bson.ObjectId) (*epubgo.Epub, error) {
+	fs := db.GetFS(FS_BOOKS)
+	var reader readerGrid
+	var err error
+	reader.f, err = fs.OpenId(id)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.f.Close()
+	return epubgo.Load(reader, reader.f.Size())
+}
+
+type readerGrid struct {
+	f *mgo.GridFile
+}
+
+func (r readerGrid) ReadAt(p []byte, off int64) (n int, err error) {
+	_, err = r.f.Seek(off, 0)
+	if err != nil {
+		return
+	}
+
+	return r.f.Read(p)
+}
+
+func StoreNewFile(name string, file io.Reader) (bson.ObjectId, error) {
+	fs := db.GetFS(FS_BOOKS)
+	fw, err := fs.Create(name)
 	if err != nil {
 		return "", err
 	}
 	defer fw.Close()
 
 	_, err = io.Copy(fw, file)
-	return path, err
+	id, _ := fw.Id().(bson.ObjectId)
+	return id, err
 }
 
-func StoreBook(book Book) (path string, err error) {
-	title := book.Title
-	path = validFileName(BOOKS_PATH, title, ".epub")
-
-	oldPath := NEW_PATH + book.Path
-	r, _ := utf8.DecodeRuneInString(title)
-	folder := string(r)
-	if _, err = os.Stat(BOOKS_PATH + folder); err != nil {
-		err = os.Mkdir(BOOKS_PATH+folder, os.ModePerm)
-		if err != nil {
-			log.Println("Error creating", BOOKS_PATH+folder, ":", err.Error())
-			return
-		}
-	}
-	cmd := exec.Command("mv", oldPath, BOOKS_PATH+path)
-	err = cmd.Run()
-	return
+func DeleteFile(id bson.ObjectId) error {
+	fs := db.GetFS(FS_BOOKS)
+	return fs.RemoveId(id)
 }
 
 func DeleteBook(book Book) {
@@ -99,7 +111,7 @@ func DeleteBook(book Book) {
 	if book.CoverSmall != "" {
 		os.RemoveAll(book.CoverSmall[1:])
 	}
-	os.RemoveAll(book.Path)
+	DeleteFile(book.File)
 }
 
 func validFileName(path string, title string, extension string) string {
@@ -115,16 +127,6 @@ func validFileName(path string, title string, extension string) string {
 		_, err = os.Stat(path + file)
 	}
 	return file
-}
-
-func storePath(name string) string {
-	path := name
-	_, err := os.Stat(NEW_PATH + path)
-	for i := 0; err == nil; i++ {
-		path = strconv.Itoa(i) + "_" + name
-		_, err = os.Stat(NEW_PATH + path)
-	}
-	return path
 }
 
 func cleanStr(str string) string {

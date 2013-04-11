@@ -149,7 +149,6 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 
 	var data readData
 	data.Book = books[0]
-	var bookPath string
 	if !data.Book.Active {
 		sess := GetSession(r)
 		if sess.User == "" {
@@ -157,12 +156,10 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		data.Back = "/new/"
-		bookPath = NEW_PATH + data.Book.Path
 	} else {
 		data.Back = "/book/" + id
-		bookPath = BOOKS_PATH + data.Book.Path
 	}
-	e, err := epubgo.Open(bookPath)
+	e, err := OpenBook(data.Book.File)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -187,29 +184,30 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 
 func contentHandler(w http.ResponseWriter, r *http.Request) {
 	_, id, file := parseUrl(r.URL.Path)
+	if file == "" {
+		http.NotFound(w, r)
+		return
+	}
+
 	books, _, err := db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
 	if err != nil || len(books) == 0 {
 		http.NotFound(w, r)
 		return
 	}
 	book := books[0]
-	var bookPath string
 	if !book.Active {
 		sess := GetSession(r)
 		if sess.User == "" {
 			http.NotFound(w, r)
 			return
 		}
-		bookPath = NEW_PATH + book.Path
-	} else {
-		bookPath = BOOKS_PATH + book.Path
 	}
-	e, _ := epubgo.Open(bookPath)
-	defer e.Close()
-	if file == "" {
+	e, err := OpenBook(book.File)
+	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
+	defer e.Close()
 
 	html, err := e.OpenFile(file)
 	if err != nil {

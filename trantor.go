@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
@@ -65,9 +66,27 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func downloadHandler(w http.ResponseWriter, r *http.Request) {
-	file := BOOKS_PATH + r.URL.Path[len("/books/"):]
-	db.IncDownload(file)
-	http.ServeFile(w, r, file)
+	id := bson.ObjectIdHex(r.URL.Path[len("/books/"):])
+	books, _, err := db.GetBooks(bson.M{"_id": id})
+	if err != nil || len(books) == 0 {
+		http.NotFound(w, r)
+		return
+	}
+
+	fs := db.GetFS(FS_BOOKS)
+	f, err := fs.OpenId(books[0].File)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	defer f.Close()
+
+	headers := w.Header()
+	headers["Content-Type"] = []string{"application/epub+zip"}
+	headers["Content-Disposition"] = []string{"attachment; filename=\"" + f.Name() + "\""}
+
+	io.Copy(w, f)
+	db.IncDownload(id)
 }
 
 type indexData struct {
@@ -97,10 +116,6 @@ func main() {
 
 	/* create the needed folders */
 	var err error
-	_, err = os.Stat(BOOKS_PATH)
-	if err != nil {
-		os.Mkdir(BOOKS_PATH, os.ModePerm)
-	}
 	_, err = os.Stat(COVER_PATH)
 	if err != nil {
 		os.Mkdir(COVER_PATH, os.ModePerm)

@@ -235,13 +235,12 @@ func storeHandler(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		book := books[0]
-		path, err := StoreBook(book)
 		if err != nil {
 			sess.Notify("An error ocurred!", err.Error(), "error")
 			log.Println("Error storing book '", book.Title, "': ", err.Error())
 			continue
 		}
-		db.UpdateBook(id, bson.M{"active": true, "path": path})
+		db.UpdateBook(id, bson.M{"active": true})
 		titles = append(titles, book.Title)
 	}
 	if titles != nil {

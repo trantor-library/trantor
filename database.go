@@ -31,7 +31,7 @@ type Book struct {
 	Coverage    string
 	Rights      string
 	Meta        string
-	Path        string
+	File        bson.ObjectId
 	Cover       string
 	CoverSmall  string
 	Active      bool
@@ -102,8 +102,8 @@ func (d *DB) IncVisit(id bson.ObjectId) error {
 	return d.books.Update(bson.M{"_id": id}, bson.M{"$inc": bson.M{"VisitsCount": 1}})
 }
 
-func (d *DB) IncDownload(path string) error {
-	return d.books.Update(bson.M{"path": path}, bson.M{"$inc": bson.M{"DownloadCount": 1}})
+func (d *DB) IncDownload(id bson.ObjectId) error {
+	return d.books.Update(bson.M{"_id": id}, bson.M{"$inc": bson.M{"DownloadCount": 1}})
 }
 
 /* optional parameters: length and start index
@@ -176,6 +176,10 @@ func (d *DB) BookActive(id bson.ObjectId) bool {
 		return false
 	}
 	return book.Active
+}
+
+func (d *DB) GetFS(prefix string) *mgo.GridFS {
+	return d.session.DB(DB_NAME).GridFS(prefix)
 }
 
 func (d *DB) areTagsOutdated() bool {

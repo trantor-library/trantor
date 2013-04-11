@@ -9,6 +9,8 @@ const (
 	BOOKS_COLL = "books"
 	TAGS_COLL  = "tags"
 	USERS_COLL = "users"
+	FS_BOOKS   = "fs_books"
+	FS_IMGS    = "fs_imgs"
 
 	PASS_SALT           = "ImperialLibSalt"
 	MINUTES_UPDATE_TAGS = 10
@@ -17,7 +19,6 @@ const (
 	NEW_ITEMS_PAGE      = 50
 
 	TEMPLATE_PATH = "templates/"
-	BOOKS_PATH    = "books/"
 	COVER_PATH    = "cover/"
 	NEW_PATH      = "new/"
 	CSS_PATH      = "css/"
