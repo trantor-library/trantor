@@ -21,7 +21,7 @@ In order to run Trantor, you need to install the following packages:
 
 Under Debian Wheezy you can simply run:
 
-# aptitude install golang-go git mercurial bzr libepub-dev mongodb
+# aptitude install golang-go git mercurial bzr mongodb
 
 Yo also need to install go dependences:
 
