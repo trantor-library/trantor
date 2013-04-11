@@ -1,9 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
 	"io"
-	"labix.org/v2/mgo"
+	"io/ioutil"
 	"labix.org/v2/mgo/bson"
 	"os"
 	"regexp"
@@ -63,27 +64,16 @@ func ParseFile(id bson.ObjectId) (string, error) {
 
 func OpenBook(id bson.ObjectId) (*epubgo.Epub, error) {
 	fs := db.GetFS(FS_BOOKS)
-	var reader readerGrid
-	var err error
-	reader.f, err = fs.OpenId(id)
+	f, err := fs.OpenId(id)
 	if err != nil {
 		return nil, err
 	}
-	defer reader.f.Close()
-	return epubgo.Load(reader, reader.f.Size())
-}
+	defer f.Close()
 
-type readerGrid struct {
-	f *mgo.GridFile
-}
+	buff, err := ioutil.ReadAll(f)
+	reader := bytes.NewReader(buff)
 
-func (r readerGrid) ReadAt(p []byte, off int64) (n int, err error) {
-	_, err = r.f.Seek(off, 0)
-	if err != nil {
-		return
-	}
-
-	return r.f.Read(p)
+	return epubgo.Load(reader, int64(len(buff)))
 }
 
 func StoreNewFile(name string, file io.Reader) (bson.ObjectId, error) {
