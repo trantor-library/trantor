@@ -20,7 +20,6 @@ const (
 
 	TEMPLATE_PATH = "templates/"
 	COVER_PATH    = "cover/"
-	NEW_PATH      = "new/"
 	CSS_PATH      = "css/"
 	JS_PATH       = "js/"
 	IMG_PATH      = "img/"

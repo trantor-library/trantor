@@ -172,11 +172,6 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(r.URL.Path) > len("/new/") {
-		http.ServeFile(w, r, NEW_PATH+r.URL.Path[len("/new/"):])
-		return
-	}
-
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

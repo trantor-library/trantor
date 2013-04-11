@@ -72,9 +72,18 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	book := books[0]
+
+	if !book.Active {
+		sess := GetSession(r)
+		if sess.User == "" {
+			http.NotFound(w, r)
+			return
+		}
+	}
 
 	fs := db.GetFS(FS_BOOKS)
-	f, err := fs.OpenId(books[0].File)
+	f, err := fs.OpenId(book.File)
 	if err != nil {
 		http.NotFound(w, r)
 		return
@@ -119,10 +128,6 @@ func main() {
 	_, err = os.Stat(COVER_PATH)
 	if err != nil {
 		os.Mkdir(COVER_PATH, os.ModePerm)
-	}
-	_, err = os.Stat(NEW_PATH)
-	if err != nil {
-		os.Mkdir(NEW_PATH, os.ModePerm)
 	}
 
 	/* set up web handlers */
