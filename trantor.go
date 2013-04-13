@@ -124,8 +124,7 @@ func main() {
 	defer db.Close()
 
 	/* create the needed folders */
-	var err error
-	_, err = os.Stat(COVER_PATH)
+	_, err := os.Stat(COVER_PATH)
 	if err != nil {
 		os.Mkdir(COVER_PATH, os.ModePerm)
 	}
