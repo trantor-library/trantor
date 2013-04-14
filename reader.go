@@ -2,10 +2,10 @@ package main
 
 import (
 	"git.gitorious.org/go-pkg/epubgo.git"
+	"github.com/gorilla/mux"
 	"io"
 	"labix.org/v2/mgo/bson"
 	"net/http"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -27,18 +27,6 @@ type readData struct {
 	Next     string
 	Prev     string
 	Back     string
-}
-
-func parseUrl(url string) (string, string, string) {
-	exp, _ := regexp.Compile("^(\\/[^\\/]*\\/)([^\\/]*)\\/?(.*)?$")
-	res := exp.FindStringSubmatch(url)
-	base := res[1]
-	id := res[2]
-	file := ""
-	if len(res) == 4 {
-		file = res[3]
-	}
-	return base, id, file
 }
 
 func cleanHtml(html string) string {
@@ -140,7 +128,9 @@ func listChapters(nav *epubgo.NavigationIterator, depth int) []chapter {
 }
 
 func readHandler(w http.ResponseWriter, r *http.Request) {
-	base, id, file := parseUrl(r.URL.Path)
+	vars := mux.Vars(r)
+	id := vars["id"]
+	file := vars["file"]
 	books, _, err := db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
 	if err != nil || len(books) == 0 {
 		http.NotFound(w, r)
@@ -171,19 +161,21 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 			http.NotFound(w, r)
 			return
 		}
-		http.Redirect(w, r, base+id+"/"+it.Url(), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/read/"+id+"/"+it.Url(), http.StatusTemporaryRedirect)
 		return
 	}
 
 	data.S = GetStatus(w, r)
-	data.Next, data.Prev = getNextPrev(e, file, id, base)
-	data.Chapters = getChapters(e, file, id, base)
+	data.Next, data.Prev = getNextPrev(e, file, id, "/read/")
+	data.Chapters = getChapters(e, file, id, "/read/")
 	data.Content = genLink(id, "/content/", file)
 	loadTemplate(w, "read", data)
 }
 
 func contentHandler(w http.ResponseWriter, r *http.Request) {
-	_, id, file := parseUrl(r.URL.Path)
+	vars := mux.Vars(r)
+	id := vars["id"]
+	file := vars["file"]
 	if file == "" {
 		http.NotFound(w, r)
 		return

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gorilla/mux"
 	"labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
@@ -47,7 +48,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	var titles []string
 	var isNew bool
-	ids := strings.Split(r.URL.Path[len("/delete/"):], "/")
+	ids := strings.Split(mux.Vars(r)["ids"], "/")
 	for _, idStr := range ids {
 		if idStr == "" {
 			continue
@@ -85,7 +86,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	id := bson.ObjectIdHex(r.URL.Path[len("/edit/"):])
+	id := bson.ObjectIdHex(mux.Vars(r)["id"])
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil {
 		http.NotFound(w, r)
@@ -109,17 +110,13 @@ func cleanEmptyStr(s []string) []string {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.NotFound(w, r)
-		return
-	}
 	sess := GetSession(r)
 	if sess.User == "" {
 		http.NotFound(w, r)
 		return
 	}
 
-	idStr := r.URL.Path[len("/save/"):]
+	idStr := mux.Vars(r)["id"]
 	id := bson.ObjectIdHex(idStr)
 	title := r.FormValue("title")
 	publisher := r.FormValue("publisher")
@@ -217,7 +214,7 @@ func storeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var titles []string
-	ids := strings.Split(r.URL.Path[len("/store/"):], "/")
+	ids := strings.Split(mux.Vars(r)["ids"], "/")
 	for _, idStr := range ids {
 		if idStr == "" {
 			continue

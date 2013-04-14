@@ -30,20 +30,18 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		user := r.FormValue("user")
-		pass := r.FormValue("pass")
-		sess := GetSession(r)
-		if db.UserValid(user, pass) {
-			log.Println("User", user, "log in")
-			sess.LogIn(user)
-			sess.Notify("Successful login!", "Welcome "+user, "success")
-		} else {
-			log.Println("User", user, "bad user or password")
-			sess.Notify("Invalid login!", "user or password invalid", "error")
-		}
-		sess.Save(w, r)
+	user := r.FormValue("user")
+	pass := r.FormValue("pass")
+	sess := GetSession(r)
+	if db.UserValid(user, pass) {
+		log.Println("User", user, "log in")
+		sess.LogIn(user)
+		sess.Notify("Successful login!", "Welcome "+user, "success")
+	} else {
+		log.Println("User", user, "bad user or password")
+		sess.Notify("Invalid login!", "user or password invalid", "error")
 	}
+	sess.Save(w, r)
 	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }
 
@@ -55,7 +53,7 @@ type bookData struct {
 func bookHandler(w http.ResponseWriter, r *http.Request) {
 	var data bookData
 	data.S = GetStatus(w, r)
-	id := bson.ObjectIdHex(r.URL.Path[len("/book/"):])
+	id := bson.ObjectIdHex(mux.Vars(r)["id"])
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
 		http.NotFound(w, r)
@@ -67,7 +65,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func downloadHandler(w http.ResponseWriter, r *http.Request) {
-	id := bson.ObjectIdHex(r.URL.Path[len("/books/"):])
+	id := bson.ObjectIdHex(mux.Vars(r)["id"])
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
 		http.NotFound(w, r)
@@ -136,16 +134,16 @@ func main() {
 	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", bookHandler)
 	r.HandleFunc("/search/{query}", searchHandler)
 	r.HandleFunc("/upload/", uploadHandler)
-	r.HandleFunc("/login/", loginHandler)
+	r.HandleFunc("/login/", loginHandler).Methods("POST")
 	r.HandleFunc("/logout/", logoutHandler)
 	r.HandleFunc("/new/", newHandler)
 	r.HandleFunc("/store/{ids:([0-9a-fA-F]+/)+}", storeHandler)
 	r.HandleFunc("/delete/{ids:([0-9a-fA-F]+/)+}", deleteHandler)
 	r.HandleFunc("/read/{id:[0-9a-fA-F]+}", readHandler)
-	r.HandleFunc("/read/{id:[0-9a-fA-F]+}/{path}", readHandler)
-	r.HandleFunc("/content/{id:[0-9a-fA-F]+}/{path}", contentHandler)
+	r.HandleFunc("/read/{id:[0-9a-fA-F]+}/{file:.*}", readHandler)
+	r.HandleFunc("/content/{id:[0-9a-fA-F]+}/{file:.*}", contentHandler)
 	r.HandleFunc("/edit/{id:[0-9a-fA-F]+}", editHandler)
-	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", saveHandler)
+	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", saveHandler).Methods("POST")
 	r.HandleFunc("/about/", aboutHandler)
 	r.HandleFunc("/books/{id:[0-9a-fA-F]+}", downloadHandler)
 	r.HandleFunc("/settings/", settingsHandler)
