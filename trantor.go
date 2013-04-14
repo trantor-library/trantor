@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gorilla/mux"
 	"io"
 	"labix.org/v2/mgo/bson"
 	"log"
@@ -130,29 +131,32 @@ func main() {
 	}
 
 	/* set up web handlers */
-	http.HandleFunc("/book/", bookHandler)
-	http.HandleFunc("/search/", searchHandler)
-	http.HandleFunc("/upload/", uploadHandler)
-	http.HandleFunc("/login/", loginHandler)
-	http.HandleFunc("/logout/", logoutHandler)
-	http.HandleFunc("/new/", newHandler)
-	http.HandleFunc("/store/", storeHandler)
-	http.HandleFunc("/read/", readHandler)
-	http.HandleFunc("/content/", contentHandler)
-	http.HandleFunc("/edit/", editHandler)
-	http.HandleFunc("/save/", saveHandler)
-	http.HandleFunc("/delete/", deleteHandler)
-	http.HandleFunc("/about/", aboutHandler)
-	http.HandleFunc("/books/", downloadHandler)
-	http.HandleFunc("/settings/", settingsHandler)
+	r := mux.NewRouter()
+	r.HandleFunc("/", indexHandler)
+	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", bookHandler)
+	r.HandleFunc("/search/{query}", searchHandler)
+	r.HandleFunc("/upload/", uploadHandler)
+	r.HandleFunc("/login/", loginHandler)
+	r.HandleFunc("/logout/", logoutHandler)
+	r.HandleFunc("/new/", newHandler)
+	r.HandleFunc("/store/{ids:([0-9a-fA-F]+/)+}", storeHandler)
+	r.HandleFunc("/delete/{ids:([0-9a-fA-F]+/)+}", deleteHandler)
+	r.HandleFunc("/read/{id:[0-9a-fA-F]+}", readHandler)
+	r.HandleFunc("/read/{id:[0-9a-fA-F]+}/{path}", readHandler)
+	r.HandleFunc("/content/{id:[0-9a-fA-F]+}/{path}", contentHandler)
+	r.HandleFunc("/edit/{id:[0-9a-fA-F]+}", editHandler)
+	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", saveHandler)
+	r.HandleFunc("/about/", aboutHandler)
+	r.HandleFunc("/books/{id:[0-9a-fA-F]+}", downloadHandler)
+	r.HandleFunc("/settings/", settingsHandler)
 	h := http.FileServer(http.Dir(IMG_PATH))
-	http.Handle("/img/", http.StripPrefix("/img/", h))
+	r.Handle("/img/{img}", http.StripPrefix("/img/", h))
 	h = http.FileServer(http.Dir(COVER_PATH))
-	http.Handle("/cover/", http.StripPrefix("/cover/", h))
+	r.Handle("/cover/{c}/{img}", http.StripPrefix("/cover/", h))
 	h = http.FileServer(http.Dir(CSS_PATH))
-	http.Handle("/css/", http.StripPrefix("/css/", h))
+	r.Handle("/css/{css}", http.StripPrefix("/css/", h))
 	h = http.FileServer(http.Dir(JS_PATH))
-	http.Handle("/js/", http.StripPrefix("/js/", h))
-	http.HandleFunc("/", indexHandler)
+	r.Handle("/js/{js}", http.StripPrefix("/js/", h))
+	http.Handle("/", r)
 	panic(http.ListenAndServe(":"+PORT, nil))
 }
