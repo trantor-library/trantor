@@ -138,7 +138,7 @@ func main() {
 	r.HandleFunc("/edit/{id:[0-9a-fA-F]+}", editHandler)
 	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", saveHandler).Methods("POST")
 	r.HandleFunc("/about/", aboutHandler)
-	r.HandleFunc("/books/{id:[0-9a-fA-F]+}", downloadHandler)
+	r.HandleFunc("/download/{id:[0-9a-fA-F]+}/{epub:.*}", downloadHandler)
 	r.HandleFunc("/cover/{id:[0-9a-fA-F]+}/{size}/{img:.*}", coverHandler)
 	r.HandleFunc("/settings/", settingsHandler)
 	h := http.FileServer(http.Dir(IMG_PATH))
