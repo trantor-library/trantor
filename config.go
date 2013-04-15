@@ -19,7 +19,6 @@ const (
 	NEW_ITEMS_PAGE      = 50
 
 	TEMPLATE_PATH = "templates/"
-	COVER_PATH    = "cover/"
 	CSS_PATH      = "css/"
 	JS_PATH       = "js/"
 	IMG_PATH      = "img/"

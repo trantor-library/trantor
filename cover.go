@@ -3,19 +3,59 @@ package main
 import (
 	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
+	"github.com/gorilla/mux"
 	"github.com/nfnt/resize"
 	"image"
 	"image/jpeg"
 	"io"
 	"io/ioutil"
+	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 	"log"
-	"os"
+	"net/http"
 	"regexp"
 	"strings"
-	"unicode/utf8"
 )
 
-func GetCover(e *epubgo.Epub, title string) (string, string) {
+func coverHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := bson.ObjectIdHex(vars["id"])
+	books, _, err := db.GetBooks(bson.M{"_id": id})
+	if err != nil || len(books) == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	book := books[0]
+
+	if !book.Active {
+		sess := GetSession(r)
+		if sess.User == "" {
+			http.NotFound(w, r)
+			return
+		}
+	}
+
+	fs := db.GetFS(FS_IMGS)
+	var f *mgo.GridFile
+	if vars["size"] == "small" {
+		f, err = fs.OpenId(book.CoverSmall)
+	} else {
+		f, err = fs.OpenId(book.Cover)
+	}
+	if err != nil {
+		log.Println("Error while opening image:", err)
+		http.NotFound(w, r)
+		return
+	}
+	defer f.Close()
+
+	headers := w.Header()
+	headers["Content-Type"] = []string{"image/jpeg"}
+
+	io.Copy(w, f)
+}
+
+func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
 	imgPath, smallPath := searchCommonCoverNames(e, title)
 	if imgPath != "" {
 		return imgPath, smallPath
@@ -65,7 +105,7 @@ func GetCover(e *epubgo.Epub, title string) (string, string) {
 	return "", ""
 }
 
-func searchCommonCoverNames(e *epubgo.Epub, title string) (string, string) {
+func searchCommonCoverNames(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
 	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
 		img, err := e.OpenFile(p)
 		if err == nil {
@@ -76,30 +116,20 @@ func searchCommonCoverNames(e *epubgo.Epub, title string) (string, string) {
 	return "", ""
 }
 
-func storeImg(img io.Reader, title, extension string) (string, string) {
-	r, _ := utf8.DecodeRuneInString(title)
-	folder := string(r)
-	if _, err := os.Stat(COVER_PATH + folder); err != nil {
-		err = os.Mkdir(COVER_PATH+folder, os.ModePerm)
-		if err != nil {
-			log.Println("Error creating", COVER_PATH+folder, ":", err.Error())
-			return "", ""
-		}
-	}
-
+func storeImg(img io.Reader, title, extension string) (bson.ObjectId, bson.ObjectId) {
 	/* open the files */
-	imgPath := validFileName(COVER_PATH, title, extension)
-	fBig, err := os.Create(COVER_PATH + imgPath)
+	imgPath := title + extension
+	fBig, err := createCoverFile(imgPath)
 	if err != nil {
-		log.Println("Error creating", COVER_PATH+imgPath, ":", err.Error())
+		log.Println("Error creating", imgPath, ":", err.Error())
 		return "", ""
 	}
 	defer fBig.Close()
 
-	imgPathSmall := validFileName(COVER_PATH, title, "_small"+extension)
-	fSmall, err := os.Create(COVER_PATH + imgPathSmall)
+	imgPathSmall := title + "_small" + extension
+	fSmall, err := createCoverFile(imgPathSmall)
 	if err != nil {
-		log.Println("Error creating", COVER_PATH+imgPathSmall, ":", err.Error())
+		log.Println("Error creating", imgPathSmall, ":", err.Error())
 		return "", ""
 	}
 	defer fSmall.Close()
@@ -129,7 +159,14 @@ func storeImg(img io.Reader, title, extension string) (string, string) {
 		return "", ""
 	}
 
-	return imgPath, imgPathSmall
+	idBig, _ := fBig.Id().(bson.ObjectId)
+	idSmall, _ := fSmall.Id().(bson.ObjectId)
+	return idBig, idSmall
+}
+
+func createCoverFile(name string) (*mgo.GridFile, error) {
+	fs := db.GetFS(FS_IMGS)
+	return fs.Create(name)
 }
 
 func resizeImg(imgReader io.Reader, width uint) (image.Image, error) {

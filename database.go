@@ -32,8 +32,8 @@ type Book struct {
 	Rights      string
 	Meta        string
 	File        bson.ObjectId
-	Cover       string
-	CoverSmall  string
+	Cover       bson.ObjectId
+	CoverSmall  bson.ObjectId
 	Active      bool
 	Keywords    []string
 }

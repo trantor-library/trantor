@@ -6,7 +6,6 @@ import (
 	"labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
-	"os"
 )
 
 type aboutData struct {
@@ -122,12 +121,6 @@ func main() {
 	db = initDB()
 	defer db.Close()
 
-	/* create the needed folders */
-	_, err := os.Stat(COVER_PATH)
-	if err != nil {
-		os.Mkdir(COVER_PATH, os.ModePerm)
-	}
-
 	/* set up web handlers */
 	r := mux.NewRouter()
 	r.HandleFunc("/", indexHandler)
@@ -146,11 +139,10 @@ func main() {
 	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", saveHandler).Methods("POST")
 	r.HandleFunc("/about/", aboutHandler)
 	r.HandleFunc("/books/{id:[0-9a-fA-F]+}", downloadHandler)
+	r.HandleFunc("/cover/{id:[0-9a-fA-F]+}/{size}/{img:.*}", coverHandler)
 	r.HandleFunc("/settings/", settingsHandler)
 	h := http.FileServer(http.Dir(IMG_PATH))
 	r.Handle("/img/{img}", http.StripPrefix("/img/", h))
-	h = http.FileServer(http.Dir(COVER_PATH))
-	r.Handle("/cover/{c}/{img}", http.StripPrefix("/cover/", h))
 	h = http.FileServer(http.Dir(CSS_PATH))
 	r.Handle("/css/{css}", http.StripPrefix("/css/", h))
 	h = http.FileServer(http.Dir(JS_PATH))

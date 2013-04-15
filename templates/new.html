@@ -26,7 +26,7 @@
 	{{with .B}}
 	<div class="row">
 		<div class="span1">
-		<p class="pull-right">{{if .CoverSmall}}<img src="/cover/{{.CoverSmall}}" alt="{{.Title}}" />{{end}}</p>
+		<p class="pull-right">{{if .CoverSmall}}<img src="/cover/{{.Id}}/small/{{.Title}}.jpg" alt="{{.Title}}" />{{end}}</p>
 		</div>
 		<div class="span9">
 		<p><a href="/search/?q=title:{{.Title}}"><strong>{{.Title}}</strong></a> <small>({{$titleFound}})</small><br />

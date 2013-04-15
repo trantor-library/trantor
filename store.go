@@ -6,11 +6,8 @@ import (
 	"io"
 	"io/ioutil"
 	"labix.org/v2/mgo/bson"
-	"os"
 	"regexp"
-	"strconv"
 	"strings"
-	"unicode/utf8"
 )
 
 func ParseFile(id bson.ObjectId) (string, error) {
@@ -94,29 +91,19 @@ func DeleteFile(id bson.ObjectId) error {
 	return fs.RemoveId(id)
 }
 
-func DeleteBook(book Book) {
-	if book.Cover != "" {
-		os.RemoveAll(book.Cover[1:])
-	}
-	if book.CoverSmall != "" {
-		os.RemoveAll(book.CoverSmall[1:])
-	}
-	DeleteFile(book.File)
+func DeleteCover(id bson.ObjectId) error {
+	fs := db.GetFS(FS_IMGS)
+	return fs.RemoveId(id)
 }
 
-func validFileName(path string, title string, extension string) string {
-	title = strings.Replace(title, "/", "_", -1)
-	title = strings.Replace(title, "?", "_", -1)
-	title = strings.Replace(title, "#", "_", -1)
-	r, _ := utf8.DecodeRuneInString(title)
-	folder := string(r)
-	file := folder + "/" + title + extension
-	_, err := os.Stat(path + file)
-	for i := 0; err == nil; i++ {
-		file = folder + "/" + title + "_" + strconv.Itoa(i) + extension
-		_, err = os.Stat(path + file)
+func DeleteBook(book Book) {
+	if book.Cover != "" {
+		DeleteCover(book.Cover)
 	}
-	return file
+	if book.CoverSmall != "" {
+		DeleteCover(book.CoverSmall)
+	}
+	DeleteFile(book.File)
 }
 
 func cleanStr(str string) string {
