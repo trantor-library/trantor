@@ -125,7 +125,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", indexHandler)
 	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", bookHandler)
-	r.HandleFunc("/search/{query}", searchHandler)
+	r.HandleFunc("/search/", searchHandler)
 	r.HandleFunc("/upload/", uploadHandler)
 	r.HandleFunc("/login/", loginHandler).Methods("POST")
 	r.HandleFunc("/logout/", logoutHandler)
