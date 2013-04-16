@@ -10,55 +10,6 @@ import (
 	"strings"
 )
 
-func ParseFile(id bson.ObjectId) (string, error) {
-	book := map[string]interface{}{}
-
-	e, err := OpenBook(id)
-	if err != nil {
-		return "", err
-	}
-	defer e.Close()
-
-	for _, m := range e.MetadataFields() {
-		data, err := e.Metadata(m)
-		if err != nil {
-			continue
-		}
-		switch m {
-		case "creator":
-			book["author"] = parseAuthr(data)
-		case "description":
-			book[m] = parseDescription(data)
-		case "subject":
-			book[m] = parseSubject(data)
-		case "date":
-			book[m] = parseDate(data)
-		case "language":
-			book["lang"] = data
-		case "title", "contributor", "publisher":
-			book[m] = cleanStr(strings.Join(data, ", "))
-		case "identifier":
-			attr, _ := e.MetadataAttr(m)
-			for i, d := range data {
-				if attr[i]["scheme"] == "ISBN" {
-					book["isbn"] = d
-				}
-			}
-		default:
-			book[m] = strings.Join(data, ", ")
-		}
-	}
-	title, _ := book["title"].(string)
-	book["file"] = id
-	cover, coverSmall := GetCover(e, title)
-	book["cover"] = cover
-	book["coversmall"] = coverSmall
-	book["keywords"] = keywords(book)
-
-	db.InsertBook(book)
-	return title, nil
-}
-
 func OpenBook(id bson.ObjectId) (*epubgo.Epub, error) {
 	fs := db.GetFS(FS_BOOKS)
 	f, err := fs.OpenId(id)
