@@ -10,46 +10,48 @@ import (
 	"strings"
 )
 
-func uploadHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "POST" {
-		sess := GetSession(r)
+func uploadPostHandler(w http.ResponseWriter, r *http.Request) {
+	sess := GetSession(r)
 
-		uploaded := ""
-		r.ParseMultipartForm(20000000)
-		filesForm := r.MultipartForm.File["epub"]
-		for _, f := range filesForm {
-			log.Println("File uploaded:", f.Filename)
-			file, err := f.Open()
-			if err != nil {
-				sess.Notify("Problem uploading!", "The file '" + f.Filename + "' is not a well formed epub: "+err.Error(), "error")
-				continue
-			}
-			defer file.Close()
-
-			epub, err := openMultipartEpub(file)
-			if err != nil {
-				sess.Notify("Problem uploading!", "The file '" + f.Filename + "' is not a well formed epub: "+err.Error(), "error")
-				continue
-			}
-			defer epub.Close()
-
-			book := parseFile(epub)
-			title, _ := book["title"].(string)
-			id, err := StoreNewFile(title, file)
-			if err != nil {
-				log.Println("Error storing book (", title, "):", err)
-				continue
-			}
-
-			book["file"] = id
-			db.InsertBook(book)
-			uploaded += " '" + title + "'"
+	uploaded := ""
+	r.ParseMultipartForm(20000000)
+	filesForm := r.MultipartForm.File["epub"]
+	for _, f := range filesForm {
+		log.Println("File uploaded:", f.Filename)
+		file, err := f.Open()
+		if err != nil {
+			sess.Notify("Problem uploading!", "The file '"+f.Filename+"' is not a well formed epub: "+err.Error(), "error")
+			continue
 		}
-		if uploaded != "" {
-			sess.Notify("Upload successful!", "Added the books:"+uploaded+". Thank you for your contribution", "success")
+		defer file.Close()
+
+		epub, err := openMultipartEpub(file)
+		if err != nil {
+			sess.Notify("Problem uploading!", "The file '"+f.Filename+"' is not a well formed epub: "+err.Error(), "error")
+			continue
 		}
+		defer epub.Close()
+
+		book := parseFile(epub)
+		title, _ := book["title"].(string)
+		id, err := StoreNewFile(title, file)
+		if err != nil {
+			log.Println("Error storing book (", title, "):", err)
+			continue
+		}
+
+		book["file"] = id
+		db.InsertBook(book)
+		uploaded += " '" + title + "'"
+	}
+	if uploaded != "" {
+		sess.Notify("Upload successful!", "Added the books:"+uploaded+". Thank you for your contribution", "success")
 	}
 
+	uploadHandler(w, r)
+}
+
+func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	var data uploadData
 	data.S = GetStatus(w, r)
 	data.S.Upload = true
