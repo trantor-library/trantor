@@ -121,7 +121,11 @@ func main() {
 	db = initDB()
 	defer db.Close()
 
-	/* set up web handlers */
+	setUpRouter()
+	panic(http.ListenAndServe(":"+PORT, nil))
+}
+
+func setUpRouter() {
 	r := mux.NewRouter()
 	r.HandleFunc("/", indexHandler)
 	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", bookHandler)
@@ -149,5 +153,4 @@ func main() {
 	h = http.FileServer(http.Dir(JS_PATH))
 	r.Handle("/js/{js}", http.StripPrefix("/js/", h))
 	http.Handle("/", r)
-	panic(http.ListenAndServe(":"+PORT, nil))
 }
