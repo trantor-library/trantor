@@ -127,49 +127,68 @@ func listChapters(nav *epubgo.NavigationIterator, depth int) []chapter {
 	return chapters
 }
 
-func readHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id := vars["id"]
-	file := vars["file"]
-	books, _, err := db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
-	if err != nil || len(books) == 0 {
-		http.NotFound(w, r)
-		return
-	}
-
-	var data readData
-	data.Book = books[0]
-	if !data.Book.Active {
-		sess := GetSession(r)
-		if sess.User == "" {
-			http.NotFound(w, r)
-			return
-		}
-		data.Back = "/new/"
-	} else {
-		data.Back = "/book/" + id
-	}
-	e, err := OpenBook(data.Book.File)
-	if err != nil {
+func readStartHandler(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	e, _ := openReadEpub(w, r)
+	if e == nil {
 		http.NotFound(w, r)
 		return
 	}
 	defer e.Close()
-	if file == "" {
-		it, err := e.Spine()
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		http.Redirect(w, r, "/read/"+id+"/"+it.Url(), http.StatusTemporaryRedirect)
+
+	it, err := e.Spine()
+	if err != nil {
+		http.NotFound(w, r)
 		return
 	}
+	http.Redirect(w, r, "/read/"+id+"/"+it.Url(), http.StatusTemporaryRedirect)
+}
 
+func readHandler(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+	file := mux.Vars(r)["file"]
+	e, book := openReadEpub(w, r)
+	if e == nil {
+		http.NotFound(w, r)
+		return
+	}
+	defer e.Close()
+
+	var data readData
 	data.S = GetStatus(w, r)
+	data.Book = book
+	if !book.Active {
+		data.Back = "/new/"
+	} else {
+		data.Back = "/book/" + id
+	}
+
 	data.Next, data.Prev = getNextPrev(e, file, id, "/read/")
 	data.Chapters = getChapters(e, file, id, "/read/")
 	data.Content = genLink(id, "/content/", file)
 	loadTemplate(w, "read", data)
+}
+
+func openReadEpub(w http.ResponseWriter, r *http.Request) (*epubgo.Epub, Book) {
+	var book Book
+	id := mux.Vars(r)["id"]
+	books, _, err := db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
+	if err != nil || len(books) == 0 {
+		return nil, book
+	}
+
+	book = books[0]
+	if !book.Active {
+		sess := GetSession(r)
+		if sess.User == "" {
+			return nil, book
+		}
+	}
+	e, err := OpenBook(book.File)
+	if err != nil {
+		return nil, book
+	}
+	return e, book
 }
 
 func contentHandler(w http.ResponseWriter, r *http.Request) {
