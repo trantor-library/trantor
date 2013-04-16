@@ -34,6 +34,7 @@ func uploadPostHandler(w http.ResponseWriter, r *http.Request) {
 
 		book := parseFile(epub)
 		title, _ := book["title"].(string)
+		file.Seek(0, 0)
 		id, err := StoreNewFile(title, file)
 		if err != nil {
 			log.Println("Error storing book (", title, "):", err)
