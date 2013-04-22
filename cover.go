@@ -56,9 +56,9 @@ func coverHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
-	imgPath, smallPath := searchCommonCoverNames(e, title)
-	if imgPath != "" {
-		return imgPath, smallPath
+	imgId, smallId := searchCommonCoverNames(e, title)
+	if imgId != "" {
+		return imgId, smallId
 	}
 
 	/* search for img on the text */
@@ -97,7 +97,7 @@ func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
 			img, err := e.OpenFile(url)
 			if err == nil {
 				defer img.Close()
-				return storeImg(img, title, string(res[2]))
+				return storeImg(img, title)
 			}
 		}
 		errNext = it.Next()
@@ -110,26 +110,24 @@ func searchCommonCoverNames(e *epubgo.Epub, title string) (bson.ObjectId, bson.O
 		img, err := e.OpenFile(p)
 		if err == nil {
 			defer img.Close()
-			return storeImg(img, title, ".jpg")
+			return storeImg(img, title)
 		}
 	}
 	return "", ""
 }
 
-func storeImg(img io.Reader, title, extension string) (bson.ObjectId, bson.ObjectId) {
+func storeImg(img io.Reader, title string) (bson.ObjectId, bson.ObjectId) {
 	/* open the files */
-	imgPath := title + extension
-	fBig, err := createCoverFile(imgPath)
+	fBig, err := createCoverFile(title)
 	if err != nil {
-		log.Println("Error creating", imgPath, ":", err.Error())
+		log.Println("Error creating", title, ":", err.Error())
 		return "", ""
 	}
 	defer fBig.Close()
 
-	imgPathSmall := title + "_small" + extension
-	fSmall, err := createCoverFile(imgPathSmall)
+	fSmall, err := createCoverFile(title + "_small")
 	if err != nil {
-		log.Println("Error creating", imgPathSmall, ":", err.Error())
+		log.Println("Error creating", title+"_small", ":", err.Error())
 		return "", ""
 	}
 	defer fSmall.Close()
@@ -164,9 +162,9 @@ func storeImg(img io.Reader, title, extension string) (bson.ObjectId, bson.Objec
 	return idBig, idSmall
 }
 
-func createCoverFile(name string) (*mgo.GridFile, error) {
+func createCoverFile(title string) (*mgo.GridFile, error) {
 	fs := db.GetFS(FS_IMGS)
-	return fs.Create(name)
+	return fs.Create(title + ".jpg")
 }
 
 func resizeImg(imgReader io.Reader, width uint) (image.Image, error) {
