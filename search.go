@@ -34,7 +34,7 @@ type searchData struct {
 	Prev  string
 }
 
-func searchHandler(w http.ResponseWriter, r *http.Request) {
+func searchHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

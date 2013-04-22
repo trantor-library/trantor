@@ -44,6 +44,7 @@ type DB struct {
 	books   *mgo.Collection
 	tags    *mgo.Collection
 	user    *mgo.Collection
+	stats   *mgo.Collection
 }
 
 func initDB() *DB {
@@ -59,6 +60,7 @@ func initDB() *DB {
 	d.books = database.C(BOOKS_COLL)
 	d.tags = database.C(TAGS_COLL)
 	d.user = database.C(USERS_COLL)
+	d.stats = database.C(STATS_COLL)
 	return d
 }
 
@@ -84,6 +86,10 @@ func (d *DB) UserValid(user string, pass string) bool {
 		return false
 	}
 	return n != 0
+}
+
+func (d *DB) InsertStats(stats interface{}) error {
+	return d.stats.Insert(stats)
 }
 
 func (d *DB) InsertBook(book interface{}) error {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"net/http"
@@ -42,6 +43,11 @@ func GetSession(r *http.Request) (s *Session) {
 		s.User, _ = s.S.Values["user"].(string)
 		s.Notif = getNotif(s.S)
 	}
+
+	if s.S.IsNew {
+		s.S.Values["id"] = hex.EncodeToString(securecookie.GenerateRandomKey(16))
+	}
+
 	return
 }
 
@@ -62,4 +68,9 @@ func (s *Session) Notify(title, msg, tpe string) {
 
 func (s *Session) Save(w http.ResponseWriter, r *http.Request) {
 	sesStore.Save(r, w, s.S)
+}
+
+func (s *Session) Id() string {
+	id, _ := s.S.Values["id"].(string)
+	return id
 }

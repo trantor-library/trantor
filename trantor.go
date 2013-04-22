@@ -12,15 +12,14 @@ type aboutData struct {
 	S Status
 }
 
-func aboutHandler(w http.ResponseWriter, r *http.Request) {
+func aboutHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var data aboutData
 	data.S = GetStatus(w, r)
 	data.S.About = true
 	loadTemplate(w, "about", data)
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
-	sess := GetSession(r)
+func logoutHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	sess.LogOut()
 	sess.Notify("Log out!", "Bye bye "+sess.User, "success")
 	sess.Save(w, r)
@@ -28,10 +27,9 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request) {
+func loginHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	user := r.FormValue("user")
 	pass := r.FormValue("pass")
-	sess := GetSession(r)
 	if db.UserValid(user, pass) {
 		log.Println("User", user, "log in")
 		sess.LogIn(user)
@@ -49,7 +47,7 @@ type bookData struct {
 	Book Book
 }
 
-func bookHandler(w http.ResponseWriter, r *http.Request) {
+func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var data bookData
 	data.S = GetStatus(w, r)
 	id := bson.ObjectIdHex(mux.Vars(r)["id"])
@@ -63,7 +61,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request) {
 	loadTemplate(w, "book", data)
 }
 
-func downloadHandler(w http.ResponseWriter, r *http.Request) {
+func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	id := bson.ObjectIdHex(mux.Vars(r)["id"])
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
@@ -105,7 +103,7 @@ type indexData struct {
 	Tags            []string
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request) {
+func indexHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var data indexData
 
 	data.Tags, _ = db.GetTags(TAGS_DISPLAY)
@@ -121,31 +119,33 @@ func main() {
 	db = initDB()
 	defer db.Close()
 
+	InitStats()
+
 	setUpRouter()
 	panic(http.ListenAndServe(":"+PORT, nil))
 }
 
 func setUpRouter() {
 	r := mux.NewRouter()
-	r.HandleFunc("/", indexHandler)
-	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", bookHandler)
-	r.HandleFunc("/search/", searchHandler)
-	r.HandleFunc("/upload/", uploadHandler).Methods("GET")
-	r.HandleFunc("/upload/", uploadPostHandler).Methods("POST")
-	r.HandleFunc("/login/", loginHandler).Methods("POST")
-	r.HandleFunc("/logout/", logoutHandler)
-	r.HandleFunc("/new/", newHandler)
-	r.HandleFunc("/store/{ids:([0-9a-fA-F]+/)+}", storeHandler)
-	r.HandleFunc("/delete/{ids:([0-9a-fA-F]+/)+}", deleteHandler)
-	r.HandleFunc("/read/{id:[0-9a-fA-F]+}", readStartHandler)
-	r.HandleFunc("/read/{id:[0-9a-fA-F]+}/{file:.*}", readHandler)
-	r.HandleFunc("/content/{id:[0-9a-fA-F]+}/{file:.*}", contentHandler)
-	r.HandleFunc("/edit/{id:[0-9a-fA-F]+}", editHandler)
-	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", saveHandler).Methods("POST")
-	r.HandleFunc("/about/", aboutHandler)
-	r.HandleFunc("/download/{id:[0-9a-fA-F]+}/{epub:.*}", downloadHandler)
+	r.HandleFunc("/", GatherStats(indexHandler))
+	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", GatherStats(bookHandler))
+	r.HandleFunc("/search/", GatherStats(searchHandler))
+	r.HandleFunc("/upload/", GatherStats(uploadHandler)).Methods("GET")
+	r.HandleFunc("/upload/", GatherStats(uploadPostHandler)).Methods("POST")
+	r.HandleFunc("/login/", GatherStats(loginHandler)).Methods("POST")
+	r.HandleFunc("/logout/", GatherStats(logoutHandler))
+	r.HandleFunc("/new/", GatherStats(newHandler))
+	r.HandleFunc("/store/{ids:([0-9a-fA-F]+/)+}", GatherStats(storeHandler))
+	r.HandleFunc("/delete/{ids:([0-9a-fA-F]+/)+}", GatherStats(deleteHandler))
+	r.HandleFunc("/read/{id:[0-9a-fA-F]+}", GatherStats(readStartHandler))
+	r.HandleFunc("/read/{id:[0-9a-fA-F]+}/{file:.*}", GatherStats(readHandler))
+	r.HandleFunc("/content/{id:[0-9a-fA-F]+}/{file:.*}", GatherStats(contentHandler))
+	r.HandleFunc("/edit/{id:[0-9a-fA-F]+}", GatherStats(editHandler))
+	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", GatherStats(saveHandler)).Methods("POST")
+	r.HandleFunc("/about/", GatherStats(aboutHandler))
+	r.HandleFunc("/download/{id:[0-9a-fA-F]+}/{epub:.*}", GatherStats(downloadHandler))
 	r.HandleFunc("/cover/{id:[0-9a-fA-F]+}/{size}/{img:.*}", coverHandler)
-	r.HandleFunc("/settings/", settingsHandler)
+	r.HandleFunc("/settings/", GatherStats(settingsHandler))
 	h := http.FileServer(http.Dir(IMG_PATH))
 	r.Handle("/img/{img}", http.StripPrefix("/img/", h))
 	h = http.FileServer(http.Dir(CSS_PATH))

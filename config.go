@@ -9,6 +9,7 @@ const (
 	BOOKS_COLL = "books"
 	TAGS_COLL  = "tags"
 	USERS_COLL = "users"
+	STATS_COLL = "statistics"
 	FS_BOOKS   = "fs_books"
 	FS_IMGS    = "fs_imgs"
 
@@ -26,4 +27,6 @@ const (
 	IMG_WIDTH_BIG   = 300
 	IMG_WIDTH_SMALL = 60
 	IMG_QUALITY     = 80
+
+	STATS_CHAN_SIZE = 100
 )

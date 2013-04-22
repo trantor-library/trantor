@@ -127,9 +127,9 @@ func listChapters(nav *epubgo.NavigationIterator, depth int) []chapter {
 	return chapters
 }
 
-func readStartHandler(w http.ResponseWriter, r *http.Request) {
+func readStartHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	id := mux.Vars(r)["id"]
-	e, _ := openReadEpub(w, r)
+	e, _ := openReadEpub(w, r, sess)
 	if e == nil {
 		http.NotFound(w, r)
 		return
@@ -144,10 +144,10 @@ func readStartHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/read/"+id+"/"+it.Url(), http.StatusTemporaryRedirect)
 }
 
-func readHandler(w http.ResponseWriter, r *http.Request) {
+func readHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	id := mux.Vars(r)["id"]
 	file := mux.Vars(r)["file"]
-	e, book := openReadEpub(w, r)
+	e, book := openReadEpub(w, r, sess)
 	if e == nil {
 		http.NotFound(w, r)
 		return
@@ -169,7 +169,7 @@ func readHandler(w http.ResponseWriter, r *http.Request) {
 	loadTemplate(w, "read", data)
 }
 
-func openReadEpub(w http.ResponseWriter, r *http.Request) (*epubgo.Epub, Book) {
+func openReadEpub(w http.ResponseWriter, r *http.Request, sess *Session) (*epubgo.Epub, Book) {
 	var book Book
 	id := mux.Vars(r)["id"]
 	books, _, err := db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
@@ -179,7 +179,6 @@ func openReadEpub(w http.ResponseWriter, r *http.Request) (*epubgo.Epub, Book) {
 
 	book = books[0]
 	if !book.Active {
-		sess := GetSession(r)
 		if sess.User == "" {
 			return nil, book
 		}
@@ -191,7 +190,7 @@ func openReadEpub(w http.ResponseWriter, r *http.Request) (*epubgo.Epub, Book) {
 	return e, book
 }
 
-func contentHandler(w http.ResponseWriter, r *http.Request) {
+func contentHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	file := vars["file"]
@@ -207,7 +206,6 @@ func contentHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	book := books[0]
 	if !book.Active {
-		sess := GetSession(r)
 		if sess.User == "" {
 			http.NotFound(w, r)
 			return

@@ -13,8 +13,7 @@ type settingsData struct {
 	S Status
 }
 
-func settingsHandler(w http.ResponseWriter, r *http.Request) {
-	sess := GetSession(r)
+func settingsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
 		http.NotFound(w, r)
 		return
@@ -39,8 +38,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request) {
 	loadTemplate(w, "settings", data)
 }
 
-func deleteHandler(w http.ResponseWriter, r *http.Request) {
-	sess := GetSession(r)
+func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
 		http.NotFound(w, r)
 		return
@@ -80,8 +78,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request) {
-	sess := GetSession(r)
+func editHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
 		http.NotFound(w, r)
 		return
@@ -109,8 +106,7 @@ func cleanEmptyStr(s []string) []string {
 	return res
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request) {
-	sess := GetSession(r)
+func saveHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
 		http.NotFound(w, r)
 		return
@@ -162,8 +158,7 @@ type newData struct {
 	Prev  string
 }
 
-func newHandler(w http.ResponseWriter, r *http.Request) {
-	sess := GetSession(r)
+func newHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
 		http.NotFound(w, r)
 		return
@@ -206,8 +201,7 @@ func newHandler(w http.ResponseWriter, r *http.Request) {
 	loadTemplate(w, "new", data)
 }
 
-func storeHandler(w http.ResponseWriter, r *http.Request) {
-	sess := GetSession(r)
+func storeHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
 		http.NotFound(w, r)
 		return

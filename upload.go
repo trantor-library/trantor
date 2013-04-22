@@ -10,9 +10,7 @@ import (
 	"strings"
 )
 
-func uploadPostHandler(w http.ResponseWriter, r *http.Request) {
-	sess := GetSession(r)
-
+func uploadPostHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	uploaded := ""
 	r.ParseMultipartForm(20000000)
 	filesForm := r.MultipartForm.File["epub"]
@@ -49,10 +47,10 @@ func uploadPostHandler(w http.ResponseWriter, r *http.Request) {
 		sess.Notify("Upload successful!", "Added the books:"+uploaded+". Thank you for your contribution", "success")
 	}
 
-	uploadHandler(w, r)
+	uploadHandler(w, r, sess)
 }
 
-func uploadHandler(w http.ResponseWriter, r *http.Request) {
+func uploadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var data uploadData
 	data.S = GetStatus(w, r)
 	data.S.Upload = true
