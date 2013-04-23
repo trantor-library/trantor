@@ -44,7 +44,7 @@ func statsWorker() {
 }
 
 func appendFiles(r *http.Request, stats map[string]interface{}) {
-	if r.Method == "POST" && r.MultipartForm.File != nil { //FIXM
+	if r.Method == "POST" && r.MultipartForm != nil {
 		files := r.MultipartForm.File
 		for key := range files {
 			list := make([]string, len(files[key]))
