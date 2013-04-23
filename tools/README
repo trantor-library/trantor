@@ -1,7 +1,9 @@
-Some tools to manage trantor:
+Some tools dirty to manage trantor:
 
 - adduser. Used to add users to trantor:
 $ adduser myNick
 Password:
 
 - update. Update the cover of all the books. It might be outdated.
+
+- togridfs (23/4/2013). Migrate all files and covers to gridfs
