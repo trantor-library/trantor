@@ -5,3 +5,4 @@ trantor
 .*.swp
 tools/adduser/adduser
 tools/update/update
+tools/togridfs/togridfs
