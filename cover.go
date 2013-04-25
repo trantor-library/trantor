@@ -1,5 +1,9 @@
 package main
 
+import _ "image/png"
+import _ "image/jpeg"
+import _ "image/gif"
+
 import (
 	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
