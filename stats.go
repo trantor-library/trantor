@@ -62,10 +62,13 @@ func appendMuxVars(vars map[string]string, stats map[string]interface{}) {
 		case key == "id":
 			stats["id"] = bson.ObjectIdHex(value)
 		case key == "ids":
+			var objectIds []bson.ObjectId
 			ids := strings.Split(value, "/")
-			objectIds := make([]bson.ObjectId, len(ids))
-			for i, id := range ids {
-				objectIds[i] = bson.ObjectIdHex(id)
+			for _, id := range ids {
+				if id == "" {
+					continue
+				}
+				objectIds = append(objectIds, bson.ObjectIdHex(id))
 			}
 			stats["ids"] = objectIds
 			stats["id"] = objectIds[0]
