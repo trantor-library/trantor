@@ -120,6 +120,7 @@ func main() {
 	defer db.Close()
 
 	InitStats()
+	InitUpload()
 
 	setUpRouter()
 	panic(http.ListenAndServe(":"+PORT, nil))

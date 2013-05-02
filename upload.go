@@ -10,43 +10,60 @@ import (
 	"strings"
 )
 
+func InitUpload() {
+	uploadChannel = make(chan uploadRequest, CHAN_SIZE)
+	go uploadWorker()
+}
+
+var uploadChannel chan uploadRequest
+
+type uploadRequest struct {
+	epubs []*multipart.FileHeader
+}
+
+func uploadWorker() {
+	for req := range uploadChannel {
+		for _, f := range req.epubs {
+			file, err := f.Open()
+			if err != nil {
+				log.Println("Can not open uploaded file", f.Filename, ":", err)
+				continue
+			}
+			defer file.Close()
+
+			epub, err := openMultipartEpub(file)
+			if err != nil {
+				log.Println("Not valid epub uploaded file", f.Filename, ":", err)
+				continue
+			}
+			defer epub.Close()
+
+			book := parseFile(epub)
+			title, _ := book["title"].(string)
+			file.Seek(0, 0)
+			id, err := StoreNewFile(title+".epub", file)
+			if err != nil {
+				log.Println("Error storing book (", title, "):", err)
+				continue
+			}
+
+			book["file"] = id
+			db.InsertBook(book)
+			log.Println("File uploaded:", f.Filename)
+		}
+	}
+}
+
 func uploadPostHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	uploaded := ""
 	r.ParseMultipartForm(20000000)
 	filesForm := r.MultipartForm.File["epub"]
-	for _, f := range filesForm {
-		log.Println("File uploaded:", f.Filename)
-		file, err := f.Open()
-		if err != nil {
-			sess.Notify("Problem uploading!", "The file '"+f.Filename+"' is not a well formed epub: "+err.Error(), "error")
-			continue
-		}
-		defer file.Close()
+	uploadChannel <- uploadRequest{filesForm}
 
-		epub, err := openMultipartEpub(file)
-		if err != nil {
-			sess.Notify("Problem uploading!", "The file '"+f.Filename+"' is not a well formed epub: "+err.Error(), "error")
-			continue
-		}
-		defer epub.Close()
-
-		book := parseFile(epub)
-		title, _ := book["title"].(string)
-		file.Seek(0, 0)
-		id, err := StoreNewFile(title+".epub", file)
-		if err != nil {
-			log.Println("Error storing book (", title, "):", err)
-			continue
-		}
-
-		book["file"] = id
-		db.InsertBook(book)
-		uploaded += " '" + title + "'"
+	if len(filesForm) > 0 {
+		sess.Notify("Upload successful!", "Thank you for your contribution", "success")
+	} else {
+		sess.Notify("Upload problem!", "No books where uploaded.", "error")
 	}
-	if uploaded != "" {
-		sess.Notify("Upload successful!", "Added the books:"+uploaded+". Thank you for your contribution", "success")
-	}
-
 	uploadHandler(w, r, sess)
 }
 

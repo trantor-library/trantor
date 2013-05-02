@@ -9,7 +9,7 @@ import (
 )
 
 func InitStats() {
-	statsChannel = make(chan statsRequest, STATS_CHAN_SIZE)
+	statsChannel = make(chan statsRequest, CHAN_SIZE)
 	go statsWorker()
 }
 
