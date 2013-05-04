@@ -246,3 +246,25 @@ func (d *DB) GetTags(numTags int) ([]string, error) {
 	}
 	return tags, nil
 }
+
+type visits struct {
+	Month string "_id"
+	Count int    "value"
+}
+
+func (d *DB) GetMonthVisits() ([]visits, error) {
+	var mr mgo.MapReduce
+	mr.Map = "function() { " +
+		"var month = this.date.getMonth() + 1;" +
+		"var year = this.date.getFullYear();" +
+		"emit(month + \".\" + year, 1);" +
+		"}"
+	mr.Reduce = "function(date, vals) { " +
+		"var count = 0;" +
+		"vals.forEach(function() { count += 1; });" +
+		"return count;" +
+		"}"
+	var result []visits
+	_, err := d.stats.Find(bson.M{}).MapReduce(&mr, &result)
+	return result, err
+}

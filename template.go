@@ -34,6 +34,7 @@ var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
 	TEMPLATE_PATH+"read.html",
 	TEMPLATE_PATH+"edit.html",
 	TEMPLATE_PATH+"settings.html",
+	TEMPLATE_PATH+"stats.html",
 ))
 
 func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {

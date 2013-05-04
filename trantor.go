@@ -147,6 +147,7 @@ func setUpRouter() {
 	r.HandleFunc("/download/{id:[0-9a-fA-F]+}/{epub:.*}", GatherStats(downloadHandler))
 	r.HandleFunc("/cover/{id:[0-9a-fA-F]+}/{size}/{img:.*}", coverHandler)
 	r.HandleFunc("/settings/", GatherStats(settingsHandler))
+	r.HandleFunc("/stats/", GatherStats(statsHandler))
 	h := http.FileServer(http.Dir(IMG_PATH))
 	r.Handle("/img/{img}", http.StripPrefix("/img/", h))
 	h = http.FileServer(http.Dir(CSS_PATH))

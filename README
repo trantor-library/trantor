@@ -94,6 +94,8 @@ file with the exception of:
   From the bootstrap framework: http://twitter.github.com/bootstrap/
 - js/jquery.js
   From jquery library: http://jquery.com/
+- js/Chart.min.js
+  From chart.js library: http://www.chartjs.org/
 - img/bright_squares.png
   From subtlepatterns: http://subtlepatterns.com/bright-squares/
 - css/FredokaOne.ttf css/PTSerif.ttf

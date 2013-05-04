@@ -43,6 +43,18 @@ func statsWorker() {
 	}
 }
 
+func statsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+	var data statsData
+	data.S = GetStatus(w, r)
+	data.Visits, _ = db.GetMonthVisits()
+	loadTemplate(w, "stats", data)
+}
+
+type statsData struct {
+	S      Status
+	Visits []visits
+}
+
 func appendFiles(r *http.Request, stats map[string]interface{}) {
 	if r.Method == "POST" && r.MultipartForm != nil {
 		files := r.MultipartForm.File
