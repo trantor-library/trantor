@@ -53,7 +53,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	id := bson.ObjectIdHex(mux.Vars(r)["id"])
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	db.IncVisit(id)
@@ -65,7 +65,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	id := bson.ObjectIdHex(mux.Vars(r)["id"])
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	book := books[0]
@@ -73,7 +73,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if !book.Active {
 		sess := GetSession(r)
 		if sess.User == "" {
-			http.NotFound(w, r)
+			notFound(w)
 			return
 		}
 	}
@@ -81,7 +81,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	fs := db.GetFS(FS_BOOKS)
 	f, err := fs.OpenId(book.File)
 	if err != nil {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	defer f.Close()
@@ -115,6 +115,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	loadTemplate(w, "index", data)
 }
 
+func notFound(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNotFound)
+	loadTemplate(w, "404", nil)
+}
+
 func main() {
 	db = initDB()
 	defer db.Close()
@@ -128,6 +133,10 @@ func main() {
 
 func setUpRouter() {
 	r := mux.NewRouter()
+	var notFoundHandler http.HandlerFunc
+	notFoundHandler = GatherStats(func(w http.ResponseWriter, r *http.Request, sess *Session) { notFound(w) })
+	r.NotFoundHandler = notFoundHandler
+
 	r.HandleFunc("/", GatherStats(indexHandler))
 	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", GatherStats(bookHandler))
 	r.HandleFunc("/search/", GatherStats(searchHandler))

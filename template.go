@@ -25,6 +25,7 @@ func GetStatus(w http.ResponseWriter, r *http.Request) Status {
 
 var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
 	TEMPLATE_PATH+"footer.html",
+	TEMPLATE_PATH+"404.html",
 	TEMPLATE_PATH+"index.html",
 	TEMPLATE_PATH+"about.html",
 	TEMPLATE_PATH+"book.html",

@@ -131,14 +131,14 @@ func readStartHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	id := mux.Vars(r)["id"]
 	e, _ := openReadEpub(w, r, sess)
 	if e == nil {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	defer e.Close()
 
 	it, err := e.Spine()
 	if err != nil {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	http.Redirect(w, r, "/read/"+id+"/"+it.Url(), http.StatusTemporaryRedirect)
@@ -149,7 +149,7 @@ func readHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	file := mux.Vars(r)["file"]
 	e, book := openReadEpub(w, r, sess)
 	if e == nil {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	defer e.Close()
@@ -195,32 +195,32 @@ func contentHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	id := vars["id"]
 	file := vars["file"]
 	if file == "" {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 
 	books, _, err := db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
 	if err != nil || len(books) == 0 {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	book := books[0]
 	if !book.Active {
 		if sess.User == "" {
-			http.NotFound(w, r)
+			notFound(w)
 			return
 		}
 	}
 	e, err := OpenBook(book.File)
 	if err != nil {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	defer e.Close()
 
 	html, err := e.OpenFile(file)
 	if err != nil {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	defer html.Close()
