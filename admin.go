@@ -48,7 +48,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var isNew bool
 	ids := strings.Split(mux.Vars(r)["ids"], "/")
 	for _, idStr := range ids {
-		if idStr == "" {
+		if !bson.IsObjectIdHex(idStr) {
 			continue
 		}
 
@@ -79,11 +79,12 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if sess.User == "" {
+	idStr := mux.Vars(r)["id"]
+	if sess.User == "" || !bson.IsObjectIdHex(idStr) {
 		notFound(w)
 		return
 	}
-	id := bson.ObjectIdHex(mux.Vars(r)["id"])
+	id := bson.ObjectIdHex(idStr)
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil {
 		notFound(w)
@@ -107,12 +108,12 @@ func cleanEmptyStr(s []string) []string {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if sess.User == "" {
+	idStr := mux.Vars(r)["id"]
+	if sess.User == "" || !bson.IsObjectIdHex(idStr) {
 		notFound(w)
 		return
 	}
 
-	idStr := mux.Vars(r)["id"]
 	id := bson.ObjectIdHex(idStr)
 	title := r.FormValue("title")
 	publisher := r.FormValue("publisher")
@@ -210,7 +211,7 @@ func storeHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var titles []string
 	ids := strings.Split(mux.Vars(r)["ids"], "/")
 	for _, idStr := range ids {
-		if idStr == "" {
+		if !bson.IsObjectIdHex(idStr) {
 			continue
 		}
 

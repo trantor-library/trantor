@@ -23,6 +23,10 @@ import (
 
 func coverHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	if !bson.IsObjectIdHex(vars["id"]) {
+		notFound(w)
+		return
+	}
 	id := bson.ObjectIdHex(vars["id"])
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {

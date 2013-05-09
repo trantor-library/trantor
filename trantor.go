@@ -48,9 +48,15 @@ type bookData struct {
 }
 
 func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+	idStr := mux.Vars(r)["id"]
+	if !bson.IsObjectIdHex(idStr) {
+		notFound(w)
+		return
+	}
+
 	var data bookData
 	data.S = GetStatus(w, r)
-	id := bson.ObjectIdHex(mux.Vars(r)["id"])
+	id := bson.ObjectIdHex(idStr)
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
 		notFound(w)
@@ -62,7 +68,13 @@ func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 }
 
 func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	id := bson.ObjectIdHex(mux.Vars(r)["id"])
+	idStr := mux.Vars(r)["id"]
+	if !bson.IsObjectIdHex(idStr) {
+		notFound(w)
+		return
+	}
+
+	id := bson.ObjectIdHex(idStr)
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
 		notFound(w)

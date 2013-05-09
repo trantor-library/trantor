@@ -172,6 +172,9 @@ func readHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 func openReadEpub(w http.ResponseWriter, r *http.Request, sess *Session) (*epubgo.Epub, Book) {
 	var book Book
 	id := mux.Vars(r)["id"]
+	if !bson.IsObjectIdHex(id) {
+		return nil, book
+	}
 	books, _, err := db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
 	if err != nil || len(books) == 0 {
 		return nil, book
@@ -194,7 +197,7 @@ func contentHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	file := vars["file"]
-	if file == "" {
+	if file == "" || !bson.IsObjectIdHex(id) {
 		notFound(w)
 		return
 	}
