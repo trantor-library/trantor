@@ -75,7 +75,9 @@ func getNextPrev(e *epubgo.Epub, file string, id string, base string) (string, s
 		return "", ""
 	}
 
-	prev = genLink(id, base, prev)
+	if prev != "" {
+		prev = genLink(id, base, prev)
+	}
 	if spine.Next() == nil {
 		next = genLink(id, base, spine.Url())
 	}
