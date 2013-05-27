@@ -23,10 +23,14 @@ import (
 
 func coverHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	if !bson.IsObjectIdHex(vars["id"]) {
+		notFound(w)
+		return
+	}
 	id := bson.ObjectIdHex(vars["id"])
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	book := books[0]
@@ -34,7 +38,7 @@ func coverHandler(w http.ResponseWriter, r *http.Request) {
 	if !book.Active {
 		sess := GetSession(r)
 		if sess.User == "" {
-			http.NotFound(w, r)
+			notFound(w)
 			return
 		}
 	}
@@ -48,7 +52,7 @@ func coverHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println("Error while opening image:", err)
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	defer f.Close()

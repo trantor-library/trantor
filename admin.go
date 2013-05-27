@@ -15,7 +15,7 @@ type settingsData struct {
 
 func settingsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 	if r.Method == "POST" {
@@ -40,7 +40,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 
 func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 
@@ -48,7 +48,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var isNew bool
 	ids := strings.Split(mux.Vars(r)["ids"], "/")
 	for _, idStr := range ids {
-		if idStr == "" {
+		if !bson.IsObjectIdHex(idStr) {
 			continue
 		}
 
@@ -79,14 +79,15 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 }
 
 func editHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if sess.User == "" {
-		http.NotFound(w, r)
+	idStr := mux.Vars(r)["id"]
+	if sess.User == "" || !bson.IsObjectIdHex(idStr) {
+		notFound(w)
 		return
 	}
-	id := bson.ObjectIdHex(mux.Vars(r)["id"])
+	id := bson.ObjectIdHex(idStr)
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 
@@ -107,12 +108,12 @@ func cleanEmptyStr(s []string) []string {
 }
 
 func saveHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if sess.User == "" {
-		http.NotFound(w, r)
+	idStr := mux.Vars(r)["id"]
+	if sess.User == "" || !bson.IsObjectIdHex(idStr) {
+		notFound(w)
 		return
 	}
 
-	idStr := mux.Vars(r)["id"]
 	id := bson.ObjectIdHex(idStr)
 	title := r.FormValue("title")
 	publisher := r.FormValue("publisher")
@@ -131,7 +132,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	book["keywords"] = keywords(book)
 	err := db.UpdateBook(id, book)
 	if err != nil {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 
@@ -160,7 +161,7 @@ type newData struct {
 
 func newHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 
@@ -203,14 +204,14 @@ func newHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 
 func storeHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
-		http.NotFound(w, r)
+		notFound(w)
 		return
 	}
 
 	var titles []string
 	ids := strings.Split(mux.Vars(r)["ids"], "/")
 	for _, idStr := range ids {
-		if idStr == "" {
+		if !bson.IsObjectIdHex(idStr) {
 			continue
 		}
 

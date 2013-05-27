@@ -72,18 +72,21 @@ func appendMuxVars(vars map[string]string, stats map[string]interface{}) {
 	for key, value := range vars {
 		switch {
 		case key == "id":
-			stats["id"] = bson.ObjectIdHex(value)
+			if bson.IsObjectIdHex(value) {
+				stats["id"] = bson.ObjectIdHex(value)
+			}
 		case key == "ids":
 			var objectIds []bson.ObjectId
 			ids := strings.Split(value, "/")
 			for _, id := range ids {
-				if id == "" {
-					continue
+				if bson.IsObjectIdHex(value) {
+					objectIds = append(objectIds, bson.ObjectIdHex(id))
 				}
-				objectIds = append(objectIds, bson.ObjectIdHex(id))
 			}
-			stats["ids"] = objectIds
-			stats["id"] = objectIds[0]
+			if len(objectIds) > 0 {
+				stats["ids"] = objectIds
+				stats["id"] = objectIds[0]
+			}
 		default:
 			stats[key] = value
 		}
