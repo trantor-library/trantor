@@ -60,16 +60,16 @@ function delBook(){
 		</div>
 	</div>
 	</div>
+{{end}}
 
 	<div class="row">
-	{{if .Description}}
 	<div class="span8">
-		<p>{{.Description}}</p>
-	</div>
+	{{range .Description}}
+		<p>{{.}}</p>
 	{{end}}
 	</div>
 	</div>
+	</div>
 </div>
-{{end}}
 
 {{template "footer.html"}}

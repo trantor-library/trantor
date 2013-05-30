@@ -87,7 +87,8 @@ func parseAuthr(creator []string) []string {
 }
 
 func parseDescription(description []string) string {
-	str := cleanStr(strings.Join(description, ", "))
+	str := cleanStr(strings.Join(description, "\n"))
+	str = strings.Replace(str, "</p>", "\n", -1)
 	exp, _ := regexp.Compile("<[^>]*>")
 	str = exp.ReplaceAllString(str, "")
 	str = strings.Replace(str, "&amp;", "&", -1)
