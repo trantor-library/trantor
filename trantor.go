@@ -6,6 +6,7 @@ import (
 	"labix.org/v2/mgo/bson"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type aboutData struct {
@@ -43,8 +44,9 @@ func loginHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 }
 
 type bookData struct {
-	S    Status
-	Book Book
+	S           Status
+	Book        Book
+	Description []string
 }
 
 func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
@@ -64,6 +66,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	}
 	db.IncVisit(id)
 	data.Book = books[0]
+	data.Description = strings.Split(data.Book.Description, "\n")
 	loadTemplate(w, "book", data)
 }
 
