@@ -7,3 +7,5 @@ Password:
 - update. Update the cover of all the books. It might be outdated.
 
 - togridfs (23/4/2013). Migrate all files and covers to gridfs
+
+- getISBNnDesc (31/5/2013). Import the ISBN and the description with changes of lines to the database
