@@ -4,6 +4,7 @@ import (
 	"github.com/gorilla/mux"
 	"labix.org/v2/mgo/bson"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -46,13 +47,44 @@ func statsWorker() {
 func statsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var data statsData
 	data.S = GetStatus(w, r)
-	data.Visits, _ = db.GetMonthVisits()
+	data.Daily = getDailyVisits()
+
 	loadTemplate(w, "stats", data)
 }
 
 type statsData struct {
-	S      Status
-	Visits []visits
+	S     Status
+	Daily []visitData
+}
+
+type visitData struct {
+	Label string
+	Count int
+}
+
+func getDailyVisits() []visitData {
+	const numDays = 30
+	visits := make([]visitData, numDays)
+
+	start := time.Now().Add(-numDays * 24 * time.Hour).Truncate(24 * time.Hour)
+	visit, _ := db.GetDayVisits(start)
+	prevDay := start.Day()
+	i := 0
+	for _, v := range visit {
+		day := time.Unix(v.Date/1000, 0).Day()
+		for prevDay+1 < day {
+			prevDay++
+			visits[i].Label = strconv.Itoa(prevDay)
+			visits[i].Count = 0
+			i++
+		}
+		visits[i].Label = strconv.Itoa(day)
+		visits[i].Count = v.Count
+		prevDay = day
+		i++
+	}
+
+	return visits
 }
 
 func appendFiles(r *http.Request, stats map[string]interface{}) {

@@ -3,28 +3,26 @@
 <script src="/js/Chart.min.js"></script>
 
 <div class="row">
-<div class="span8">
-	<h4>Visits:</h4>
-	<canvas id="visits" height="400"></canvas>
-</div>
+	<h4>Daily visits:</h4>
+	<canvas id="daily" height="400" width="800"></canvas>
 </div>
 
 <script type="text/javascript">
 	var data = {
-		labels : [{{range .Visits}}"{{.Month}}",{{end}}],
+		labels : [{{range .Daily}}"{{.Label}}",{{end}}],
 		datasets : [
 			{
 				fillColor : "rgba(151,187,205,0.5)",
 				strokeColor : "rgba(151,187,205,1)",
 				pointColor : "rgba(151,187,205,1)",
 				pointStrokeColor : "#fff",
-				data : [{{range .Visits}}{{.Count}},{{end}}]
+				data : [{{range .Daily}}{{.Count}},{{end}}]
 			}
 		]
 	}
 
 
-	var ctx = $("#visits").get(0).getContext("2d");
+	var ctx = $("#daily").get(0).getContext("2d");
 	new Chart(ctx).Line(data);
 </script>
 

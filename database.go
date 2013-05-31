@@ -247,24 +247,25 @@ func (d *DB) GetTags(numTags int) ([]string, error) {
 	return tags, nil
 }
 
-type visits struct {
-	Month string "_id"
-	Count int    "value"
+type Visits struct {
+	Date  int64 "_id"
+	Count int   "value"
 }
 
-func (d *DB) GetMonthVisits() ([]visits, error) {
+func (d *DB) GetDayVisits(start time.Time) ([]Visits, error) {
 	var mr mgo.MapReduce
-	mr.Map = "function() { " +
-		"var month = this.date.getMonth() + 1;" +
-		"var year = this.date.getFullYear();" +
-		"emit(month + \".\" + year, 1);" +
-		"}"
-	mr.Reduce = "function(date, vals) { " +
-		"var count = 0;" +
-		"vals.forEach(function() { count += 1; });" +
-		"return count;" +
-		"}"
-	var result []visits
-	_, err := d.stats.Find(bson.M{}).MapReduce(&mr, &result)
+	mr.Map = `function() {
+	              var day = Date.UTC(this.date.getFullYear(),
+		                         this.date.getMonth(),
+					 this.date.getDate());
+	              emit(day, 1);
+	          }`
+	mr.Reduce = `function(date, vals) {
+	                 var count = 0;
+	                 vals.forEach(function(v) { count += v; });
+	                 return count;
+	             }`
+	var result []Visits
+	_, err := d.stats.Find(bson.M{"date": bson.M{"$gte": start}}).MapReduce(&mr, &result)
 	return result, err
 }
