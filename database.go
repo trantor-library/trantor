@@ -208,14 +208,16 @@ func (d *DB) updateTags() error {
 	}
 
 	var mr mgo.MapReduce
-	mr.Map = "function() { " +
-		"if (this.active) { this.subject.forEach(function(s) { emit(s, 1); }); }" +
-		"}"
-	mr.Reduce = "function(tag, vals) { " +
-		"var count = 0;" +
-		"vals.forEach(function() { count += 1; });" +
-		"return count;" +
-		"}"
+	mr.Map = `function() {
+	              if (this.active) {
+	                  this.subject.forEach(function(s) { emit(s, 1); });
+	              }
+	          }`
+	mr.Reduce = `function(tag, vals) {
+	                 var count = 0;
+	                 vals.forEach(function() { count += 1; });
+	                 return count;
+	             }`
 	mr.Out = bson.M{"replace": TAGS_COLL}
 	_, err = d.books.Find(bson.M{"active": true}).MapReduce(&mr, nil)
 	if err != nil {
