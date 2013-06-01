@@ -13,6 +13,7 @@ type Status struct {
 	About  bool
 	Upload bool
 	Stats  bool
+	Help   bool
 }
 
 func GetStatus(w http.ResponseWriter, r *http.Request) Status {
@@ -37,6 +38,7 @@ var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
 	TEMPLATE_PATH+"edit.html",
 	TEMPLATE_PATH+"settings.html",
 	TEMPLATE_PATH+"stats.html",
+	TEMPLATE_PATH+"help.html",
 ))
 
 func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {

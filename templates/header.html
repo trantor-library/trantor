@@ -78,6 +78,9 @@
 		<form class="navbar-search pull-right" action="/search/">
 			<input type="search" class="search-query span3" name="q" {{if .Search}}value="{{.Search}}"{{else}}placeholder="Search"{{end}} />
 		</form>
+		<ul class="nav pull-right">
+			<li {{if .Help}}class="active"{{end}}><a href="/help/">Help</a></li>
+		</ul>
 	</div>
 </div>
 </div>

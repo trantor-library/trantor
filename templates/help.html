@@ -1,0 +1,19 @@
+{{template "header.html" .S}}
+
+<h4>Advanced Search</h4>
+<p>It is possible to search for books in an specific language adding <em>lang:code</em> to the search string. See for example some searches:
+<ul>
+	<li><a href="/search/?q=lang:en hacker">lang:en hacker</a></li>
+	<li><a href="/search/?q=lang:es">lang:es</a></li>
+	<li><a href="/search/?q=isaac asimov lang:fr">isaac asimov lang:fr</a></li>
+</ul>
+</p>
+
+<p>There is other topics than <em>lang</em> that can be used:
+<ul>
+	<li><a href="/search/?q=author:doctorow">author:doctorow</a></li>
+	<li><a href="/search/?q=subject:computers title:python">subject:computers title:python</a></li>
+</ul>
+</p>
+
+{{template "footer.html"}}

@@ -9,15 +9,22 @@ import (
 	"strings"
 )
 
-type aboutData struct {
+type statusData struct {
 	S Status
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	var data aboutData
+	var data statusData
 	data.S = GetStatus(w, r)
 	data.S.About = true
 	loadTemplate(w, "about", data)
+}
+
+func helpHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+	var data statusData
+	data.S = GetStatus(w, r)
+	data.S.Help = true
+	loadTemplate(w, "help", data)
 }
 
 func logoutHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
@@ -168,6 +175,7 @@ func setUpRouter() {
 	r.HandleFunc("/edit/{id:[0-9a-fA-F]+}", GatherStats(editHandler))
 	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", GatherStats(saveHandler)).Methods("POST")
 	r.HandleFunc("/about/", GatherStats(aboutHandler))
+	r.HandleFunc("/help/", GatherStats(helpHandler))
 	r.HandleFunc("/download/{id:[0-9a-fA-F]+}/{epub:.*}", GatherStats(downloadHandler))
 	r.HandleFunc("/cover/{id:[0-9a-fA-F]+}/{size}/{img:.*}", coverHandler)
 	r.HandleFunc("/settings/", GatherStats(settingsHandler))
