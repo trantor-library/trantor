@@ -67,7 +67,7 @@ type visitData struct {
 }
 
 func getHourlyVisits() []visitData {
-	const numDays = 2.5
+	const numDays = 2
 	var visits []visitData
 
 	start := time.Now().UTC().Add(-numDays * 24 * time.Hour)
