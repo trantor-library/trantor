@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-const (
-	META_TYPE_TAGS = "tags updated"
-)
-
 var db *DB
 
 type Book struct {
@@ -40,11 +36,10 @@ type Book struct {
 
 type DB struct {
 	session *mgo.Session
-	meta    *mgo.Collection
 	books   *mgo.Collection
-	tags    *mgo.Collection
 	user    *mgo.Collection
 	stats   *mgo.Collection
+	mr      *MR
 }
 
 func initDB() *DB {
@@ -56,11 +51,10 @@ func initDB() *DB {
 	}
 
 	database := d.session.DB(DB_NAME)
-	d.meta = database.C(META_COLL)
 	d.books = database.C(BOOKS_COLL)
-	d.tags = database.C(TAGS_COLL)
 	d.user = database.C(USERS_COLL)
 	d.stats = database.C(STATS_COLL)
+	d.mr = NewMR(database)
 	return d
 }
 
@@ -188,65 +182,8 @@ func (d *DB) GetFS(prefix string) *mgo.GridFS {
 	return d.session.DB(DB_NAME).GridFS(prefix)
 }
 
-func (d *DB) areTagsOutdated() bool {
-	var result struct {
-		Id bson.ObjectId `bson:"_id"`
-	}
-	err := d.meta.Find(bson.M{"type": META_TYPE_TAGS}).One(&result)
-	if err != nil {
-		return true
-	}
-
-	lastUpdate := result.Id.Time()
-	return time.Since(lastUpdate).Minutes() > MINUTES_UPDATE_TAGS
-}
-
-func (d *DB) updateTags() error {
-	_, err := d.meta.RemoveAll(bson.M{"type": META_TYPE_TAGS})
-	if err != nil {
-		return err
-	}
-
-	var mr mgo.MapReduce
-	mr.Map = `function() {
-	              if (this.active) {
-	                  this.subject.forEach(function(s) { emit(s, 1); });
-	              }
-	          }`
-	mr.Reduce = `function(tag, vals) {
-	                 var count = 0;
-	                 vals.forEach(function() { count += 1; });
-	                 return count;
-	             }`
-	mr.Out = bson.M{"replace": TAGS_COLL}
-	_, err = d.books.Find(bson.M{"active": true}).MapReduce(&mr, nil)
-	if err != nil {
-		return err
-	}
-
-	return d.meta.Insert(bson.M{"type": META_TYPE_TAGS})
-}
-
 func (d *DB) GetTags(numTags int) ([]string, error) {
-	if d.areTagsOutdated() {
-		err := d.updateTags()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	var result []struct {
-		Tag string "_id"
-	}
-	err := d.tags.Find(nil).Sort("-value").Limit(numTags).All(&result)
-	if err != nil {
-		return nil, err
-	}
-	tags := make([]string, len(result))
-	for i, r := range result {
-		tags[i] = r.Tag
-	}
-	return tags, nil
+	return d.mr.GetTags(numTags, d.books)
 }
 
 type Visits struct {
@@ -255,19 +192,5 @@ type Visits struct {
 }
 
 func (d *DB) GetDayVisits(start time.Time) ([]Visits, error) {
-	var mr mgo.MapReduce
-	mr.Map = `function() {
-	              var day = Date.UTC(this.date.getFullYear(),
-		                         this.date.getMonth(),
-					 this.date.getDate());
-	              emit(day, 1);
-	          }`
-	mr.Reduce = `function(date, vals) {
-	                 var count = 0;
-	                 vals.forEach(function(v) { count += v; });
-	                 return count;
-	             }`
-	var result []Visits
-	_, err := d.stats.Find(bson.M{"date": bson.M{"$gte": start}}).MapReduce(&mr, &result)
-	return result, err
+	return d.mr.GetDayVisits(start, d.stats)
 }
