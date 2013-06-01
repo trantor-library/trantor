@@ -9,6 +9,8 @@ import (
 type MR struct {
 	meta        *mgo.Collection
 	tags        *mgo.Collection
+	visited     *mgo.Collection
+	downloaded  *mgo.Collection
 	hourly_raw  *mgo.Collection
 	daily_raw   *mgo.Collection
 	monthly_raw *mgo.Collection
@@ -21,6 +23,8 @@ func NewMR(database *mgo.Database) *MR {
 	m := new(MR)
 	m.meta = database.C(META_COLL)
 	m.tags = database.C(TAGS_COLL)
+	m.visited = database.C(VISITED_COLL)
+	m.downloaded = database.C(DOWNLOADED_COLL)
 	m.hourly_raw = database.C(HOURLY_VISITS_COLL + "_raw")
 	m.daily_raw = database.C(DAILY_VISITS_COLL + "_raw")
 	m.monthly_raw = database.C(MONTHLY_VISITS_COLL + "_raw")
@@ -62,6 +66,70 @@ func (m *MR) GetTags(numTags int, booksColl *mgo.Collection) ([]string, error) {
 		tags[i] = r.Tag
 	}
 	return tags, nil
+}
+
+func (m *MR) GetMostVisited(num int, statsColl *mgo.Collection) ([]bson.ObjectId, error) {
+	if m.isOutdated(VISITED_COLL, MINUTES_UPDATE_VISITED) {
+		var mr mgo.MapReduce
+		mr.Map = `function() {
+		              emit(this.id, 1);
+			  }`
+		mr.Reduce = `function(tag, vals) {
+				 var count = 0;
+				 vals.forEach(function() { count += 1; });
+				 return count;
+			     }`
+		err := m.update(&mr, bson.M{"section": "book"}, statsColl, VISITED_COLL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var result []struct {
+		Book bson.ObjectId "_id"
+	}
+	err := m.visited.Find(nil).Sort("-value").Limit(num).All(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	books := make([]bson.ObjectId, len(result))
+	for i, r := range result {
+		books[i] = r.Book
+	}
+	return books, nil
+}
+
+func (m *MR) GetMostDownloaded(num int, statsColl *mgo.Collection) ([]bson.ObjectId, error) {
+	if m.isOutdated(DOWNLOADED_COLL, MINUTES_UPDATE_DOWNLOADED) {
+		var mr mgo.MapReduce
+		mr.Map = `function() {
+		              emit(this.id, 1);
+			  }`
+		mr.Reduce = `function(tag, vals) {
+				 var count = 0;
+				 vals.forEach(function() { count += 1; });
+				 return count;
+			     }`
+		err := m.update(&mr, bson.M{"section": "download"}, statsColl, DOWNLOADED_COLL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var result []struct {
+		Book bson.ObjectId "_id"
+	}
+	err := m.downloaded.Find(nil).Sort("-value").Limit(num).All(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	books := make([]bson.ObjectId, len(result))
+	for i, r := range result {
+		books[i] = r.Book
+	}
+	return books, nil
 }
 
 func (m *MR) GetHourVisits(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {

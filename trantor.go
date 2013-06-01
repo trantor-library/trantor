@@ -71,7 +71,6 @@ func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 		notFound(w)
 		return
 	}
-	db.IncVisit(id)
 	data.Book = books[0]
 	data.Description = strings.Split(data.Book.Description, "\n")
 	loadTemplate(w, "book", data)
@@ -113,7 +112,6 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	headers["Content-Disposition"] = []string{"attachment; filename=\"" + f.Name() + "\""}
 
 	io.Copy(w, f)
-	db.IncDownload(id)
 }
 
 type indexData struct {

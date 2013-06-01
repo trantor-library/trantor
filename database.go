@@ -98,14 +98,6 @@ func (d *DB) UpdateBook(id bson.ObjectId, data interface{}) error {
 	return d.books.Update(bson.M{"_id": id}, bson.M{"$set": data})
 }
 
-func (d *DB) IncVisit(id bson.ObjectId) error {
-	return d.books.Update(bson.M{"_id": id}, bson.M{"$inc": bson.M{"VisitsCount": 1}})
-}
-
-func (d *DB) IncDownload(id bson.ObjectId) error {
-	return d.books.Update(bson.M{"_id": id}, bson.M{"$inc": bson.M{"DownloadCount": 1}})
-}
-
 /* optional parameters: length and start index
  *
  * Returns: list of books, number found and err
@@ -140,11 +132,15 @@ func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error)
 /* Get the most visited books
  */
 func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
-	var q *mgo.Query
-	q = d.books.Find(bson.M{"active": true}).Sort("-VisitsCount").Limit(num)
-	err = q.All(&books)
-	for i, b := range books {
-		books[i].Id = bson.ObjectId(b.Id).Hex()
+	bookId, err := d.mr.GetMostVisited(num, d.stats)
+	if err != nil {
+		return nil, err
+	}
+
+	books = make([]Book, num)
+	for i, id := range bookId {
+		d.books.Find(bson.M{"_id": id}).One(&books[i])
+		books[i].Id = bson.ObjectId(books[i].Id).Hex()
 	}
 	return
 }
@@ -152,11 +148,15 @@ func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
 /* Get the most downloaded books
  */
 func (d *DB) GetDownloadedBooks(num int) (books []Book, err error) {
-	var q *mgo.Query
-	q = d.books.Find(bson.M{"active": true}).Sort("-DownloadCount").Limit(num)
-	err = q.All(&books)
-	for i, b := range books {
-		books[i].Id = bson.ObjectId(b.Id).Hex()
+	bookId, err := d.mr.GetMostDownloaded(num, d.stats)
+	if err != nil {
+		return nil, err
+	}
+
+	books = make([]Book, num)
+	for i, id := range bookId {
+		d.books.Find(bson.M{"_id": id}).One(&books[i])
+		books[i].Id = bson.ObjectId(books[i].Id).Hex()
 	}
 	return
 }
