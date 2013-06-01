@@ -47,6 +47,7 @@ func statsWorker() {
 func statsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var data statsData
 	data.S = GetStatus(w, r)
+	data.S.Stats = true
 	data.Hourly = getHourlyVisits()
 	data.Daily = getDailyVisits()
 	data.Monthly = getMonthlyVisits()

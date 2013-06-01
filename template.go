@@ -12,6 +12,7 @@ type Status struct {
 	Home   bool
 	About  bool
 	Upload bool
+	Stats  bool
 }
 
 func GetStatus(w http.ResponseWriter, r *http.Request) Status {
