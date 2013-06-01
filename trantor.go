@@ -59,7 +59,7 @@ type bookData struct {
 func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	idStr := mux.Vars(r)["id"]
 	if !bson.IsObjectIdHex(idStr) {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 
@@ -68,7 +68,7 @@ func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	id := bson.ObjectIdHex(idStr)
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 	data.Book = books[0]
@@ -79,14 +79,14 @@ func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	idStr := mux.Vars(r)["id"]
 	if !bson.IsObjectIdHex(idStr) {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 
 	id := bson.ObjectIdHex(idStr)
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 	book := books[0]
@@ -94,7 +94,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if !book.Active {
 		sess := GetSession(r)
 		if sess.User == "" {
-			notFound(w)
+			notFound(w, r)
 			return
 		}
 	}
@@ -102,7 +102,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	fs := db.GetFS(FS_BOOKS)
 	f, err := fs.OpenId(book.File)
 	if err != nil {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 	defer f.Close()
@@ -135,9 +135,12 @@ func indexHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	loadTemplate(w, "index", data)
 }
 
-func notFound(w http.ResponseWriter) {
+func notFound(w http.ResponseWriter, r *http.Request) {
+	var data statusData
+
+	data.S = GetStatus(w, r)
 	w.WriteHeader(http.StatusNotFound)
-	loadTemplate(w, "404", nil)
+	loadTemplate(w, "404", data)
 }
 
 func main() {
@@ -154,7 +157,7 @@ func main() {
 func setUpRouter() {
 	r := mux.NewRouter()
 	var notFoundHandler http.HandlerFunc
-	notFoundHandler = GatherStats(func(w http.ResponseWriter, r *http.Request, sess *Session) { notFound(w) })
+	notFoundHandler = GatherStats(func(w http.ResponseWriter, r *http.Request, sess *Session) { notFound(w, r) })
 	r.NotFoundHandler = notFoundHandler
 
 	r.HandleFunc("/", GatherStats(indexHandler))

@@ -15,7 +15,7 @@ type settingsData struct {
 
 func settingsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 	if r.Method == "POST" {
@@ -40,7 +40,7 @@ func settingsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 
 func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 
@@ -81,13 +81,13 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 func editHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	idStr := mux.Vars(r)["id"]
 	if sess.User == "" || !bson.IsObjectIdHex(idStr) {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 	id := bson.ObjectIdHex(idStr)
 	books, _, err := db.GetBooks(bson.M{"_id": id})
 	if err != nil {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 
@@ -110,7 +110,7 @@ func cleanEmptyStr(s []string) []string {
 func saveHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	idStr := mux.Vars(r)["id"]
 	if sess.User == "" || !bson.IsObjectIdHex(idStr) {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 
@@ -132,7 +132,7 @@ func saveHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	book["keywords"] = keywords(book)
 	err := db.UpdateBook(id, book)
 	if err != nil {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 
@@ -161,7 +161,7 @@ type newData struct {
 
 func newHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 
@@ -204,7 +204,7 @@ func newHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 
 func storeHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if sess.User == "" {
-		notFound(w)
+		notFound(w, r)
 		return
 	}
 
