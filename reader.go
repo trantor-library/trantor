@@ -184,7 +184,7 @@ func openReadEpub(w http.ResponseWriter, r *http.Request, sess *Session) (*epubg
 
 	book = books[0]
 	if !book.Active {
-		if sess.User == "" {
+		if !sess.IsAdmin() {
 			return nil, book
 		}
 	}
@@ -211,7 +211,7 @@ func contentHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	}
 	book := books[0]
 	if !book.Active {
-		if sess.User == "" {
+		if !sess.IsAdmin() {
 			notFound(w, r)
 			return
 		}

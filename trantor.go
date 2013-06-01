@@ -93,7 +93,7 @@ func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 
 	if !book.Active {
 		sess := GetSession(r)
-		if sess.User == "" {
+		if !sess.IsAdmin() {
 			notFound(w, r)
 			return
 		}

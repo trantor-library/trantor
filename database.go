@@ -82,6 +82,18 @@ func (d *DB) UserValid(user string, pass string) bool {
 	return n != 0
 }
 
+func (d *DB) UserRole(user string) string {
+	type result struct {
+		Role string
+	}
+	res := result{}
+	err := d.user.Find(bson.M{"user": user}).One(&res)
+	if err != nil {
+		return ""
+	}
+	return res.Role
+}
+
 func (d *DB) InsertStats(stats interface{}) error {
 	return d.stats.Insert(stats)
 }

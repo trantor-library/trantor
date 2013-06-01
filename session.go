@@ -17,6 +17,7 @@ type Notification struct {
 
 type Session struct {
 	User  string
+	Role  string
 	Notif []Notification
 	S     *sessions.Session
 }
@@ -41,6 +42,7 @@ func GetSession(r *http.Request) (s *Session) {
 	s.S, err = sesStore.Get(r, "session")
 	if err == nil && !s.S.IsNew {
 		s.User, _ = s.S.Values["user"].(string)
+		s.Role = db.UserRole(s.User)
 		s.Notif = getNotif(s.S)
 	}
 
@@ -73,4 +75,8 @@ func (s *Session) Save(w http.ResponseWriter, r *http.Request) {
 func (s *Session) Id() string {
 	id, _ := s.S.Values["id"].(string)
 	return id
+}
+
+func (s *Session) IsAdmin() bool {
+	return s.Role == "admin"
 }
