@@ -47,14 +47,18 @@ func statsWorker() {
 func statsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var data statsData
 	data.S = GetStatus(w, r)
+	data.Hourly = getHourlyVisits()
 	data.Daily = getDailyVisits()
+	data.Monthly = getMonthlyVisits()
 
 	loadTemplate(w, "stats", data)
 }
 
 type statsData struct {
-	S     Status
-	Daily []visitData
+	S       Status
+	Hourly  []visitData
+	Daily   []visitData
+	Monthly []visitData
 }
 
 type visitData struct {
@@ -62,26 +66,52 @@ type visitData struct {
 	Count int
 }
 
+func getHourlyVisits() []visitData {
+	const numDays = 2.5
+	var visits []visitData
+
+	start := time.Now().UTC().Add(-numDays * 24 * time.Hour)
+	visit, _ := db.GetHourVisits(start)
+	for _, v := range visit {
+		var elem visitData
+		hour := time.Unix(v.Date/1000, 0).UTC().Hour()
+		elem.Label = strconv.Itoa(hour + 1)
+		elem.Count = v.Count
+		visits = append(visits, elem)
+	}
+
+	return visits
+}
+
 func getDailyVisits() []visitData {
 	const numDays = 30
-	visits := make([]visitData, numDays)
+	var visits []visitData
 
-	start := time.Now().Add(-numDays * 24 * time.Hour).Truncate(24 * time.Hour)
+	start := time.Now().UTC().Add(-numDays * 24 * time.Hour).Truncate(24 * time.Hour)
 	visit, _ := db.GetDayVisits(start)
-	prevDay := start.Day()
-	i := 0
 	for _, v := range visit {
-		day := time.Unix(v.Date/1000, 0).Day()
-		for prevDay+1 < day {
-			prevDay++
-			visits[i].Label = strconv.Itoa(prevDay)
-			visits[i].Count = 0
-			i++
-		}
-		visits[i].Label = strconv.Itoa(day)
-		visits[i].Count = v.Count
-		prevDay = day
-		i++
+		var elem visitData
+		day := time.Unix(v.Date/1000, 0).UTC().Day()
+		elem.Label = strconv.Itoa(day)
+		elem.Count = v.Count
+		visits = append(visits, elem)
+	}
+
+	return visits
+}
+
+func getMonthlyVisits() []visitData {
+	const numDays = 365
+	var visits []visitData
+
+	start := time.Now().UTC().Add(-numDays * 24 * time.Hour).Truncate(24 * time.Hour)
+	visit, _ := db.GetMonthVisits(start)
+	for _, v := range visit {
+		var elem visitData
+		month := time.Unix(v.Date/1000, 0).UTC().Month()
+		elem.Label = month.String()
+		elem.Count = v.Count
+		visits = append(visits, elem)
 	}
 
 	return visits

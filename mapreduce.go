@@ -7,16 +7,20 @@ import (
 )
 
 type MR struct {
-	meta  *mgo.Collection
-	tags  *mgo.Collection
-	daily *mgo.Collection
+	meta    *mgo.Collection
+	tags    *mgo.Collection
+	hourly  *mgo.Collection
+	daily   *mgo.Collection
+	monthly *mgo.Collection
 }
 
 func NewMR(database *mgo.Database) *MR {
 	m := new(MR)
 	m.meta = database.C(META_COLL)
 	m.tags = database.C(TAGS_COLL)
+	m.hourly = database.C(HOURLY_VISITS_COLL)
 	m.daily = database.C(DAILY_VISITS_COLL)
+	m.monthly = database.C(MONTHLY_VISITS_COLL)
 	return m
 }
 
@@ -54,15 +58,41 @@ func (m *MR) GetTags(numTags int, booksColl *mgo.Collection) ([]string, error) {
 	return tags, nil
 }
 
+func (m *MR) GetHourVisits(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {
+	if m.isOutdated(HOURLY_VISITS_COLL, MINUTES_UPDATE_HOURLY) {
+		var mr mgo.MapReduce
+		mr.Map = `function() {
+		              var day = Date.UTC(this.date.getUTCFullYear(),
+		                                 this.date.getUTCMonth(),
+		                                 this.date.getUTCDate(),
+	                                         this.date.getUTCHours());
+		              emit(day, 1);
+		          }`
+		mr.Reduce = `function(date, vals) {
+				 var count = 0;
+				 vals.forEach(function(v) { count += v; });
+				 return count;
+			     }`
+		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, HOURLY_VISITS_COLL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var result []Visits
+	err := m.hourly.Find(nil).All(&result)
+	return result, err
+}
+
 func (m *MR) GetDayVisits(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {
 	if m.isOutdated(DAILY_VISITS_COLL, MINUTES_UPDATE_DAILY) {
 		var mr mgo.MapReduce
 		mr.Map = `function() {
-			      var day = Date.UTC(this.date.getFullYear(),
-						 this.date.getMonth(),
-						 this.date.getDate());
-			      emit(day, 1);
-			  }`
+		              var day = Date.UTC(this.date.getUTCFullYear(),
+		                                 this.date.getUTCMonth(),
+		                                 this.date.getUTCDate());
+		              emit(day, 1);
+		          }`
 		mr.Reduce = `function(date, vals) {
 				 var count = 0;
 				 vals.forEach(function(v) { count += v; });
@@ -76,6 +106,30 @@ func (m *MR) GetDayVisits(start time.Time, statsColl *mgo.Collection) ([]Visits,
 
 	var result []Visits
 	err := m.daily.Find(nil).All(&result)
+	return result, err
+}
+
+func (m *MR) GetMonthVisits(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {
+	if m.isOutdated(MONTHLY_VISITS_COLL, MINUTES_UPDATE_MONTHLY) {
+		var mr mgo.MapReduce
+		mr.Map = `function() {
+		              var day = Date.UTC(this.date.getUTCFullYear(),
+		                                 this.date.getUTCMonth());
+		              emit(day, 1);
+		          }`
+		mr.Reduce = `function(date, vals) {
+				 var count = 0;
+				 vals.forEach(function(v) { count += v; });
+				 return count;
+			     }`
+		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, MONTHLY_VISITS_COLL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var result []Visits
+	err := m.monthly.Find(nil).All(&result)
 	return result, err
 }
 

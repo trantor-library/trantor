@@ -3,27 +3,39 @@
 <script src="/js/Chart.min.js"></script>
 
 <div class="row">
+	<h4>Hourly visits:</h4>
+	<canvas id="hourly" height="400" width="800"></canvas>
 	<h4>Daily visits:</h4>
 	<canvas id="daily" height="400" width="800"></canvas>
+	<h4>Monthly visits:</h4>
+	<canvas id="monthly" height="400" width="800"></canvas>
 </div>
 
 <script type="text/javascript">
-	var data = {
-		labels : [{{range .Daily}}"{{.Label}}",{{end}}],
-		datasets : [
-			{
-				fillColor : "rgba(151,187,205,0.5)",
-				strokeColor : "rgba(151,187,205,1)",
-				pointColor : "rgba(151,187,205,1)",
-				pointStrokeColor : "#fff",
-				data : [{{range .Daily}}{{.Count}},{{end}}]
-			}
-		]
+	function chart(id, labels, counts) {
+		var data = {
+			labels : labels,
+			datasets : [
+				{
+					fillColor : "rgba(151,187,205,0.5)",
+					strokeColor : "rgba(151,187,205,1)",
+					pointColor : "rgba(151,187,205,1)",
+					pointStrokeColor : "#fff",
+					data : counts
+				}
+			]
+		}
+
+		var ctx = $(id).get(0).getContext("2d");
+		new Chart(ctx).Line(data);
 	}
 
-
-	var ctx = $("#daily").get(0).getContext("2d");
-	new Chart(ctx).Line(data);
+	chart("#hourly", [{{range .Hourly}}"{{.Label}}",{{end}}],
+			 [{{range .Hourly}}{{.Count}},{{end}}])
+	chart("#daily", [{{range .Daily}}"{{.Label}}",{{end}}],
+			[{{range .Daily}}{{.Count}},{{end}}])
+	chart("#monthly", [{{range .Monthly}}"{{.Label}}",{{end}}],
+			  [{{range .Monthly}}{{.Count}},{{end}}])
 </script>
 
 {{template "footer.html"}}

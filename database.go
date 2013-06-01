@@ -191,6 +191,14 @@ type Visits struct {
 	Count int   "value"
 }
 
+func (d *DB) GetHourVisits(start time.Time) ([]Visits, error) {
+	return d.mr.GetHourVisits(start, d.stats)
+}
+
 func (d *DB) GetDayVisits(start time.Time) ([]Visits, error) {
 	return d.mr.GetDayVisits(start, d.stats)
+}
+
+func (d *DB) GetMonthVisits(start time.Time) ([]Visits, error) {
+	return d.mr.GetMonthVisits(start, d.stats)
 }
