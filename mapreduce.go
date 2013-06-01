@@ -7,17 +7,23 @@ import (
 )
 
 type MR struct {
-	meta    *mgo.Collection
-	tags    *mgo.Collection
-	hourly  *mgo.Collection
-	daily   *mgo.Collection
-	monthly *mgo.Collection
+	meta        *mgo.Collection
+	tags        *mgo.Collection
+	hourly_raw  *mgo.Collection
+	daily_raw   *mgo.Collection
+	monthly_raw *mgo.Collection
+	hourly      *mgo.Collection
+	daily       *mgo.Collection
+	monthly     *mgo.Collection
 }
 
 func NewMR(database *mgo.Database) *MR {
 	m := new(MR)
 	m.meta = database.C(META_COLL)
 	m.tags = database.C(TAGS_COLL)
+	m.hourly_raw = database.C(HOURLY_VISITS_COLL + "_raw")
+	m.daily_raw = database.C(DAILY_VISITS_COLL + "_raw")
+	m.monthly_raw = database.C(MONTHLY_VISITS_COLL + "_raw")
 	m.hourly = database.C(HOURLY_VISITS_COLL)
 	m.daily = database.C(DAILY_VISITS_COLL)
 	m.monthly = database.C(MONTHLY_VISITS_COLL)
@@ -60,20 +66,30 @@ func (m *MR) GetTags(numTags int, booksColl *mgo.Collection) ([]string, error) {
 
 func (m *MR) GetHourVisits(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {
 	if m.isOutdated(HOURLY_VISITS_COLL, MINUTES_UPDATE_HOURLY) {
+		const reduce = `function(date, vals) {
+		                    var count = 0;
+		                    vals.forEach(function(v) { count += v; });
+		                    return count;
+		                }`
 		var mr mgo.MapReduce
 		mr.Map = `function() {
-		              var day = Date.UTC(this.date.getUTCFullYear(),
-		                                 this.date.getUTCMonth(),
-		                                 this.date.getUTCDate(),
-	                                         this.date.getUTCHours());
-		              emit(day, 1);
+		              var date = Date.UTC(this.date.getUTCFullYear(),
+		                                  this.date.getUTCMonth(),
+		                                  this.date.getUTCDate(),
+	                                          this.date.getUTCHours());
+		              emit({date: date, session: this.session}, 1);
 		          }`
-		mr.Reduce = `function(date, vals) {
-				 var count = 0;
-				 vals.forEach(function(v) { count += v; });
-				 return count;
-			     }`
-		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, HOURLY_VISITS_COLL)
+		mr.Reduce = reduce
+		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, HOURLY_VISITS_COLL+"_raw")
+		if err != nil {
+			return nil, err
+		}
+		var mr2 mgo.MapReduce
+		mr2.Map = `function() {
+		               emit(this['_id']['date'], 1);
+		           }`
+		mr2.Reduce = reduce
+		err = m.update(&mr2, bson.M{}, m.hourly_raw, HOURLY_VISITS_COLL)
 		if err != nil {
 			return nil, err
 		}
@@ -86,19 +102,29 @@ func (m *MR) GetHourVisits(start time.Time, statsColl *mgo.Collection) ([]Visits
 
 func (m *MR) GetDayVisits(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {
 	if m.isOutdated(DAILY_VISITS_COLL, MINUTES_UPDATE_DAILY) {
+		const reduce = `function(date, vals) {
+		                    var count = 0;
+		                    vals.forEach(function(v) { count += v; });
+		                    return count;
+		                }`
 		var mr mgo.MapReduce
 		mr.Map = `function() {
-		              var day = Date.UTC(this.date.getUTCFullYear(),
-		                                 this.date.getUTCMonth(),
-		                                 this.date.getUTCDate());
-		              emit(day, 1);
+		              var date = Date.UTC(this.date.getUTCFullYear(),
+		                                  this.date.getUTCMonth(),
+		                                  this.date.getUTCDate());
+		              emit({date: date, session: this.session}, 1);
 		          }`
-		mr.Reduce = `function(date, vals) {
-				 var count = 0;
-				 vals.forEach(function(v) { count += v; });
-				 return count;
-			     }`
-		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, DAILY_VISITS_COLL)
+		mr.Reduce = reduce
+		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, DAILY_VISITS_COLL+"_raw")
+		if err != nil {
+			return nil, err
+		}
+		var mr2 mgo.MapReduce
+		mr2.Map = `function() {
+		               emit(this['_id']['date'], 1);
+		           }`
+		mr2.Reduce = reduce
+		err = m.update(&mr2, bson.M{}, m.daily_raw, DAILY_VISITS_COLL)
 		if err != nil {
 			return nil, err
 		}
@@ -111,18 +137,28 @@ func (m *MR) GetDayVisits(start time.Time, statsColl *mgo.Collection) ([]Visits,
 
 func (m *MR) GetMonthVisits(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {
 	if m.isOutdated(MONTHLY_VISITS_COLL, MINUTES_UPDATE_MONTHLY) {
+		const reduce = `function(date, vals) {
+		                    var count = 0;
+		                    vals.forEach(function(v) { count += v; });
+		                    return count;
+		                }`
 		var mr mgo.MapReduce
 		mr.Map = `function() {
-		              var day = Date.UTC(this.date.getUTCFullYear(),
-		                                 this.date.getUTCMonth());
-		              emit(day, 1);
+		              var date = Date.UTC(this.date.getUTCFullYear(),
+		                                  this.date.getUTCMonth());
+		              emit({date: date, session: this.session}, 1);
 		          }`
-		mr.Reduce = `function(date, vals) {
-				 var count = 0;
-				 vals.forEach(function(v) { count += v; });
-				 return count;
-			     }`
-		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, MONTHLY_VISITS_COLL)
+		mr.Reduce = reduce
+		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, MONTHLY_VISITS_COLL+"_raw")
+		if err != nil {
+			return nil, err
+		}
+		var mr2 mgo.MapReduce
+		mr2.Map = `function() {
+		               emit(this['_id']['date'], 1);
+		           }`
+		mr2.Reduce = reduce
+		err = m.update(&mr2, bson.M{}, m.monthly_raw, MONTHLY_VISITS_COLL)
 		if err != nil {
 			return nil, err
 		}
