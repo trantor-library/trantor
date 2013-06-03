@@ -2,8 +2,9 @@ books/
 new/
 cover/
 trantor
-.*.swp
 tools/adduser/adduser
 tools/update/update
 tools/togridfs/togridfs
 tools/getISBNnDesc/getISBNnDesc
+tags
+.*.swp
