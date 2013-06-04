@@ -65,10 +65,10 @@ func getNextPrev(e *epubgo.Epub, file string, id string, base string) (string, s
 	prev := ""
 	next := ""
 	for err == nil {
-		if cleanLink(spine.Url()) == file {
+		if cleanLink(spine.URL()) == file {
 			break
 		}
-		prev = spine.Url()
+		prev = spine.URL()
 		err = spine.Next()
 	}
 	if err != nil {
@@ -79,7 +79,7 @@ func getNextPrev(e *epubgo.Epub, file string, id string, base string) (string, s
 		prev = genLink(id, base, prev)
 	}
 	if spine.Next() == nil {
-		next = genLink(id, base, spine.Url())
+		next = genLink(id, base, spine.URL())
 	}
 	return next, prev
 }
@@ -106,7 +106,7 @@ func listChapters(nav *epubgo.NavigationIterator, depth int) []chapter {
 	for err == nil {
 		var c chapter
 		c.Label = nav.Title()
-		c.Link = nav.Url()
+		c.Link = nav.URL()
 		c.Depth = depth
 		for c.Depth < depth {
 			c.Out = append(c.Out, true)
@@ -143,7 +143,7 @@ func readStartHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 		notFound(w, r)
 		return
 	}
-	http.Redirect(w, r, "/read/"+id+"/"+it.Url(), http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/read/"+id+"/"+it.URL(), http.StatusTemporaryRedirect)
 }
 
 func readHandler(w http.ResponseWriter, r *http.Request, sess *Session) {

@@ -86,7 +86,7 @@ func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
 		res := exp.FindSubmatch(txt)
 		if res != nil {
 			href := string(res[1])
-			urlPart := strings.Split(it.Url(), "/")
+			urlPart := strings.Split(it.URL(), "/")
 			url := strings.Join(urlPart[:len(urlPart)-1], "/")
 			if href[:3] == "../" {
 				href = href[3:]
