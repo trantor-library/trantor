@@ -1,0 +1,10 @@
+{{template "header.html" .S}}
+
+<dl class="dl-horizontal">
+{{range .News}}
+    <dt>{{.Date}}</dt>
+    <dd>{{.Text}}</dd>
+{{end}}
+</dl>
+
+{{template "footer.html"}}

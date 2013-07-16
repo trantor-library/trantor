@@ -1,0 +1,9 @@
+{{template "header.html" .S}}
+
+<h4>Add News:</h4>
+<form method="POST" action="/news/edit">
+    <textarea name="text" rows="3"></textarea>
+    <button type="submit" class="btn">Add</button>
+</form>
+
+{{template "footer.html"}}

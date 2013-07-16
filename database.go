@@ -34,10 +34,16 @@ type Book struct {
 	Keywords    []string
 }
 
+type News struct {
+	Date time.Time
+	Text string
+}
+
 type DB struct {
 	session *mgo.Session
 	books   *mgo.Collection
 	user    *mgo.Collection
+	news    *mgo.Collection
 	stats   *mgo.Collection
 	mr      *MR
 }
@@ -53,6 +59,7 @@ func initDB() *DB {
 	database := d.session.DB(DB_NAME)
 	d.books = database.C(BOOKS_COLL)
 	d.user = database.C(USERS_COLL)
+	d.news = database.C(NEWS_COLL)
 	d.stats = database.C(STATS_COLL)
 	d.mr = NewMR(database)
 	return d
@@ -80,6 +87,18 @@ func (d *DB) UserValid(user string, pass string) bool {
 		return false
 	}
 	return n != 0
+}
+
+func (d *DB) AddNews(text string) error {
+	var news News
+	news.Text = text
+	news.Date = time.Now()
+	return d.news.Insert(news)
+}
+
+func (d *DB) GetNews(num int) (news []News, err error) {
+	err = d.news.Find(bson.M{}).Sort("-date").Limit(num).All(&news)
+	return
 }
 
 func (d *DB) InsertStats(stats interface{}) error {

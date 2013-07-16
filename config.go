@@ -14,6 +14,7 @@ const (
 	DAILY_VISITS_COLL   = "visits.daily"
 	MONTHLY_VISITS_COLL = "visits.monthly"
 	USERS_COLL          = "users"
+	NEWS_COLL           = "news"
 	STATS_COLL          = "statistics"
 	FS_BOOKS            = "fs_books"
 	FS_IMGS             = "fs_imgs"
@@ -28,6 +29,7 @@ const (
 	TAGS_DISPLAY              = 50
 	SEARCH_ITEMS_PAGE         = 20
 	NEW_ITEMS_PAGE            = 50
+	NUM_NEWS                  = 10
 
 	TEMPLATE_PATH = "templates/"
 	CSS_PATH      = "css/"
