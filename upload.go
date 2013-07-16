@@ -18,51 +18,62 @@ func InitUpload() {
 var uploadChannel chan uploadRequest
 
 type uploadRequest struct {
-	epubs []*multipart.FileHeader
+	file     multipart.File
+	filename string
 }
 
 func uploadWorker() {
 	for req := range uploadChannel {
-		for _, f := range req.epubs {
-			file, err := f.Open()
-			if err != nil {
-				log.Println("Can not open uploaded file", f.Filename, ":", err)
-				continue
-			}
-			defer file.Close()
-
-			epub, err := openMultipartEpub(file)
-			if err != nil {
-				log.Println("Not valid epub uploaded file", f.Filename, ":", err)
-				continue
-			}
-			defer epub.Close()
-
-			book := parseFile(epub)
-			title, _ := book["title"].(string)
-			file.Seek(0, 0)
-			id, err := StoreNewFile(title+".epub", file)
-			if err != nil {
-				log.Println("Error storing book (", title, "):", err)
-				continue
-			}
-
-			book["file"] = id
-			db.InsertBook(book)
-			log.Println("File uploaded:", f.Filename)
-		}
+		processFile(req)
 	}
 }
 
+func processFile(req uploadRequest) {
+	defer req.file.Close()
+
+	epub, err := openMultipartEpub(req.file)
+	if err != nil {
+		log.Println("Not valid epub uploaded req.file", req.filename, ":", err)
+		return
+	}
+	defer epub.Close()
+
+	book := parseFile(epub)
+	title, _ := book["title"].(string)
+	req.file.Seek(0, 0)
+	id, err := StoreNewFile(title+".epub", req.file)
+	if err != nil {
+		log.Println("Error storing book (", title, "):", err)
+		return
+	}
+
+	book["req.file"] = id
+	db.InsertBook(book)
+	log.Println("File uploaded:", req.filename)
+}
+
 func uploadPostHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+	problem := false
+
 	r.ParseMultipartForm(20000000)
 	filesForm := r.MultipartForm.File["epub"]
-	uploadChannel <- uploadRequest{filesForm}
+	for _, f := range filesForm {
+		file, err := f.Open()
+		if err != nil {
+			log.Println("Can not open uploaded file", f.Filename, ":", err)
+			sess.Notify("Upload problem!", "There was a problem with book "+f.Filename, "error")
+			problem = true
+			continue
+		}
+		uploadChannel <- uploadRequest{file, f.Filename}
+	}
 
-	if len(filesForm) > 0 {
-		sess.Notify("Upload successful!", "Thank you for your contribution", "success")
-	} else {
-		sess.Notify("Upload problem!", "No books where uploaded.", "error")
+	if !problem {
+		if len(filesForm) > 0 {
+			sess.Notify("Upload successful!", "Thank you for your contribution", "success")
+		} else {
+			sess.Notify("Upload problem!", "No books where uploaded.", "error")
+		}
 	}
 	uploadHandler(w, r, sess)
 }
