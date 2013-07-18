@@ -1,6 +1,6 @@
 {{template "header.html" .S}}
 
-{{$user := .S.User}}
+{{$isAdmin := .S.IsAdmin}}
 {{with .Book}}
 <script>
 function delBook(){
@@ -43,7 +43,7 @@ function delBook(){
 		</dl>
 	</div>
 	<div class="span3">
-		{{if $user}}
+		{{if $isAdmin}}
 		<div class="row">
 		<div class="btn-group pull-right">
 		<a href="/edit/{{.Id}}" class="btn btn-primary"><i class="icon-pencil"></i> Edit</a>

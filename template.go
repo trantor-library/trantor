@@ -6,15 +6,16 @@ import (
 )
 
 type Status struct {
-	Search string
-	User   string
-	Notif  []Notification
-	Home   bool
-	About  bool
-	News   bool
-	Upload bool
-	Stats  bool
-	Help   bool
+	Search  string
+	User    string
+	IsAdmin bool
+	Notif   []Notification
+	Home    bool
+	About   bool
+	News    bool
+	Upload  bool
+	Stats   bool
+	Help    bool
 }
 
 func GetStatus(w http.ResponseWriter, r *http.Request) Status {
@@ -22,6 +23,7 @@ func GetStatus(w http.ResponseWriter, r *http.Request) Status {
 	sess := GetSession(r)
 	sess.Save(w, r)
 	s.User = sess.User
+	s.IsAdmin = sess.IsAdmin()
 	s.Notif = sess.Notif
 	return s
 }

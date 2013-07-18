@@ -65,9 +65,11 @@
 					<i class="icon-user icon-white"></i> {{.User}}<b class="caret"></b>
 				</a>
 				<ul class="dropdown-menu">
+					{{if .IsAdmin}}
 					<li><a href="/new/"><i class="icon-book"></i> New books</a></li>
 					<li><a href="/news/edit"><i class="icon-certificate"></i> Edit news</a></li>
 					<li class="divider"></li>
+ 					{{end}}
 					<li><a href="/settings/"><i class="icon-wrench"></i> Settings</a></li>
 					<li class="divider"></li>
 					<li><a href="/logout/"><i class="icon-off"></i> Log Out</a></li>
