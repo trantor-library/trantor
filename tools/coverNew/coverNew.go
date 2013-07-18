@@ -13,7 +13,6 @@ func main() {
 
 	for _, book := range books {
 		fmt.Println(book.Title)
-		fmt.Println(book.File)
 		e, err := OpenBook(book.File)
 		if err != nil {
 			fmt.Println("================", err)
