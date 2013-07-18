@@ -64,7 +64,12 @@ func coverHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
-	imgId, smallId := searchCommonCoverNames(e, title)
+	imgId, smallId := coverFromMetadata(e, title)
+	if imgId != "" {
+		return imgId, smallId
+	}
+
+	imgId, smallId = searchCommonCoverNames(e, title)
 	if imgId != "" {
 		return imgId, smallId
 	}
@@ -113,8 +118,22 @@ func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
 	return "", ""
 }
 
+func coverFromMetadata(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
+	metaList, _ := e.MetadataAttr("meta")
+	for _, meta := range metaList {
+		if meta["name"] == "cover" {
+			img, err := e.OpenFileId(meta["content"])
+			if err == nil {
+				defer img.Close()
+				return storeImg(img, title)
+			}
+		}
+	}
+	return "", ""
+}
+
 func searchCommonCoverNames(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
-	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
+	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
 		img, err := e.OpenFile(p)
 		if err == nil {
 			defer img.Close()
