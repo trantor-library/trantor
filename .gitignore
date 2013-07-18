@@ -6,5 +6,6 @@ tools/adduser/adduser
 tools/update/update
 tools/togridfs/togridfs
 tools/getISBNnDesc/getISBNnDesc
+tools/coverNew/coverNew
 tags
 .*.swp
