@@ -6,10 +6,10 @@ import (
 
 type newsData struct {
 	S    Status
-	News []news
+	News []newsEntry
 }
 
-type news struct {
+type newsEntry struct {
 	Date string
 	Text string
 }
@@ -18,12 +18,7 @@ func newsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	var data newsData
 	data.S = GetStatus(w, r)
 	data.S.News = true
-	newsEntries, _ := db.GetNews(NUM_NEWS)
-	data.News = make([]news, len(newsEntries))
-	for i, n := range newsEntries {
-		data.News[i].Text = n.Text
-		data.News[i].Date = n.Date.Format("Jan 31, 2006")
-	}
+	data.News = getNews(NUM_NEWS, 0)
 	loadTemplate(w, "news", data)
 }
 
@@ -48,4 +43,14 @@ func postNewsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	text := r.FormValue("text")
 	db.AddNews(text)
 	http.Redirect(w, r, "/news/", http.StatusFound)
+}
+
+func getNews(num int, days int) []newsEntry {
+	dbnews, _ := db.GetNews(num, days)
+	news := make([]newsEntry, len(dbnews))
+	for i, n := range dbnews {
+		news[i].Text = n.Text
+		news[i].Date = n.Date.Format("Jan 31, 2006")
+	}
+	return news
 }

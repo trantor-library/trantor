@@ -96,8 +96,15 @@ func (d *DB) AddNews(text string) error {
 	return d.news.Insert(news)
 }
 
-func (d *DB) GetNews(num int) (news []News, err error) {
-	err = d.news.Find(bson.M{}).Sort("-date").Limit(num).All(&news)
+func (d *DB) GetNews(num int, days int) (news []News, err error) {
+	query := bson.M{}
+	if days != 0 {
+		duration := time.Duration(-24*days) * time.Hour
+		date := time.Now().Add(duration)
+		query = bson.M{"date": bson.M{"$gt": date}}
+	}
+	q := d.news.Find(query).Sort("-date").Limit(num)
+	err = q.All(&news)
 	return
 }
 

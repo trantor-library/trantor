@@ -30,6 +30,7 @@ const (
 	SEARCH_ITEMS_PAGE         = 20
 	NEW_ITEMS_PAGE            = 50
 	NUM_NEWS                  = 10
+	DAYS_NEWS_INDEXPAGE       = 15
 
 	TEMPLATE_PATH = "templates/"
 	CSS_PATH      = "css/"

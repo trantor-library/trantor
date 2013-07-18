@@ -121,6 +121,7 @@ type indexData struct {
 	DownloadedBooks []Book
 	Count           int
 	Tags            []string
+	News            []newsEntry
 }
 
 func indexHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
@@ -132,6 +133,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	data.Books, data.Count, _ = db.GetBooks(bson.M{"active": true}, 6)
 	data.VisitedBooks, _ = db.GetVisitedBooks(6)
 	data.DownloadedBooks, _ = db.GetDownloadedBooks(6)
+	data.News = getNews(1, DAYS_NEWS_INDEXPAGE)
 	loadTemplate(w, "index", data)
 }
 
