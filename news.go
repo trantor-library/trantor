@@ -23,7 +23,7 @@ func newsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 }
 
 func editNewsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if sess.User == "" {
+	if !sess.IsAdmin() {
 		notFound(w, r)
 		return
 	}
@@ -35,7 +35,7 @@ func editNewsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 }
 
 func postNewsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if sess.User == "" {
+	if !sess.IsAdmin() {
 		notFound(w, r)
 		return
 	}
