@@ -50,7 +50,7 @@ func getNews(num int, days int) []newsEntry {
 	news := make([]newsEntry, len(dbnews))
 	for i, n := range dbnews {
 		news[i].Text = n.Text
-		news[i].Date = n.Date.Format("Jan 31, 2006")
+		news[i].Date = n.Date.Format("Jan 2, 2006")
 	}
 	return news
 }
