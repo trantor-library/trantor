@@ -70,7 +70,7 @@ func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
 	}
 
 	/* search for img on the text */
-	exp, _ := regexp.Compile("<ima?g.*[(src)(href)]=[\"']([^\"']*(\\.[^\\.\"']*))[\"']")
+	exp, _ := regexp.Compile("<.*ima?g.*[(src)(href)]=[\"']([^\"']*(\\.[^\\.\"']*))[\"']")
 	it, errNext := e.Spine()
 	for errNext == nil {
 		file, err := it.Open()
