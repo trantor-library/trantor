@@ -37,7 +37,7 @@ func coverHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !book.Active {
 		sess := GetSession(r)
-		if !sess.IsAdmin() {
+		if sess.User == "" {
 			notFound(w, r)
 			return
 		}

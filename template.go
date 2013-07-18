@@ -11,6 +11,7 @@ type Status struct {
 	Notif  []Notification
 	Home   bool
 	About  bool
+	News   bool
 	Upload bool
 	Stats  bool
 	Help   bool
@@ -30,6 +31,8 @@ var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
 	TEMPLATE_PATH+"404.html",
 	TEMPLATE_PATH+"index.html",
 	TEMPLATE_PATH+"about.html",
+	TEMPLATE_PATH+"news.html",
+	TEMPLATE_PATH+"edit_news.html",
 	TEMPLATE_PATH+"book.html",
 	TEMPLATE_PATH+"search.html",
 	TEMPLATE_PATH+"upload.html",

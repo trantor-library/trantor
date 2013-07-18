@@ -1,0 +1,14 @@
+{{template "header.html" .S}}
+
+<h4>News:</h4>
+
+<dl class="dl-horizontal">
+{{range .News}}
+<div class="well well-small">
+    <dt>{{.Date}}</dt>
+    <dd>{{.Text}}</dd>
+</div>
+{{end}}
+</dl>
+
+{{template "footer.html"}}

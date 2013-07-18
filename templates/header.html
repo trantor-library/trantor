@@ -52,7 +52,8 @@
 		<ul class="nav">
 			<li {{if .Home}}class="active"{{end}}><a href="/">Home</a></li>
 			<li {{if .About}}class="active"{{end}}><a href="/about/">About</a></li>
-			<li {{if .Upload}}class="active"{{end}}><a href="/upload/">Upload your epub</a></li>
+			<li {{if .News}}class="active"{{end}}><a href="/news/">News</a></li>
+			<li {{if .Upload}}class="active"{{end}}><a href="/upload/">Upload</a></li>
 			<li {{if .Stats}}class="active"{{end}}><a href="/stats/">Statistics</a></li>
 		</ul>
 
@@ -65,6 +66,8 @@
 				</a>
 				<ul class="dropdown-menu">
 					<li><a href="/new/"><i class="icon-book"></i> New books</a></li>
+					<li><a href="/news/edit"><i class="icon-certificate"></i> Edit news</a></li>
+					<li class="divider"></li>
 					<li><a href="/settings/"><i class="icon-wrench"></i> Settings</a></li>
 					<li class="divider"></li>
 					<li><a href="/logout/"><i class="icon-off"></i> Log Out</a></li>
