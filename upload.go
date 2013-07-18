@@ -33,7 +33,7 @@ func processFile(req uploadRequest) {
 
 	epub, err := openMultipartEpub(req.file)
 	if err != nil {
-		log.Println("Not valid epub uploaded req.file", req.filename, ":", err)
+		log.Println("Not valid epub uploaded file", req.filename, ":", err)
 		return
 	}
 	defer epub.Close()
@@ -47,7 +47,7 @@ func processFile(req uploadRequest) {
 		return
 	}
 
-	book["req.file"] = id
+	book["file"] = id
 	db.InsertBook(book)
 	log.Println("File uploaded:", req.filename)
 }
