@@ -48,7 +48,11 @@ func processFile(req uploadRequest) {
 	}
 
 	book["file"] = id
-	db.InsertBook(book)
+	err = db.InsertBook(book)
+	if err != nil {
+		log.Println("Error storing metadata (", title, "):", err)
+		return
+	}
 	log.Println("File uploaded:", req.filename)
 }
 
