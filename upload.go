@@ -133,8 +133,10 @@ func parseFile(epub *epubgo.Epub) map[string]interface{} {
 	title, _ := book["title"].(string)
 	book["file"] = nil
 	cover, coverSmall := GetCover(epub, title)
-	book["cover"] = cover
-	book["coversmall"] = coverSmall
+	if cover != "" {
+		book["cover"] = cover
+		book["coversmall"] = coverSmall
+	}
 	book["keywords"] = keywords(book)
 	return book
 }
