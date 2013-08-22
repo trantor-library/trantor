@@ -32,7 +32,7 @@ func main() {
 	h := md5.New()
 	hash := h.Sum(([]byte)(PASS_SALT + pass))
 	fmt.Println(user, " - ", hash)
-	err = coll.Insert(bson.M{"user": user, "pass": hash})
+	err = coll.Insert(bson.M{"user": user, "pass": hash, "role": "admin"})
 	if err != nil {
 		panic(err)
 	}
