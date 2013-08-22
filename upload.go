@@ -48,7 +48,11 @@ func processFile(req uploadRequest) {
 	}
 
 	book["file"] = id
-	db.InsertBook(book)
+	err = db.InsertBook(book)
+	if err != nil {
+		log.Println("Error storing metadata (", title, "):", err)
+		return
+	}
 	log.Println("File uploaded:", req.filename)
 }
 
@@ -129,8 +133,10 @@ func parseFile(epub *epubgo.Epub) map[string]interface{} {
 	title, _ := book["title"].(string)
 	book["file"] = nil
 	cover, coverSmall := GetCover(epub, title)
-	book["cover"] = cover
-	book["coversmall"] = coverSmall
+	if cover != "" {
+		book["cover"] = cover
+		book["coversmall"] = coverSmall
+	}
 	book["keywords"] = keywords(book)
 	return book
 }
