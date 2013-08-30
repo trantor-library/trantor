@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+{{with .S}}
+ <title>Imperial Library of Trantor</title>
+{{if .Search}}
+ <description>Book search: {{.Search}}</description>
+{{else}}
+ <description>Last books added</description>
+{{end}}
+ <link>{{.BaseURL}}</link>
+{{end}}
+ 
+{{$baseURL := .S.BaseURL}}
+{{range .Books}}
+ <item>
+  <title>{{.Title}} - {{index .Author 0}}</title>
+  <description>{{.Description}}</description>
+  <link>{{$baseURL}}/book/{{.Id}}</link>
+{{if .Isbn}}
+  <guid isPermaLink="false">ISBN: {{.Isbn}}</guid>
+{{end}}
+{{range .Subject}}
+  {{if .}}
+  <category>{{.}}</category>
+  {{end}}
+{{end}}
+ </item>
+{{end}}
+ 
+</channel>
+</rss>

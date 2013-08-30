@@ -62,5 +62,11 @@ func searchHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if page > 0 {
 		data.Prev = "/search/?q=" + req + "&p=" + strconv.Itoa(page-1)
 	}
-	loadTemplate(w, "search", data)
+
+	format := r.Form["fmt"]
+	if (len(format) > 0) && (format[0] == "rss") {
+		loadTxtTemplate(w, "search_rss.xml", data)
+	} else {
+		loadTemplate(w, "search", data)
+	}
 }

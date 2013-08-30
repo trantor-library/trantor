@@ -1,6 +1,6 @@
 {{template "header.html" .S}}
 
-<p class="centered">Found {{.Found}} books. Page {{.Page}}</p>
+<p class="centered">Found {{.Found}} books. Page {{.Page}} <a href="/search/?fmt=rss&q={{.S.Search}}"><img src="/img/feed.png"/></a></p>
 
 <ul class="pager">
 {{if .Prev}}
