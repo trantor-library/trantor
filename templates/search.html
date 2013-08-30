@@ -50,7 +50,17 @@
   <li class="previous">
     <a href="{{.Prev}}">&larr; Prev</a>
   </li>
+{{else}}
+  <div class="span1"></div>
 {{end}}
+<form class="form-inline span9 centered">
+<label>Books per page: </label>
+<div class="input-append" action="/search/">
+<input class="span1" name="num" type="text" value="{{.ItemsPage}}" />
+<button type="submit" class="btn">Ok</button>
+</div>
+<input class="hidden span1" name="q" type="text" value="{{.S.Search}}" />
+</form>
 {{if .Next}}
   <li class="next">
     <a href="{{.Next}}">Next &rarr;</a>
