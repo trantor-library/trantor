@@ -1,13 +1,15 @@
 {{template "header.html" .S}}
 
-<p class="centered">Found {{.Found}} books. Page {{.Page}} <a href="/search/?fmt=rss&q={{.S.Search}}"><img src="/img/feed.png"/></a></p>
 
 <ul class="pager">
 {{if .Prev}}
   <li class="previous">
     <a href="{{.Prev}}">&larr; Prev</a>
   </li>
+{{else}}
+  <div class="span1"></div>
 {{end}}
+<p class="centered span9">Found {{.Found}} books. Page {{.Page}} <a href="{{.S.FullURL}}&fmt=rss"><img src="/img/feed.png"/></a> <br />
 {{if .Next}}
   <li class="next">
     <a href="{{.Next}}">Next &rarr;</a>
