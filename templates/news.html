@@ -1,6 +1,8 @@
 {{template "header.html" .S}}
 
-<h4>News:</h4>
+<h4>News:
+	<a href="/news/?fmt=rss" class="pull-right"><img src="/img/feed.png"/></a>
+</h4>
 
 <dl class="dl-horizontal">
 {{range .News}}

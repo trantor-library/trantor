@@ -60,7 +60,9 @@ func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	}
 }
 
-var txt_templates = txt_tmpl.Must(txt_tmpl.ParseFiles(TEMPLATE_PATH + "search_rss.xml"))
+var txt_templates = txt_tmpl.Must(txt_tmpl.ParseFiles(TEMPLATE_PATH+"search_rss.xml",
+	TEMPLATE_PATH+"news_rss.xml",
+))
 
 func loadTxtTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	err := txt_templates.ExecuteTemplate(w, tmpl, data)

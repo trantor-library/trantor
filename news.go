@@ -15,11 +15,23 @@ type newsEntry struct {
 }
 
 func newsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	var data newsData
 	data.S = GetStatus(w, r)
 	data.S.News = true
 	data.News = getNews(NUM_NEWS, 0)
-	loadTemplate(w, "news", data)
+
+	format := r.Form["fmt"]
+	if (len(format) > 0) && (format[0] == "rss") {
+		loadTxtTemplate(w, "news_rss.xml", data)
+	} else {
+		loadTemplate(w, "news", data)
+	}
 }
 
 func editNewsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
