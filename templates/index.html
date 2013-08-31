@@ -1,8 +1,10 @@
 {{template "header.html" .S}}
 
 {{range .News}}
+<div class="row">
 <div class="offset2 span8 alert alert-info">
     <a href="/news/"><strong>News!</strong></a> {{.Text}}
+</div>
 </div>
 {{end}}
 
