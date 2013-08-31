@@ -7,12 +7,14 @@
 {{end}}
 
 <div class="row">
-<div class="span8">
-	<h4>Last books added: <a href="/search/?fmt=rss&q="><img src="/img/feed.png"/></a></h4>
+	<p class="centered">There is {{.Count}} books on the library.</p>
 </div>
-<div class="span4">
-	<p class="pull-right">{{.Count}} books</p>
-</div>
+<div class="row">
+	<h4>Last books added:
+	<span class="pull-right">
+		<small>(<a href="/search/?q=">more</a>)</small>
+		<a href="/search/?fmt=rss&q="><img src="/img/feed.png"/></a>
+	</h4>
 </div>
 
 <ul class="row thumbnails">
