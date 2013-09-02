@@ -30,7 +30,7 @@ func GetStatus(w http.ResponseWriter, r *http.Request) Status {
 	s.FullURL = s.BaseURL + r.RequestURI
 	s.User = sess.User
 	s.IsAdmin = sess.IsAdmin()
-	s.Notif = sess.Notif
+	s.Notif = sess.GetNotif()
 	return s
 }
 

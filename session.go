@@ -16,13 +16,29 @@ type Notification struct {
 }
 
 type Session struct {
-	User  string
-	Role  string
-	Notif []Notification
-	S     *sessions.Session
+	User string
+	Role string
+	S    *sessions.Session
 }
 
-func getNotif(session *sessions.Session) []Notification {
+func GetSession(r *http.Request) (s *Session) {
+	s = new(Session)
+	var err error
+	s.S, err = sesStore.Get(r, "session")
+	if err == nil && !s.S.IsNew {
+		s.User, _ = s.S.Values["user"].(string)
+		s.Role = db.UserRole(s.User)
+	}
+
+	if s.S.IsNew {
+		s.S.Values["id"] = hex.EncodeToString(securecookie.GenerateRandomKey(16))
+	}
+
+	return
+}
+
+func (s *Session) GetNotif() []Notification {
+	session := s.S
 	msgs := session.Flashes("nMsg")
 	titles := session.Flashes("nTitle")
 	tpes := session.Flashes("nType")
@@ -34,23 +50,6 @@ func getNotif(session *sessions.Session) []Notification {
 		notif[i] = Notification{title, msg, tpe}
 	}
 	return notif
-}
-
-func GetSession(r *http.Request) (s *Session) {
-	s = new(Session)
-	var err error
-	s.S, err = sesStore.Get(r, "session")
-	if err == nil && !s.S.IsNew {
-		s.User, _ = s.S.Values["user"].(string)
-		s.Role = db.UserRole(s.User)
-		s.Notif = getNotif(s.S)
-	}
-
-	if s.S.IsNew {
-		s.S.Values["id"] = hex.EncodeToString(securecookie.GenerateRandomKey(16))
-	}
-
-	return
 }
 
 func (s *Session) LogIn(user string) {
