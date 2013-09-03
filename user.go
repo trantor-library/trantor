@@ -25,3 +25,21 @@ func loginPostHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	sess.Save(w, r)
 	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }
+
+func createUserHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+	pass := r.FormValue("pass")
+	confirmPass := r.FormValue("confirmPass")
+	if pass != confirmPass {
+		sess.Notify("Registration error!", "Passwords don't match", "error")
+	} else {
+		user := r.FormValue("user")
+		err := db.AddUser(user, pass)
+		if err == nil {
+			sess.Notify("Account created!", "Welcome "+user+". Now you can login", "success")
+		} else {
+			sess.Notify("Registration error!", "There was some database problem, if it keeps happening please inform me", "error")
+		}
+	}
+	sess.Save(w, r)
+	http.Redirect(w, r, r.Referer(), http.StatusFound)
+}

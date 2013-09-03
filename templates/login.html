@@ -1,5 +1,27 @@
 {{template "header.html" .S}}
 
+<script>
+$(document).ready(function () {
+	$("#confirmPass").keyup(checkPasswordMatch);
+});
+
+function checkPasswordMatch() {
+	var password = $("#pass").val();
+	var confirmPassword = $("#confirmPass").val();
+
+	if (password != confirmPassword) {
+		$("#passCheck").removeClass("success");
+		$("#passCheck").addClass("error");
+		$("#passCheckHelp").html("Passwords don't match!");
+	} else {
+		$("#passCheck").removeClass("error");
+		$("#passCheck").addClass("success");
+		$("#passCheckHelp").html("");
+	}
+}
+</script>
+
+<div class="offset1 span4">
   <h3>Log In</h3>
   <form id="login" method="POST" action="/login/" enctype="application/x-www-form-urlencoded">
 	  <div class="input-prepend">
@@ -12,5 +34,34 @@
 	  </div>
 	  <input class="btn btn-primary" type="submit" name="submit" value="Log In"/>
   </form>
+</div>
+
+<div class="span2">
+	<br />
+	<br />
+	<h3 class="centered">Or</h3>
+</div>
+
+<div class="span4">
+  <h3>Create an Account</h3>
+  <form id="login" method="POST" action="/create_user/" enctype="application/x-www-form-urlencoded">
+	  <div class="input-prepend">
+	    <div class="add-on"><i class="icon-user"></i></div>
+	    <input type="text" placeholder="Username" size="16" name="user" autofocus="autofocus">
+	  </div>
+	  <div class="input-prepend">
+	    <div class="add-on"><i class="icon-lock"></i></div>
+	    <input type="password" placeholder="Password" size="16" name="pass" id="pass">
+	  </div>
+	  <div class="control-group" id="passCheck">
+	     <div class="controls input-prepend">
+	       <div class="add-on"><i class="icon-lock"></i></div>
+	       <input type="password" placeholder="Confirm password" size="16" name="confirmPass" id="confirmPass">
+	     </div>
+         <span id="passCheckHelp" class="help-inline"></span>
+	  </div>
+	  <input class="btn btn-primary" type="submit" name="submit" value="Create"/>
+  </form>
+</div>
 
 {{template "footer.html"}}

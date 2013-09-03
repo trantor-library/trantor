@@ -154,6 +154,7 @@ func setUpRouter() {
 	r.HandleFunc("/upload/", GatherStats(uploadPostHandler)).Methods("POST")
 	r.HandleFunc("/login/", GatherStats(loginHandler)).Methods("GET")
 	r.HandleFunc("/login/", GatherStats(loginPostHandler)).Methods("POST")
+	r.HandleFunc("/create_user/", GatherStats(createUserHandler)).Methods("POST")
 	r.HandleFunc("/logout/", GatherStats(logoutHandler))
 	r.HandleFunc("/new/", GatherStats(newHandler))
 	r.HandleFunc("/store/{ids:([0-9a-fA-F]+/)+}", GatherStats(storeHandler))
