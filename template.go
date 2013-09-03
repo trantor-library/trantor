@@ -25,12 +25,12 @@ type Status struct {
 func GetStatus(w http.ResponseWriter, r *http.Request) Status {
 	var s Status
 	sess := GetSession(r)
-	sess.Save(w, r)
 	s.BaseURL = "http://" + r.Host
 	s.FullURL = s.BaseURL + r.RequestURI
 	s.User = sess.User
 	s.IsAdmin = sess.IsAdmin()
 	s.Notif = sess.GetNotif()
+	sess.Save(w, r)
 	return s
 }
 
