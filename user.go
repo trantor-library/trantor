@@ -43,3 +43,33 @@ func createUserHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	sess.Save(w, r)
 	http.Redirect(w, r, r.Referer(), http.StatusFound)
 }
+
+type settingsData struct {
+	S Status
+}
+
+func settingsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+	if sess.User == "" {
+		notFound(w, r)
+		return
+	}
+	if r.Method == "POST" {
+		current_pass := r.FormValue("currpass")
+		pass1 := r.FormValue("password1")
+		pass2 := r.FormValue("password2")
+		switch {
+		case !db.UserValid(sess.User, current_pass):
+			sess.Notify("Password error!", "The current password given don't match with the user password. Try again", "error")
+		case pass1 != pass2:
+			sess.Notify("Passwords don't match!", "The new password and the confirmation password don't match. Try again", "error")
+		default:
+			db.SetPassword(sess.User, pass1)
+			sess.Notify("Password updated!", "Your new password is correctly set.", "success")
+		}
+		sess.Save(w, r)
+	}
+
+	var data settingsData
+	data.S = GetStatus(w, r)
+	loadTemplate(w, "settings", data)
+}

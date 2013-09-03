@@ -1,8 +1,29 @@
 {{template "header.html" .S}}
 
+<script>
+$(document).ready(function () {
+	$("#passCheck").keyup(checkPasswordMatch);
+});
+
+function checkPasswordMatch() {
+	var password = $("#password1").val();
+	var confirmPassword = $("#password2").val();
+
+	if (password != confirmPassword) {
+		$("#passCheck").removeClass("success");
+		$("#passCheck").addClass("error");
+		$("#passCheckHelp").html("Passwords don't match!");
+	} else {
+		$("#passCheck").removeClass("error");
+		$("#passCheck").addClass("success");
+		$("#passCheckHelp").html("");
+	}
+}
+</script>
+
 <h2>Settings</h2>
 
-<form class="form-horizontal" method="POST">
+<form class="form-horizontal" method="POST" action="/settings/">
 	<legend>Change your pasword</legend>
 	<div class="control-group">
 		<label class="control-label" for="currpass">Current password:</label>
@@ -10,7 +31,7 @@
 		<input type="password" name="currpass" id="currpass" /><br />
 		</div>
 	</div>
-	<div class="control-group">
+	<div class="control-group" id="passCheck">
 		<label class="control-label" for="password1">New password:</label>
 		<div class="controls">
 		<input type="password" name="password1" id="password1" />
@@ -19,6 +40,7 @@
 		<div class="controls">
 		<input type="password" name="password2" id="password2" />
 		</div>
+        <div id="passCheckHelp" class="controls text-error"></div>
 	</div>
 	<div class="control-group">
 		<div class="controls">
