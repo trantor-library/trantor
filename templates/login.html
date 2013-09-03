@@ -1,0 +1,16 @@
+{{template "header.html" .S}}
+
+  <h3>Log In</h3>
+  <form id="login" method="POST" action="/login/" enctype="application/x-www-form-urlencoded">
+	  <div class="input-prepend">
+	    <div class="add-on"><i class="icon-user"></i></div>
+	    <input type="text" placeholder="Username" size="16" name="user" autofocus="autofocus">
+	  </div>
+	  <div class="input-prepend">
+	    <div class="add-on"><i class="icon-lock"></i></div>
+	    <input type="password" placeholder="Password" size="16" name="pass">
+	  </div>
+	  <input class="btn btn-primary" type="submit" name="submit" value="Log In"/>
+  </form>
+
+{{template "footer.html"}}
