@@ -28,6 +28,7 @@ type Book struct {
 	Rights      string
 	Meta        string
 	File        bson.ObjectId
+	FileSize    int
 	Cover       bson.ObjectId
 	CoverSmall  bson.ObjectId
 	Active      bool

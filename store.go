@@ -24,17 +24,17 @@ func OpenBook(id bson.ObjectId) (*epubgo.Epub, error) {
 	return epubgo.Load(reader, int64(len(buff)))
 }
 
-func StoreNewFile(name string, file io.Reader) (bson.ObjectId, error) {
+func StoreNewFile(name string, file io.Reader) (bson.ObjectId, int64, error) {
 	fs := db.GetFS(FS_BOOKS)
 	fw, err := fs.Create(name)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 	defer fw.Close()
 
-	_, err = io.Copy(fw, file)
+	size, err := io.Copy(fw, file)
 	id, _ := fw.Id().(bson.ObjectId)
-	return id, err
+	return id, size, err
 }
 
 func DeleteFile(id bson.ObjectId) error {

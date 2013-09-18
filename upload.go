@@ -41,13 +41,14 @@ func processFile(req uploadRequest) {
 	book := parseFile(epub)
 	title, _ := book["title"].(string)
 	req.file.Seek(0, 0)
-	id, err := StoreNewFile(title+".epub", req.file)
+	id, size, err := StoreNewFile(title+".epub", req.file)
 	if err != nil {
 		log.Println("Error storing book (", title, "):", err)
 		return
 	}
 
 	book["file"] = id
+	book["filesize"] = size
 	err = db.InsertBook(book)
 	if err != nil {
 		log.Println("Error storing metadata (", title, "):", err)
