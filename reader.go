@@ -129,35 +129,35 @@ func listChapters(nav *epubgo.NavigationIterator, depth int) []chapter {
 	return chapters
 }
 
-func readStartHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	id := mux.Vars(r)["id"]
-	e, _ := openReadEpub(w, r, sess)
+func readStartHandler(h handler) {
+	id := mux.Vars(h.r)["id"]
+	e, _ := openReadEpub(h)
 	if e == nil {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	defer e.Close()
 
 	it, err := e.Spine()
 	if err != nil {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
-	http.Redirect(w, r, "/read/"+id+"/"+it.URL(), http.StatusTemporaryRedirect)
+	http.Redirect(h.w, h.r, "/read/"+id+"/"+it.URL(), http.StatusTemporaryRedirect)
 }
 
-func readHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	id := mux.Vars(r)["id"]
-	file := mux.Vars(r)["file"]
-	e, book := openReadEpub(w, r, sess)
+func readHandler(h handler) {
+	id := mux.Vars(h.r)["id"]
+	file := mux.Vars(h.r)["file"]
+	e, book := openReadEpub(h)
 	if e == nil {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	defer e.Close()
 
 	var data readData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	data.Book = book
 	if !book.Active {
 		data.Back = "/new/"
@@ -168,66 +168,66 @@ func readHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	data.Next, data.Prev = getNextPrev(e, file, id, "/read/")
 	data.Chapters = getChapters(e, file, id, "/read/")
 	data.Content = genLink(id, "/content/", file)
-	loadTemplate(w, "read", data)
+	loadTemplate(h.w, "read", data)
 }
 
-func openReadEpub(w http.ResponseWriter, r *http.Request, sess *Session) (*epubgo.Epub, Book) {
+func openReadEpub(h handler) (*epubgo.Epub, Book) {
 	var book Book
-	id := mux.Vars(r)["id"]
+	id := mux.Vars(h.r)["id"]
 	if !bson.IsObjectIdHex(id) {
 		return nil, book
 	}
-	books, _, err := db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
+	books, _, err := h.db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
 	if err != nil || len(books) == 0 {
 		return nil, book
 	}
 
 	book = books[0]
 	if !book.Active {
-		if !sess.IsAdmin() {
+		if !h.sess.IsAdmin() {
 			return nil, book
 		}
 	}
-	e, err := OpenBook(book.File)
+	e, err := OpenBook(book.File, h.db)
 	if err != nil {
 		return nil, book
 	}
 	return e, book
 }
 
-func contentHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	vars := mux.Vars(r)
+func contentHandler(h handler) {
+	vars := mux.Vars(h.r)
 	id := vars["id"]
 	file := vars["file"]
 	if file == "" || !bson.IsObjectIdHex(id) {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 
-	books, _, err := db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
+	books, _, err := h.db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
 	if err != nil || len(books) == 0 {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	book := books[0]
 	if !book.Active {
-		if !sess.IsAdmin() {
-			notFound(w, r)
+		if !h.sess.IsAdmin() {
+			notFound(h)
 			return
 		}
 	}
-	e, err := OpenBook(book.File)
+	e, err := OpenBook(book.File, h.db)
 	if err != nil {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	defer e.Close()
 
 	html, err := e.OpenFile(file)
 	if err != nil {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	defer html.Close()
-	io.Copy(w, html)
+	io.Copy(h.w, html)
 }

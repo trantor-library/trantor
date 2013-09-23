@@ -6,13 +6,12 @@ import (
 	"io/ioutil"
 	"log"
 	"mime/multipart"
-	"net/http"
 	"strings"
 )
 
-func InitUpload() {
+func InitUpload(database *DB) {
 	uploadChannel = make(chan uploadRequest, CHAN_SIZE)
-	go uploadWorker()
+	go uploadWorker(database)
 }
 
 var uploadChannel chan uploadRequest
@@ -22,13 +21,16 @@ type uploadRequest struct {
 	filename string
 }
 
-func uploadWorker() {
+func uploadWorker(database *DB) {
+	db := database.Copy()
+	defer db.Close()
+
 	for req := range uploadChannel {
-		processFile(req)
+		processFile(req, db)
 	}
 }
 
-func processFile(req uploadRequest) {
+func processFile(req uploadRequest, db *DB) {
 	defer req.file.Close()
 
 	epub, err := openMultipartEpub(req.file)
@@ -38,10 +40,10 @@ func processFile(req uploadRequest) {
 	}
 	defer epub.Close()
 
-	book := parseFile(epub)
+	book := parseFile(epub, db)
 	title, _ := book["title"].(string)
 	req.file.Seek(0, 0)
-	id, size, err := StoreNewFile(title+".epub", req.file)
+	id, size, err := StoreNewFile(title+".epub", req.file, db)
 	if err != nil {
 		log.Println("Error storing book (", title, "):", err)
 		return
@@ -57,16 +59,16 @@ func processFile(req uploadRequest) {
 	log.Println("File uploaded:", req.filename)
 }
 
-func uploadPostHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+func uploadPostHandler(h handler) {
 	problem := false
 
-	r.ParseMultipartForm(20000000)
-	filesForm := r.MultipartForm.File["epub"]
+	h.r.ParseMultipartForm(20000000)
+	filesForm := h.r.MultipartForm.File["epub"]
 	for _, f := range filesForm {
 		file, err := f.Open()
 		if err != nil {
 			log.Println("Can not open uploaded file", f.Filename, ":", err)
-			sess.Notify("Upload problem!", "There was a problem with book "+f.Filename, "error")
+			h.sess.Notify("Upload problem!", "There was a problem with book "+f.Filename, "error")
 			problem = true
 			continue
 		}
@@ -75,19 +77,19 @@ func uploadPostHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 
 	if !problem {
 		if len(filesForm) > 0 {
-			sess.Notify("Upload successful!", "Thank you for your contribution", "success")
+			h.sess.Notify("Upload successful!", "Thank you for your contribution", "success")
 		} else {
-			sess.Notify("Upload problem!", "No books where uploaded.", "error")
+			h.sess.Notify("Upload problem!", "No books where uploaded.", "error")
 		}
 	}
-	uploadHandler(w, r, sess)
+	uploadHandler(h)
 }
 
-func uploadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+func uploadHandler(h handler) {
 	var data uploadData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	data.S.Upload = true
-	loadTemplate(w, "upload", data)
+	loadTemplate(h.w, "upload", data)
 }
 
 type uploadData struct {
@@ -100,7 +102,7 @@ func openMultipartEpub(file multipart.File) (*epubgo.Epub, error) {
 	return epubgo.Load(reader, int64(len(buff)))
 }
 
-func parseFile(epub *epubgo.Epub) map[string]interface{} {
+func parseFile(epub *epubgo.Epub, db *DB) map[string]interface{} {
 	book := map[string]interface{}{}
 	for _, m := range epub.MetadataFields() {
 		data, err := epub.Metadata(m)
@@ -133,7 +135,7 @@ func parseFile(epub *epubgo.Epub) map[string]interface{} {
 	}
 	title, _ := book["title"].(string)
 	book["file"] = nil
-	cover, coverSmall := GetCover(epub, title)
+	cover, coverSmall := GetCover(epub, title, db)
 	if cover != "" {
 		book["cover"] = cover
 		book["coversmall"] = coverSmall

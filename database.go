@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-var db *DB
-
 type Book struct {
 	Id          string `bson:"_id"`
 	Title       string
@@ -56,6 +54,12 @@ func initDB() *DB {
 
 func (d *DB) Close() {
 	d.session.Close()
+}
+
+func (d *DB) Copy() *DB {
+	dbCopy := new(DB)
+	dbCopy.session = d.session.Copy()
+	return dbCopy
 }
 
 func md5Pass(pass string) []byte {

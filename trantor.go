@@ -13,41 +13,41 @@ type statusData struct {
 	S Status
 }
 
-func aboutHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+func aboutHandler(h handler) {
 	var data statusData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	data.S.About = true
-	loadTemplate(w, "about", data)
+	loadTemplate(h.w, "about", data)
 }
 
-func helpHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+func helpHandler(h handler) {
 	var data statusData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	data.S.Help = true
-	loadTemplate(w, "help", data)
+	loadTemplate(h.w, "help", data)
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	sess.LogOut()
-	sess.Notify("Log out!", "Bye bye "+sess.User, "success")
-	sess.Save(w, r)
-	log.Println("User", sess.User, "log out")
-	http.Redirect(w, r, "/", http.StatusFound)
+func logoutHandler(h handler) {
+	h.sess.LogOut()
+	h.sess.Notify("Log out!", "Bye bye "+h.sess.User, "success")
+	h.sess.Save(h.w, h.r)
+	log.Println("User", h.sess.User, "log out")
+	http.Redirect(h.w, h.r, "/", http.StatusFound)
 }
 
-func loginHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	user := r.FormValue("user")
-	pass := r.FormValue("pass")
-	if db.UserValid(user, pass) {
+func loginHandler(h handler) {
+	user := h.r.FormValue("user")
+	pass := h.r.FormValue("pass")
+	if h.db.UserValid(user, pass) {
 		log.Println("User", user, "log in")
-		sess.LogIn(user)
-		sess.Notify("Successful login!", "Welcome "+user, "success")
+		h.sess.LogIn(user)
+		h.sess.Notify("Successful login!", "Welcome "+user, "success")
 	} else {
 		log.Println("User", user, "bad user or password")
-		sess.Notify("Invalid login!", "user or password invalid", "error")
+		h.sess.Notify("Invalid login!", "user or password invalid", "error")
 	}
-	sess.Save(w, r)
-	http.Redirect(w, r, r.Referer(), http.StatusFound)
+	h.sess.Save(h.w, h.r)
+	http.Redirect(h.w, h.r, h.r.Referer(), http.StatusFound)
 }
 
 type bookData struct {
@@ -56,62 +56,61 @@ type bookData struct {
 	Description []string
 }
 
-func bookHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	idStr := mux.Vars(r)["id"]
+func bookHandler(h handler) {
+	idStr := mux.Vars(h.r)["id"]
 	if !bson.IsObjectIdHex(idStr) {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 
 	var data bookData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	id := bson.ObjectIdHex(idStr)
-	books, _, err := db.GetBooks(bson.M{"_id": id})
+	books, _, err := h.db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	data.Book = books[0]
 	data.Description = strings.Split(data.Book.Description, "\n")
-	loadTemplate(w, "book", data)
+	loadTemplate(h.w, "book", data)
 }
 
-func downloadHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	idStr := mux.Vars(r)["id"]
+func downloadHandler(h handler) {
+	idStr := mux.Vars(h.r)["id"]
 	if !bson.IsObjectIdHex(idStr) {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 
 	id := bson.ObjectIdHex(idStr)
-	books, _, err := db.GetBooks(bson.M{"_id": id})
+	books, _, err := h.db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	book := books[0]
 
 	if !book.Active {
-		sess := GetSession(r)
-		if !sess.IsAdmin() {
-			notFound(w, r)
+		if !h.sess.IsAdmin() {
+			notFound(h)
 			return
 		}
 	}
 
-	fs := db.GetFS(FS_BOOKS)
+	fs := h.db.GetFS(FS_BOOKS)
 	f, err := fs.OpenId(book.File)
 	if err != nil {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	defer f.Close()
 
-	headers := w.Header()
+	headers := h.w.Header()
 	headers["Content-Type"] = []string{"application/epub+zip"}
 	headers["Content-Disposition"] = []string{"attachment; filename=\"" + f.Name() + "\""}
 
-	io.Copy(w, f)
+	io.Copy(h.w, f)
 }
 
 type indexData struct {
@@ -124,68 +123,68 @@ type indexData struct {
 	News            []newsEntry
 }
 
-func indexHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+func indexHandler(h handler) {
 	var data indexData
 
-	data.Tags, _ = db.GetTags(TAGS_DISPLAY)
-	data.S = GetStatus(w, r)
+	data.Tags, _ = h.db.GetTags(TAGS_DISPLAY)
+	data.S = GetStatus(h)
 	data.S.Home = true
-	data.Books, data.Count, _ = db.GetBooks(bson.M{"active": true}, 6)
-	data.VisitedBooks, _ = db.GetVisitedBooks(6)
-	data.DownloadedBooks, _ = db.GetDownloadedBooks(6)
-	data.News = getNews(1, DAYS_NEWS_INDEXPAGE)
-	loadTemplate(w, "index", data)
+	data.Books, data.Count, _ = h.db.GetBooks(bson.M{"active": true}, 6)
+	data.VisitedBooks, _ = h.db.GetVisitedBooks(6)
+	data.DownloadedBooks, _ = h.db.GetDownloadedBooks(6)
+	data.News = getNews(1, DAYS_NEWS_INDEXPAGE, h.db)
+	loadTemplate(h.w, "index", data)
 }
 
-func notFound(w http.ResponseWriter, r *http.Request) {
+func notFound(h handler) {
 	var data statusData
 
-	data.S = GetStatus(w, r)
-	w.WriteHeader(http.StatusNotFound)
-	loadTemplate(w, "404", data)
+	data.S = GetStatus(h)
+	h.w.WriteHeader(http.StatusNotFound)
+	loadTemplate(h.w, "404", data)
 }
 
 func main() {
-	db = initDB()
+	db := initDB()
 	defer db.Close()
 
-	InitStats()
-	InitUpload()
+	InitStats(db)
+	InitUpload(db)
 
-	setUpRouter()
+	setUpRouter(db)
 	panic(http.ListenAndServe(":"+PORT, nil))
 }
 
-func setUpRouter() {
+func setUpRouter(db *DB) {
 	r := mux.NewRouter()
 	var notFoundHandler http.HandlerFunc
-	notFoundHandler = GatherStats(func(w http.ResponseWriter, r *http.Request, sess *Session) { notFound(w, r) })
+	notFoundHandler = GatherStats(notFound, db)
 	r.NotFoundHandler = notFoundHandler
 
-	r.HandleFunc("/", GatherStats(indexHandler))
-	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", GatherStats(bookHandler))
-	r.HandleFunc("/search/", GatherStats(searchHandler))
-	r.HandleFunc("/upload/", GatherStats(uploadHandler)).Methods("GET")
-	r.HandleFunc("/upload/", GatherStats(uploadPostHandler)).Methods("POST")
-	r.HandleFunc("/login/", GatherStats(loginHandler)).Methods("POST")
-	r.HandleFunc("/logout/", GatherStats(logoutHandler))
-	r.HandleFunc("/new/", GatherStats(newHandler))
-	r.HandleFunc("/store/{ids:([0-9a-fA-F]+/)+}", GatherStats(storeHandler))
-	r.HandleFunc("/delete/{ids:([0-9a-fA-F]+/)+}", GatherStats(deleteHandler))
-	r.HandleFunc("/read/{id:[0-9a-fA-F]+}", GatherStats(readStartHandler))
-	r.HandleFunc("/read/{id:[0-9a-fA-F]+}/{file:.*}", GatherStats(readHandler))
-	r.HandleFunc("/content/{id:[0-9a-fA-F]+}/{file:.*}", GatherStats(contentHandler))
-	r.HandleFunc("/edit/{id:[0-9a-fA-F]+}", GatherStats(editHandler))
-	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", GatherStats(saveHandler)).Methods("POST")
-	r.HandleFunc("/about/", GatherStats(aboutHandler))
-	r.HandleFunc("/help/", GatherStats(helpHandler))
-	r.HandleFunc("/download/{id:[0-9a-fA-F]+}/{epub:.*}", GatherStats(downloadHandler))
-	r.HandleFunc("/cover/{id:[0-9a-fA-F]+}/{size}/{img:.*}", coverHandler)
-	r.HandleFunc("/settings/", GatherStats(settingsHandler))
-	r.HandleFunc("/stats/", GatherStats(statsHandler))
-	r.HandleFunc("/news/", GatherStats(newsHandler))
-	r.HandleFunc("/news/edit", GatherStats(editNewsHandler)).Methods("GET")
-	r.HandleFunc("/news/edit", GatherStats(postNewsHandler)).Methods("POST")
+	r.HandleFunc("/", GatherStats(indexHandler, db))
+	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", GatherStats(bookHandler, db))
+	r.HandleFunc("/search/", GatherStats(searchHandler, db))
+	r.HandleFunc("/upload/", GatherStats(uploadHandler, db)).Methods("GET")
+	r.HandleFunc("/upload/", GatherStats(uploadPostHandler, db)).Methods("POST")
+	r.HandleFunc("/login/", GatherStats(loginHandler, db)).Methods("POST")
+	r.HandleFunc("/logout/", GatherStats(logoutHandler, db))
+	r.HandleFunc("/new/", GatherStats(newHandler, db))
+	r.HandleFunc("/store/{ids:([0-9a-fA-F]+/)+}", GatherStats(storeHandler, db))
+	r.HandleFunc("/delete/{ids:([0-9a-fA-F]+/)+}", GatherStats(deleteHandler, db))
+	r.HandleFunc("/read/{id:[0-9a-fA-F]+}", GatherStats(readStartHandler, db))
+	r.HandleFunc("/read/{id:[0-9a-fA-F]+}/{file:.*}", GatherStats(readHandler, db))
+	r.HandleFunc("/content/{id:[0-9a-fA-F]+}/{file:.*}", GatherStats(contentHandler, db))
+	r.HandleFunc("/edit/{id:[0-9a-fA-F]+}", GatherStats(editHandler, db))
+	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", GatherStats(saveHandler, db)).Methods("POST")
+	r.HandleFunc("/about/", GatherStats(aboutHandler, db))
+	r.HandleFunc("/help/", GatherStats(helpHandler, db))
+	r.HandleFunc("/download/{id:[0-9a-fA-F]+}/{epub:.*}", GatherStats(downloadHandler, db))
+	r.HandleFunc("/cover/{id:[0-9a-fA-F]+}/{size}/{img:.*}", GatherStats(coverHandler, db))
+	r.HandleFunc("/settings/", GatherStats(settingsHandler, db))
+	r.HandleFunc("/stats/", GatherStats(statsHandler, db))
+	r.HandleFunc("/news/", GatherStats(newsHandler, db))
+	r.HandleFunc("/news/edit", GatherStats(editNewsHandler, db)).Methods("GET")
+	r.HandleFunc("/news/edit", GatherStats(postNewsHandler, db)).Methods("POST")
 	h := http.FileServer(http.Dir(IMG_PATH))
 	r.Handle("/img/{img}", http.StripPrefix("/img/", h))
 	h = http.FileServer(http.Dir(CSS_PATH))

@@ -9,16 +9,30 @@ import (
 	"time"
 )
 
-func InitStats() {
-	statsChannel = make(chan statsRequest, CHAN_SIZE)
-	go statsWorker()
+type handler struct {
+	w    http.ResponseWriter
+	r    *http.Request
+	sess *Session
+	db   *DB
 }
 
-func GatherStats(function func(http.ResponseWriter, *http.Request, *Session)) func(http.ResponseWriter, *http.Request) {
+func InitStats(database *DB) {
+	statsChannel = make(chan statsRequest, CHAN_SIZE)
+	go statsWorker(database)
+}
+
+func GatherStats(function func(handler), database *DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		sess := GetSession(r)
-		function(w, r, sess)
-		statsChannel <- statsRequest{bson.Now(), mux.Vars(r), sess, r}
+		var h handler
+		h.db = database.Copy()
+		defer h.db.Close()
+
+		h.w = w
+		h.r = r
+		h.sess = GetSession(r, h.db)
+		function(h)
+
+		statsChannel <- statsRequest{bson.Now(), mux.Vars(r), h.sess, r}
 	}
 }
 
@@ -31,7 +45,10 @@ type statsRequest struct {
 	r    *http.Request
 }
 
-func statsWorker() {
+func statsWorker(database *DB) {
+	db := database.Copy()
+	defer db.Close()
+
 	for req := range statsChannel {
 		stats := make(map[string]interface{})
 		appendFiles(req.r, stats)
@@ -44,15 +61,15 @@ func statsWorker() {
 	}
 }
 
-func statsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
+func statsHandler(h handler) {
 	var data statsData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	data.S.Stats = true
-	data.Hourly = getHourlyVisits()
-	data.Daily = getDailyVisits()
-	data.Monthly = getMonthlyVisits()
+	data.Hourly = getHourlyVisits(h.db)
+	data.Daily = getDailyVisits(h.db)
+	data.Monthly = getMonthlyVisits(h.db)
 
-	loadTemplate(w, "stats", data)
+	loadTemplate(h.w, "stats", data)
 }
 
 type statsData struct {
@@ -67,7 +84,7 @@ type visitData struct {
 	Count int
 }
 
-func getHourlyVisits() []visitData {
+func getHourlyVisits(db *DB) []visitData {
 	const numDays = 2
 	var visits []visitData
 
@@ -84,7 +101,7 @@ func getHourlyVisits() []visitData {
 	return visits
 }
 
-func getDailyVisits() []visitData {
+func getDailyVisits(db *DB) []visitData {
 	const numDays = 30
 	var visits []visitData
 
@@ -101,7 +118,7 @@ func getDailyVisits() []visitData {
 	return visits
 }
 
-func getMonthlyVisits() []visitData {
+func getMonthlyVisits(db *DB) []visitData {
 	const numDays = 365
 	var visits []visitData
 
