@@ -42,11 +42,6 @@ type News struct {
 
 type DB struct {
 	session *mgo.Session
-	books   *mgo.Collection
-	user    *mgo.Collection
-	news    *mgo.Collection
-	stats   *mgo.Collection
-	mr      *MR
 }
 
 func initDB() *DB {
@@ -56,13 +51,6 @@ func initDB() *DB {
 	if err != nil {
 		panic(err)
 	}
-
-	database := d.session.DB(DB_NAME)
-	d.books = database.C(BOOKS_COLL)
-	d.user = database.C(USERS_COLL)
-	d.news = database.C(NEWS_COLL)
-	d.stats = database.C(STATS_COLL)
-	d.mr = NewMR(database)
 	return d
 }
 
@@ -78,12 +66,14 @@ func md5Pass(pass string) []byte {
 
 func (d *DB) SetPassword(user string, pass string) error {
 	hash := md5Pass(pass)
-	return d.user.Update(bson.M{"user": user}, bson.M{"$set": bson.M{"pass": hash}})
+	userColl := d.session.DB(DB_NAME).C(USERS_COLL)
+	return userColl.Update(bson.M{"user": user}, bson.M{"$set": bson.M{"pass": hash}})
 }
 
 func (d *DB) UserValid(user string, pass string) bool {
 	hash := md5Pass(pass)
-	n, err := d.user.Find(bson.M{"user": user, "pass": hash}).Count()
+	userColl := d.session.DB(DB_NAME).C(USERS_COLL)
+	n, err := userColl.Find(bson.M{"user": user, "pass": hash}).Count()
 	if err != nil {
 		return false
 	}
@@ -95,7 +85,8 @@ func (d *DB) UserRole(user string) string {
 		Role string
 	}
 	res := result{}
-	err := d.user.Find(bson.M{"user": user}).One(&res)
+	userColl := d.session.DB(DB_NAME).C(USERS_COLL)
+	err := userColl.Find(bson.M{"user": user}).One(&res)
 	if err != nil {
 		return ""
 	}
@@ -106,7 +97,8 @@ func (d *DB) AddNews(text string) error {
 	var news News
 	news.Text = text
 	news.Date = time.Now()
-	return d.news.Insert(news)
+	newsColl := d.session.DB(DB_NAME).C(NEWS_COLL)
+	return newsColl.Insert(news)
 }
 
 func (d *DB) GetNews(num int, days int) (news []News, err error) {
@@ -116,25 +108,30 @@ func (d *DB) GetNews(num int, days int) (news []News, err error) {
 		date := time.Now().Add(duration)
 		query = bson.M{"date": bson.M{"$gt": date}}
 	}
-	q := d.news.Find(query).Sort("-date").Limit(num)
+	newsColl := d.session.DB(DB_NAME).C(NEWS_COLL)
+	q := newsColl.Find(query).Sort("-date").Limit(num)
 	err = q.All(&news)
 	return
 }
 
 func (d *DB) InsertStats(stats interface{}) error {
-	return d.stats.Insert(stats)
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	return statsColl.Insert(stats)
 }
 
 func (d *DB) InsertBook(book interface{}) error {
-	return d.books.Insert(book)
+	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
+	return booksColl.Insert(book)
 }
 
 func (d *DB) RemoveBook(id bson.ObjectId) error {
-	return d.books.Remove(bson.M{"_id": id})
+	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
+	return booksColl.Remove(bson.M{"_id": id})
 }
 
 func (d *DB) UpdateBook(id bson.ObjectId, data interface{}) error {
-	return d.books.Update(bson.M{"_id": id}, bson.M{"$set": data})
+	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
+	return booksColl.Update(bson.M{"_id": id}, bson.M{"$set": data})
 }
 
 /* optional parameters: length and start index
@@ -149,7 +146,8 @@ func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error)
 			start = r[1]
 		}
 	}
-	q := d.books.Find(query).Sort("-_id")
+	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
+	q := booksColl.Find(query).Sort("-_id")
 	num, err = q.Count()
 	if err != nil {
 		return
@@ -171,14 +169,17 @@ func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error)
 /* Get the most visited books
  */
 func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
-	bookId, err := d.mr.GetMostVisited(num, d.stats)
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	bookId, err := mr.GetMostVisited(num, statsColl)
 	if err != nil {
 		return nil, err
 	}
 
 	books = make([]Book, num)
 	for i, id := range bookId {
-		d.books.Find(bson.M{"_id": id}).One(&books[i])
+		booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
+		booksColl.Find(bson.M{"_id": id}).One(&books[i])
 		books[i].Id = bson.ObjectId(books[i].Id).Hex()
 	}
 	return
@@ -187,14 +188,17 @@ func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
 /* Get the most downloaded books
  */
 func (d *DB) GetDownloadedBooks(num int) (books []Book, err error) {
-	bookId, err := d.mr.GetMostDownloaded(num, d.stats)
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	bookId, err := mr.GetMostDownloaded(num, statsColl)
 	if err != nil {
 		return nil, err
 	}
 
 	books = make([]Book, num)
 	for i, id := range bookId {
-		d.books.Find(bson.M{"_id": id}).One(&books[i])
+		booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
+		booksColl.Find(bson.M{"_id": id}).One(&books[i])
 		books[i].Id = bson.ObjectId(books[i].Id).Hex()
 	}
 	return
@@ -210,7 +214,8 @@ func (d *DB) GetNewBooks(r ...int) (books []Book, num int, err error) {
 
 func (d *DB) BookActive(id bson.ObjectId) bool {
 	var book Book
-	err := d.books.Find(bson.M{"_id": id}).One(&book)
+	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
+	err := booksColl.Find(bson.M{"_id": id}).One(&book)
 	if err != nil {
 		return false
 	}
@@ -222,7 +227,9 @@ func (d *DB) GetFS(prefix string) *mgo.GridFS {
 }
 
 func (d *DB) GetTags(numTags int) ([]string, error) {
-	return d.mr.GetTags(numTags, d.books)
+	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.GetTags(numTags, booksColl)
 }
 
 type Visits struct {
@@ -231,13 +238,19 @@ type Visits struct {
 }
 
 func (d *DB) GetHourVisits(start time.Time) ([]Visits, error) {
-	return d.mr.GetHourVisits(start, d.stats)
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.GetHourVisits(start, statsColl)
 }
 
 func (d *DB) GetDayVisits(start time.Time) ([]Visits, error) {
-	return d.mr.GetDayVisits(start, d.stats)
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.GetDayVisits(start, statsColl)
 }
 
 func (d *DB) GetMonthVisits(start time.Time) ([]Visits, error) {
-	return d.mr.GetMonthVisits(start, d.stats)
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.GetMonthVisits(start, statsColl)
 }

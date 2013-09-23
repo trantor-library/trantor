@@ -7,30 +7,12 @@ import (
 )
 
 type MR struct {
-	meta        *mgo.Collection
-	tags        *mgo.Collection
-	visited     *mgo.Collection
-	downloaded  *mgo.Collection
-	hourly_raw  *mgo.Collection
-	daily_raw   *mgo.Collection
-	monthly_raw *mgo.Collection
-	hourly      *mgo.Collection
-	daily       *mgo.Collection
-	monthly     *mgo.Collection
+	database *mgo.Database
 }
 
 func NewMR(database *mgo.Database) *MR {
 	m := new(MR)
-	m.meta = database.C(META_COLL)
-	m.tags = database.C(TAGS_COLL)
-	m.visited = database.C(VISITED_COLL)
-	m.downloaded = database.C(DOWNLOADED_COLL)
-	m.hourly_raw = database.C(HOURLY_VISITS_COLL + "_raw")
-	m.daily_raw = database.C(DAILY_VISITS_COLL + "_raw")
-	m.monthly_raw = database.C(MONTHLY_VISITS_COLL + "_raw")
-	m.hourly = database.C(HOURLY_VISITS_COLL)
-	m.daily = database.C(DAILY_VISITS_COLL)
-	m.monthly = database.C(MONTHLY_VISITS_COLL)
+	m.database = database
 	return m
 }
 
@@ -56,7 +38,8 @@ func (m *MR) GetTags(numTags int, booksColl *mgo.Collection) ([]string, error) {
 	var result []struct {
 		Tag string "_id"
 	}
-	err := m.tags.Find(nil).Sort("-value").Limit(numTags).All(&result)
+	tagsColl := m.database.C(TAGS_COLL)
+	err := tagsColl.Find(nil).Sort("-value").Limit(numTags).All(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +71,8 @@ func (m *MR) GetMostVisited(num int, statsColl *mgo.Collection) ([]bson.ObjectId
 	var result []struct {
 		Book bson.ObjectId "_id"
 	}
-	err := m.visited.Find(nil).Sort("-value").Limit(num).All(&result)
+	visitedColl := m.database.C(VISITED_COLL)
+	err := visitedColl.Find(nil).Sort("-value").Limit(num).All(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +104,8 @@ func (m *MR) GetMostDownloaded(num int, statsColl *mgo.Collection) ([]bson.Objec
 	var result []struct {
 		Book bson.ObjectId "_id"
 	}
-	err := m.downloaded.Find(nil).Sort("-value").Limit(num).All(&result)
+	downloadedColl := m.database.C(DOWNLOADED_COLL)
+	err := downloadedColl.Find(nil).Sort("-value").Limit(num).All(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -157,14 +142,16 @@ func (m *MR) GetHourVisits(start time.Time, statsColl *mgo.Collection) ([]Visits
 		               emit(this['_id']['date'], 1);
 		           }`
 		mr2.Reduce = reduce
-		err = m.update(&mr2, bson.M{}, m.hourly_raw, HOURLY_VISITS_COLL)
+		hourly_raw := m.database.C(HOURLY_VISITS_COLL + "_raw")
+		err = m.update(&mr2, bson.M{}, hourly_raw, HOURLY_VISITS_COLL)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	var result []Visits
-	err := m.hourly.Find(nil).All(&result)
+	hourlyColl := m.database.C(HOURLY_VISITS_COLL)
+	err := hourlyColl.Find(nil).All(&result)
 	return result, err
 }
 
@@ -192,14 +179,16 @@ func (m *MR) GetDayVisits(start time.Time, statsColl *mgo.Collection) ([]Visits,
 		               emit(this['_id']['date'], 1);
 		           }`
 		mr2.Reduce = reduce
-		err = m.update(&mr2, bson.M{}, m.daily_raw, DAILY_VISITS_COLL)
+		daily_raw := m.database.C(DAILY_VISITS_COLL + "_raw")
+		err = m.update(&mr2, bson.M{}, daily_raw, DAILY_VISITS_COLL)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	var result []Visits
-	err := m.daily.Find(nil).All(&result)
+	dailyColl := m.database.C(DAILY_VISITS_COLL)
+	err := dailyColl.Find(nil).All(&result)
 	return result, err
 }
 
@@ -226,19 +215,22 @@ func (m *MR) GetMonthVisits(start time.Time, statsColl *mgo.Collection) ([]Visit
 		               emit(this['_id']['date'], 1);
 		           }`
 		mr2.Reduce = reduce
-		err = m.update(&mr2, bson.M{}, m.monthly_raw, MONTHLY_VISITS_COLL)
+		monthly_raw := m.database.C(MONTHLY_VISITS_COLL + "_raw")
+		err = m.update(&mr2, bson.M{}, monthly_raw, MONTHLY_VISITS_COLL)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	var result []Visits
-	err := m.monthly.Find(nil).All(&result)
+	monthlyColl := m.database.C(MONTHLY_VISITS_COLL)
+	err := monthlyColl.Find(nil).All(&result)
 	return result, err
 }
 
 func (m *MR) update(mr *mgo.MapReduce, query bson.M, queryColl *mgo.Collection, storeColl string) error {
-	_, err := m.meta.RemoveAll(bson.M{"type": storeColl})
+	metaColl := m.database.C(META_COLL)
+	_, err := metaColl.RemoveAll(bson.M{"type": storeColl})
 	if err != nil {
 		return err
 	}
@@ -249,14 +241,15 @@ func (m *MR) update(mr *mgo.MapReduce, query bson.M, queryColl *mgo.Collection, 
 		return err
 	}
 
-	return m.meta.Insert(bson.M{"type": storeColl})
+	return metaColl.Insert(bson.M{"type": storeColl})
 }
 
 func (m *MR) isOutdated(coll string, minutes float64) bool {
 	var result struct {
 		Id bson.ObjectId `bson:"_id"`
 	}
-	err := m.meta.Find(bson.M{"type": coll}).One(&result)
+	metaColl := m.database.C(META_COLL)
+	err := metaColl.Find(bson.M{"type": coll}).One(&result)
 	if err != nil {
 		return true
 	}
