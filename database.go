@@ -264,3 +264,21 @@ func (d *DB) GetMonthVisits(start time.Time) ([]Visits, error) {
 	mr := NewMR(d.session.DB(DB_NAME))
 	return mr.GetMonthVisits(start, statsColl)
 }
+
+func (d *DB) GetHourDownloads(start time.Time) ([]Visits, error) {
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.GetHourDownloads(start, statsColl)
+}
+
+func (d *DB) GetDayDownloads(start time.Time) ([]Visits, error) {
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.GetDayDowloads(start, statsColl)
+}
+
+func (d *DB) GetMonthDownloads(start time.Time) ([]Visits, error) {
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.GetMonthDowloads(start, statsColl)
+}
