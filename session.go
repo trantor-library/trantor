@@ -21,7 +21,7 @@ type Session struct {
 	S    *sessions.Session
 }
 
-func GetSession(r *http.Request) (s *Session) {
+func GetSession(r *http.Request, db *DB) (s *Session) {
 	s = new(Session)
 	var err error
 	s.S, err = sesStore.Get(r, "session")

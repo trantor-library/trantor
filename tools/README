@@ -11,3 +11,5 @@ Password:
 - getISBNnDesc (31/5/2013). Import the ISBN and the description with changes of lines to the database
 
 - coverNew. Reload the cover from all the new books
+
+- addsize. Add the size of the books to the book metadata

@@ -16,34 +16,32 @@ import (
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"log"
-	"net/http"
 	"regexp"
 	"strings"
 )
 
-func coverHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+func coverHandler(h handler) {
+	vars := mux.Vars(h.r)
 	if !bson.IsObjectIdHex(vars["id"]) {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	id := bson.ObjectIdHex(vars["id"])
-	books, _, err := db.GetBooks(bson.M{"_id": id})
+	books, _, err := h.db.GetBooks(bson.M{"_id": id})
 	if err != nil || len(books) == 0 {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	book := books[0]
 
 	if !book.Active {
-		sess := GetSession(r)
-		if !sess.IsAdmin() {
-			notFound(w, r)
+		if !h.sess.IsAdmin() {
+			notFound(h)
 			return
 		}
 	}
 
-	fs := db.GetFS(FS_IMGS)
+	fs := h.db.GetFS(FS_IMGS)
 	var f *mgo.GridFile
 	if vars["size"] == "small" {
 		f, err = fs.OpenId(book.CoverSmall)
@@ -52,24 +50,24 @@ func coverHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Println("Error while opening image:", err)
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 	defer f.Close()
 
-	headers := w.Header()
+	headers := h.w.Header()
 	headers["Content-Type"] = []string{"image/jpeg"}
 
-	io.Copy(w, f)
+	io.Copy(h.w, f)
 }
 
-func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
-	imgId, smallId := coverFromMetadata(e, title)
+func GetCover(e *epubgo.Epub, title string, db *DB) (bson.ObjectId, bson.ObjectId) {
+	imgId, smallId := coverFromMetadata(e, title, db)
 	if imgId != "" {
 		return imgId, smallId
 	}
 
-	imgId, smallId = searchCommonCoverNames(e, title)
+	imgId, smallId = searchCommonCoverNames(e, title, db)
 	if imgId != "" {
 		return imgId, smallId
 	}
@@ -110,7 +108,7 @@ func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
 			img, err := e.OpenFile(url)
 			if err == nil {
 				defer img.Close()
-				return storeImg(img, title)
+				return storeImg(img, title, db)
 			}
 		}
 		errNext = it.Next()
@@ -118,41 +116,41 @@ func GetCover(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
 	return "", ""
 }
 
-func coverFromMetadata(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
+func coverFromMetadata(e *epubgo.Epub, title string, db *DB) (bson.ObjectId, bson.ObjectId) {
 	metaList, _ := e.MetadataAttr("meta")
 	for _, meta := range metaList {
 		if meta["name"] == "cover" {
 			img, err := e.OpenFileId(meta["content"])
 			if err == nil {
 				defer img.Close()
-				return storeImg(img, title)
+				return storeImg(img, title, db)
 			}
 		}
 	}
 	return "", ""
 }
 
-func searchCommonCoverNames(e *epubgo.Epub, title string) (bson.ObjectId, bson.ObjectId) {
+func searchCommonCoverNames(e *epubgo.Epub, title string, db *DB) (bson.ObjectId, bson.ObjectId) {
 	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
 		img, err := e.OpenFile(p)
 		if err == nil {
 			defer img.Close()
-			return storeImg(img, title)
+			return storeImg(img, title, db)
 		}
 	}
 	return "", ""
 }
 
-func storeImg(img io.Reader, title string) (bson.ObjectId, bson.ObjectId) {
+func storeImg(img io.Reader, title string, db *DB) (bson.ObjectId, bson.ObjectId) {
 	/* open the files */
-	fBig, err := createCoverFile(title)
+	fBig, err := createCoverFile(title, db)
 	if err != nil {
 		log.Println("Error creating", title, ":", err.Error())
 		return "", ""
 	}
 	defer fBig.Close()
 
-	fSmall, err := createCoverFile(title + "_small")
+	fSmall, err := createCoverFile(title+"_small", db)
 	if err != nil {
 		log.Println("Error creating", title+"_small", ":", err.Error())
 		return "", ""
@@ -189,7 +187,7 @@ func storeImg(img io.Reader, title string) (bson.ObjectId, bson.ObjectId) {
 	return idBig, idSmall
 }
 
-func createCoverFile(title string) (*mgo.GridFile, error) {
+func createCoverFile(title string, db *DB) (*mgo.GridFile, error) {
 	fs := db.GetFS(FS_IMGS)
 	return fs.Create(title + ".jpg")
 }

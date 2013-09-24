@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var db *DB
+
 type Book struct {
 	Id          string `bson:"_id"`
 	Title       string
@@ -40,6 +42,11 @@ type News struct {
 
 type DB struct {
 	session *mgo.Session
+	books   *mgo.Collection
+	user    *mgo.Collection
+	news    *mgo.Collection
+	stats   *mgo.Collection
+	mr      *MR
 }
 
 func initDB() *DB {
@@ -49,17 +56,18 @@ func initDB() *DB {
 	if err != nil {
 		panic(err)
 	}
+
+	database := d.session.DB(DB_NAME)
+	d.books = database.C(BOOKS_COLL)
+	d.user = database.C(USERS_COLL)
+	d.news = database.C(NEWS_COLL)
+	d.stats = database.C(STATS_COLL)
+	d.mr = NewMR(database)
 	return d
 }
 
 func (d *DB) Close() {
 	d.session.Close()
-}
-
-func (d *DB) Copy() *DB {
-	dbCopy := new(DB)
-	dbCopy.session = d.session.Copy()
-	return dbCopy
 }
 
 func md5Pass(pass string) []byte {
@@ -70,24 +78,16 @@ func md5Pass(pass string) []byte {
 
 func (d *DB) SetPassword(user string, pass string) error {
 	hash := md5Pass(pass)
-	userColl := d.session.DB(DB_NAME).C(USERS_COLL)
-	return userColl.Update(bson.M{"user": user}, bson.M{"$set": bson.M{"pass": hash}})
+	return d.user.Update(bson.M{"user": user}, bson.M{"$set": bson.M{"pass": hash}})
 }
 
 func (d *DB) UserValid(user string, pass string) bool {
 	hash := md5Pass(pass)
-	userColl := d.session.DB(DB_NAME).C(USERS_COLL)
-	n, err := userColl.Find(bson.M{"user": user, "pass": hash}).Count()
+	n, err := d.user.Find(bson.M{"user": user, "pass": hash}).Count()
 	if err != nil {
 		return false
 	}
 	return n != 0
-}
-
-func (d *DB) AddUser(user string, pass string) error {
-	hash := md5Pass(pass)
-	userColl := d.session.DB(DB_NAME).C(USERS_COLL)
-	return userColl.Insert(bson.M{"user": user, "pass": hash, "role": ""})
 }
 
 func (d *DB) UserRole(user string) string {
@@ -95,8 +95,7 @@ func (d *DB) UserRole(user string) string {
 		Role string
 	}
 	res := result{}
-	userColl := d.session.DB(DB_NAME).C(USERS_COLL)
-	err := userColl.Find(bson.M{"user": user}).One(&res)
+	err := d.user.Find(bson.M{"user": user}).One(&res)
 	if err != nil {
 		return ""
 	}
@@ -107,8 +106,7 @@ func (d *DB) AddNews(text string) error {
 	var news News
 	news.Text = text
 	news.Date = time.Now()
-	newsColl := d.session.DB(DB_NAME).C(NEWS_COLL)
-	return newsColl.Insert(news)
+	return d.news.Insert(news)
 }
 
 func (d *DB) GetNews(num int, days int) (news []News, err error) {
@@ -118,30 +116,25 @@ func (d *DB) GetNews(num int, days int) (news []News, err error) {
 		date := time.Now().Add(duration)
 		query = bson.M{"date": bson.M{"$gt": date}}
 	}
-	newsColl := d.session.DB(DB_NAME).C(NEWS_COLL)
-	q := newsColl.Find(query).Sort("-date").Limit(num)
+	q := d.news.Find(query).Sort("-date").Limit(num)
 	err = q.All(&news)
 	return
 }
 
 func (d *DB) InsertStats(stats interface{}) error {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	return statsColl.Insert(stats)
+	return d.stats.Insert(stats)
 }
 
 func (d *DB) InsertBook(book interface{}) error {
-	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
-	return booksColl.Insert(book)
+	return d.books.Insert(book)
 }
 
 func (d *DB) RemoveBook(id bson.ObjectId) error {
-	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
-	return booksColl.Remove(bson.M{"_id": id})
+	return d.books.Remove(bson.M{"_id": id})
 }
 
 func (d *DB) UpdateBook(id bson.ObjectId, data interface{}) error {
-	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
-	return booksColl.Update(bson.M{"_id": id}, bson.M{"$set": data})
+	return d.books.Update(bson.M{"_id": id}, bson.M{"$set": data})
 }
 
 /* optional parameters: length and start index
@@ -156,8 +149,7 @@ func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error)
 			start = r[1]
 		}
 	}
-	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
-	q := booksColl.Find(query).Sort("-_id")
+	q := d.books.Find(query).Sort("-_id")
 	num, err = q.Count()
 	if err != nil {
 		return
@@ -179,17 +171,14 @@ func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error)
 /* Get the most visited books
  */
 func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	bookId, err := mr.GetMostVisited(num, statsColl)
+	bookId, err := d.mr.GetMostVisited(num, d.stats)
 	if err != nil {
 		return nil, err
 	}
 
 	books = make([]Book, num)
 	for i, id := range bookId {
-		booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
-		booksColl.Find(bson.M{"_id": id}).One(&books[i])
+		d.books.Find(bson.M{"_id": id}).One(&books[i])
 		books[i].Id = bson.ObjectId(books[i].Id).Hex()
 	}
 	return
@@ -198,17 +187,14 @@ func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
 /* Get the most downloaded books
  */
 func (d *DB) GetDownloadedBooks(num int) (books []Book, err error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	bookId, err := mr.GetMostDownloaded(num, statsColl)
+	bookId, err := d.mr.GetMostDownloaded(num, d.stats)
 	if err != nil {
 		return nil, err
 	}
 
 	books = make([]Book, num)
 	for i, id := range bookId {
-		booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
-		booksColl.Find(bson.M{"_id": id}).One(&books[i])
+		d.books.Find(bson.M{"_id": id}).One(&books[i])
 		books[i].Id = bson.ObjectId(books[i].Id).Hex()
 	}
 	return
@@ -224,8 +210,7 @@ func (d *DB) GetNewBooks(r ...int) (books []Book, num int, err error) {
 
 func (d *DB) BookActive(id bson.ObjectId) bool {
 	var book Book
-	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
-	err := booksColl.Find(bson.M{"_id": id}).One(&book)
+	err := d.books.Find(bson.M{"_id": id}).One(&book)
 	if err != nil {
 		return false
 	}
@@ -237,9 +222,7 @@ func (d *DB) GetFS(prefix string) *mgo.GridFS {
 }
 
 func (d *DB) GetTags(numTags int) ([]string, error) {
-	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetTags(numTags, booksColl)
+	return d.mr.GetTags(numTags, d.books)
 }
 
 type Visits struct {
@@ -248,19 +231,13 @@ type Visits struct {
 }
 
 func (d *DB) GetHourVisits(start time.Time) ([]Visits, error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetHourVisits(start, statsColl)
+	return d.mr.GetHourVisits(start, d.stats)
 }
 
 func (d *DB) GetDayVisits(start time.Time) ([]Visits, error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetDayVisits(start, statsColl)
+	return d.mr.GetDayVisits(start, d.stats)
 }
 
 func (d *DB) GetMonthVisits(start time.Time) ([]Visits, error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetMonthVisits(start, statsColl)
+	return d.mr.GetMonthVisits(start, d.stats)
 }

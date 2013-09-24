@@ -7,5 +7,6 @@ tools/update/update
 tools/togridfs/togridfs
 tools/getISBNnDesc/getISBNnDesc
 tools/coverNew/coverNew
+tools/addsize/addsize
 tags
 .*.swp

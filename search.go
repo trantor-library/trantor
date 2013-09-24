@@ -35,25 +35,25 @@ type searchData struct {
 	Prev      string
 }
 
-func searchHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	err := r.ParseForm()
+func searchHandler(h handler) {
+	err := h.r.ParseForm()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(h.w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	req := strings.Join(r.Form["q"], " ")
+	req := strings.Join(h.r.Form["q"], " ")
 	page := 0
-	if len(r.Form["p"]) != 0 {
-		page, err = strconv.Atoi(r.Form["p"][0])
+	if len(h.r.Form["p"]) != 0 {
+		page, err = strconv.Atoi(h.r.Form["p"][0])
 		if err != nil {
 			page = 0
 		}
 	}
-	items_page := itemsPage(r)
-	res, num, _ := db.GetBooks(buildQuery(req), items_page, page*items_page)
+	items_page := itemsPage(h.r)
+	res, num, _ := h.db.GetBooks(buildQuery(req), items_page, page*items_page)
 
 	var data searchData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	data.S.Search = req
 	data.Books = res
 	data.ItemsPage = items_page
@@ -66,11 +66,11 @@ func searchHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 		data.Prev = "/search/?q=" + req + "&p=" + strconv.Itoa(page-1) + "&num=" + strconv.Itoa(items_page)
 	}
 
-	format := r.Form["fmt"]
+	format := h.r.Form["fmt"]
 	if (len(format) > 0) && (format[0] == "rss") {
-		loadTxtTemplate(w, "search_rss.xml", data)
+		loadTxtTemplate(h.w, "search_rss.xml", data)
 	} else {
-		loadTemplate(w, "search", data)
+		loadTemplate(h.w, "search", data)
 	}
 }
 

@@ -14,50 +14,50 @@ type newsEntry struct {
 	Text string
 }
 
-func newsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	err := r.ParseForm()
+func newsHandler(h handler) {
+	err := h.r.ParseForm()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(h.w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	var data newsData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	data.S.News = true
-	data.News = getNews(NUM_NEWS, 0)
+	data.News = getNews(NUM_NEWS, 0, h.db)
 
-	format := r.Form["fmt"]
+	format := h.r.Form["fmt"]
 	if (len(format) > 0) && (format[0] == "rss") {
-		loadTxtTemplate(w, "news_rss.xml", data)
+		loadTxtTemplate(h.w, "news_rss.xml", data)
 	} else {
-		loadTemplate(w, "news", data)
+		loadTemplate(h.w, "news", data)
 	}
 }
 
-func editNewsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if !sess.IsAdmin() {
-		notFound(w, r)
+func editNewsHandler(h handler) {
+	if !h.sess.IsAdmin() {
+		notFound(h)
 		return
 	}
 
 	var data statusData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	data.S.News = true
-	loadTemplate(w, "edit_news", data)
+	loadTemplate(h.w, "edit_news", data)
 }
 
-func postNewsHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if !sess.IsAdmin() {
-		notFound(w, r)
+func postNewsHandler(h handler) {
+	if !h.sess.IsAdmin() {
+		notFound(h)
 		return
 	}
 
-	text := r.FormValue("text")
-	db.AddNews(text)
-	http.Redirect(w, r, "/news/", http.StatusFound)
+	text := h.r.FormValue("text")
+	h.db.AddNews(text)
+	http.Redirect(h.w, h.r, "/news/", http.StatusFound)
 }
 
-func getNews(num int, days int) []newsEntry {
+func getNews(num int, days int, db *DB) []newsEntry {
 	dbnews, _ := db.GetNews(num, days)
 	news := make([]newsEntry, len(dbnews))
 	for i, n := range dbnews {

@@ -20,6 +20,7 @@
 {{if .Isbn}}
   <guid isPermaLink="false">ISBN: {{.Isbn}}</guid>
 {{end}}
+  <enclosure url="{{$baseURL}}/download/{{.Id}}/{{.Title}}.epub" length="{{.FileSize}}" type="application/epub+zip" />
 {{range .Subject}}
   {{if .}}
   <category>{{.}}</category>

@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func OpenBook(id bson.ObjectId) (*epubgo.Epub, error) {
+func OpenBook(id bson.ObjectId, db *DB) (*epubgo.Epub, error) {
 	fs := db.GetFS(FS_BOOKS)
 	f, err := fs.OpenId(id)
 	if err != nil {
@@ -24,37 +24,37 @@ func OpenBook(id bson.ObjectId) (*epubgo.Epub, error) {
 	return epubgo.Load(reader, int64(len(buff)))
 }
 
-func StoreNewFile(name string, file io.Reader) (bson.ObjectId, error) {
+func StoreNewFile(name string, file io.Reader, db *DB) (bson.ObjectId, int64, error) {
 	fs := db.GetFS(FS_BOOKS)
 	fw, err := fs.Create(name)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 	defer fw.Close()
 
-	_, err = io.Copy(fw, file)
+	size, err := io.Copy(fw, file)
 	id, _ := fw.Id().(bson.ObjectId)
-	return id, err
+	return id, size, err
 }
 
-func DeleteFile(id bson.ObjectId) error {
+func DeleteFile(id bson.ObjectId, db *DB) error {
 	fs := db.GetFS(FS_BOOKS)
 	return fs.RemoveId(id)
 }
 
-func DeleteCover(id bson.ObjectId) error {
+func DeleteCover(id bson.ObjectId, db *DB) error {
 	fs := db.GetFS(FS_IMGS)
 	return fs.RemoveId(id)
 }
 
-func DeleteBook(book Book) {
+func DeleteBook(book Book, db *DB) {
 	if book.Cover != "" {
-		DeleteCover(book.Cover)
+		DeleteCover(book.Cover, db)
 	}
 	if book.CoverSmall != "" {
-		DeleteCover(book.CoverSmall)
+		DeleteCover(book.CoverSmall, db)
 	}
-	DeleteFile(book.File)
+	DeleteFile(book.File, db)
 }
 
 func cleanStr(str string) string {

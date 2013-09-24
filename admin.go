@@ -9,29 +9,29 @@ import (
 	"strings"
 )
 
-func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if !sess.IsAdmin() {
-		notFound(w, r)
+func deleteHandler(h handler) {
+	if !h.sess.IsAdmin() {
+		notFound(h)
 		return
 	}
 
 	var titles []string
 	var isNew bool
-	ids := strings.Split(mux.Vars(r)["ids"], "/")
+	ids := strings.Split(mux.Vars(h.r)["ids"], "/")
 	for _, idStr := range ids {
 		if !bson.IsObjectIdHex(idStr) {
 			continue
 		}
 
 		id := bson.ObjectIdHex(idStr)
-		books, _, err := db.GetBooks(bson.M{"_id": id})
+		books, _, err := h.db.GetBooks(bson.M{"_id": id})
 		if err != nil {
-			sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
+			h.sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
 			continue
 		}
 		book := books[0]
-		DeleteBook(book)
-		db.RemoveBook(id)
+		DeleteBook(book, h.db)
+		h.db.RemoveBook(id)
 
 		if !book.Active {
 			isNew = true
@@ -39,33 +39,33 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 		titles = append(titles, book.Title)
 	}
 	if titles != nil {
-		sess.Notify("Removed books!", "The books "+strings.Join(titles, ", ")+" are completly removed", "success")
+		h.sess.Notify("Removed books!", "The books "+strings.Join(titles, ", ")+" are completly removed", "success")
 	}
-	sess.Save(w, r)
+	h.sess.Save(h.w, h.r)
 	if isNew {
-		http.Redirect(w, r, "/new/", http.StatusFound)
+		http.Redirect(h.w, h.r, "/new/", http.StatusFound)
 	} else {
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(h.w, h.r, "/", http.StatusFound)
 	}
 }
 
-func editHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	idStr := mux.Vars(r)["id"]
-	if !sess.IsAdmin() || !bson.IsObjectIdHex(idStr) {
-		notFound(w, r)
+func editHandler(h handler) {
+	idStr := mux.Vars(h.r)["id"]
+	if !h.sess.IsAdmin() || !bson.IsObjectIdHex(idStr) {
+		notFound(h)
 		return
 	}
 	id := bson.ObjectIdHex(idStr)
-	books, _, err := db.GetBooks(bson.M{"_id": id})
+	books, _, err := h.db.GetBooks(bson.M{"_id": id})
 	if err != nil {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 
 	var data bookData
 	data.Book = books[0]
-	data.S = GetStatus(w, r)
-	loadTemplate(w, "edit", data)
+	data.S = GetStatus(h)
+	loadTemplate(h.w, "edit", data)
 }
 
 func cleanEmptyStr(s []string) []string {
@@ -78,21 +78,21 @@ func cleanEmptyStr(s []string) []string {
 	return res
 }
 
-func saveHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	idStr := mux.Vars(r)["id"]
-	if !sess.IsAdmin() || !bson.IsObjectIdHex(idStr) {
-		notFound(w, r)
+func saveHandler(h handler) {
+	idStr := mux.Vars(h.r)["id"]
+	if !h.sess.IsAdmin() || !bson.IsObjectIdHex(idStr) {
+		notFound(h)
 		return
 	}
 
 	id := bson.ObjectIdHex(idStr)
-	title := r.FormValue("title")
-	publisher := r.FormValue("publisher")
-	date := r.FormValue("date")
-	description := r.FormValue("description")
-	author := cleanEmptyStr(r.Form["author"])
-	subject := cleanEmptyStr(r.Form["subject"])
-	lang := cleanEmptyStr(r.Form["lang"])
+	title := h.r.FormValue("title")
+	publisher := h.r.FormValue("publisher")
+	date := h.r.FormValue("date")
+	description := h.r.FormValue("description")
+	author := cleanEmptyStr(h.r.Form["author"])
+	subject := cleanEmptyStr(h.r.Form["subject"])
+	lang := cleanEmptyStr(h.r.Form["lang"])
 	book := map[string]interface{}{"title": title,
 		"publisher":   publisher,
 		"date":        date,
@@ -101,18 +101,18 @@ func saveHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 		"subject":     subject,
 		"lang":        lang}
 	book["keywords"] = keywords(book)
-	err := db.UpdateBook(id, book)
+	err := h.db.UpdateBook(id, book)
 	if err != nil {
-		notFound(w, r)
+		notFound(h)
 		return
 	}
 
-	sess.Notify("Book Modified!", "", "success")
-	sess.Save(w, r)
-	if db.BookActive(id) {
-		http.Redirect(w, r, "/book/"+idStr, http.StatusFound)
+	h.sess.Notify("Book Modified!", "", "success")
+	h.sess.Save(h.w, h.r)
+	if h.db.BookActive(id) {
+		http.Redirect(h.w, h.r, "/book/"+idStr, http.StatusFound)
 	} else {
-		http.Redirect(w, r, "/new/", http.StatusFound)
+		http.Redirect(h.w, h.r, "/new/", http.StatusFound)
 	}
 }
 
@@ -130,28 +130,28 @@ type newData struct {
 	Prev  string
 }
 
-func newHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if !sess.IsAdmin() {
-		notFound(w, r)
+func newHandler(h handler) {
+	if !h.sess.IsAdmin() {
+		notFound(h)
 		return
 	}
 
-	err := r.ParseForm()
+	err := h.r.ParseForm()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(h.w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	page := 0
-	if len(r.Form["p"]) != 0 {
-		page, err = strconv.Atoi(r.Form["p"][0])
+	if len(h.r.Form["p"]) != 0 {
+		page, err = strconv.Atoi(h.r.Form["p"][0])
 		if err != nil {
 			page = 0
 		}
 	}
-	res, num, _ := db.GetNewBooks(NEW_ITEMS_PAGE, page*NEW_ITEMS_PAGE)
+	res, num, _ := h.db.GetNewBooks(NEW_ITEMS_PAGE, page*NEW_ITEMS_PAGE)
 
 	var data newData
-	data.S = GetStatus(w, r)
+	data.S = GetStatus(h)
 	data.Found = num
 	if num-NEW_ITEMS_PAGE*page < NEW_ITEMS_PAGE {
 		data.Books = make([]newBook, num-NEW_ITEMS_PAGE*page)
@@ -160,8 +160,8 @@ func newHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	}
 	for i, b := range res {
 		data.Books[i].B = b
-		_, data.Books[i].TitleFound, _ = db.GetBooks(buildQuery("title:"+b.Title), 1)
-		_, data.Books[i].AuthorFound, _ = db.GetBooks(buildQuery("author:"+strings.Join(b.Author, " author:")), 1)
+		_, data.Books[i].TitleFound, _ = h.db.GetBooks(buildQuery("title:"+b.Title), 1)
+		_, data.Books[i].AuthorFound, _ = h.db.GetBooks(buildQuery("author:"+strings.Join(b.Author, " author:")), 1)
 	}
 	data.Page = page + 1
 	if num > (page+1)*NEW_ITEMS_PAGE {
@@ -170,40 +170,40 @@ func newHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
 	if page > 0 {
 		data.Prev = "/new/?p=" + strconv.Itoa(page-1)
 	}
-	loadTemplate(w, "new", data)
+	loadTemplate(h.w, "new", data)
 }
 
-func storeHandler(w http.ResponseWriter, r *http.Request, sess *Session) {
-	if !sess.IsAdmin() {
-		notFound(w, r)
+func storeHandler(h handler) {
+	if !h.sess.IsAdmin() {
+		notFound(h)
 		return
 	}
 
 	var titles []string
-	ids := strings.Split(mux.Vars(r)["ids"], "/")
+	ids := strings.Split(mux.Vars(h.r)["ids"], "/")
 	for _, idStr := range ids {
 		if !bson.IsObjectIdHex(idStr) {
 			continue
 		}
 
 		id := bson.ObjectIdHex(idStr)
-		books, _, err := db.GetBooks(bson.M{"_id": id})
+		books, _, err := h.db.GetBooks(bson.M{"_id": id})
 		if err != nil {
-			sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
+			h.sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
 			continue
 		}
 		book := books[0]
 		if err != nil {
-			sess.Notify("An error ocurred!", err.Error(), "error")
+			h.sess.Notify("An error ocurred!", err.Error(), "error")
 			log.Println("Error storing book '", book.Title, "': ", err.Error())
 			continue
 		}
-		db.UpdateBook(id, bson.M{"active": true})
+		h.db.UpdateBook(id, bson.M{"active": true})
 		titles = append(titles, book.Title)
 	}
 	if titles != nil {
-		sess.Notify("Store books!", "The books '"+strings.Join(titles, ", ")+"' are stored for public download", "success")
+		h.sess.Notify("Store books!", "The books '"+strings.Join(titles, ", ")+"' are stored for public download", "success")
 	}
-	sess.Save(w, r)
-	http.Redirect(w, r, "/new/", http.StatusFound)
+	h.sess.Save(h.w, h.r)
+	http.Redirect(h.w, h.r, "/new/", http.StatusFound)
 }
