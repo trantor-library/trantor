@@ -65,18 +65,24 @@ func statsHandler(h handler) {
 	var data statsData
 	data.S = GetStatus(h)
 	data.S.Stats = true
-	data.Hourly = getHourlyVisits(h.db)
-	data.Daily = getDailyVisits(h.db)
-	data.Monthly = getMonthlyVisits(h.db)
+	data.HVisits = getHourlyVisits(h.db)
+	data.DVisits = getDailyVisits(h.db)
+	data.MVisits = getMonthlyVisits(h.db)
+	data.HDownloads = getHourlyDownloads(h.db)
+	data.DDownloads = getDailyDownloads(h.db)
+	data.MDownloads = getMonthlyDownloads(h.db)
 
 	loadTemplate(h.w, "stats", data)
 }
 
 type statsData struct {
-	S       Status
-	Hourly  []visitData
-	Daily   []visitData
-	Monthly []visitData
+	S          Status
+	HVisits    []visitData
+	DVisits    []visitData
+	MVisits    []visitData
+	HDownloads []visitData
+	DDownloads []visitData
+	MDownloads []visitData
 }
 
 type visitData struct {
@@ -124,6 +130,57 @@ func getMonthlyVisits(db *DB) []visitData {
 
 	start := time.Now().UTC().Add(-numDays * 24 * time.Hour).Truncate(24 * time.Hour)
 	visit, _ := db.GetMonthVisits(start)
+	for _, v := range visit {
+		var elem visitData
+		month := time.Unix(v.Date/1000, 0).UTC().Month()
+		elem.Label = month.String()
+		elem.Count = v.Count
+		visits = append(visits, elem)
+	}
+
+	return visits
+}
+
+func getHourlyDownloads(db *DB) []visitData {
+	const numDays = 2
+	var visits []visitData
+
+	start := time.Now().UTC().Add(-numDays * 24 * time.Hour)
+	visit, _ := db.GetHourDownloads(start)
+	for _, v := range visit {
+		var elem visitData
+		hour := time.Unix(v.Date/1000, 0).UTC().Hour()
+		elem.Label = strconv.Itoa(hour + 1)
+		elem.Count = v.Count
+		visits = append(visits, elem)
+	}
+
+	return visits
+}
+
+func getDailyDownloads(db *DB) []visitData {
+	const numDays = 30
+	var visits []visitData
+
+	start := time.Now().UTC().Add(-numDays * 24 * time.Hour).Truncate(24 * time.Hour)
+	visit, _ := db.GetDayDownloads(start)
+	for _, v := range visit {
+		var elem visitData
+		day := time.Unix(v.Date/1000, 0).UTC().Day()
+		elem.Label = strconv.Itoa(day)
+		elem.Count = v.Count
+		visits = append(visits, elem)
+	}
+
+	return visits
+}
+
+func getMonthlyDownloads(db *DB) []visitData {
+	const numDays = 365
+	var visits []visitData
+
+	start := time.Now().UTC().Add(-numDays * 24 * time.Hour).Truncate(24 * time.Hour)
+	visit, _ := db.GetMonthDownloads(start)
 	for _, v := range visit {
 		var elem visitData
 		month := time.Unix(v.Date/1000, 0).UTC().Month()

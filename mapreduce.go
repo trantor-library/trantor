@@ -129,7 +129,7 @@ func (m *MR) GetHourVisits(start time.Time, statsColl *mgo.Collection) ([]Visits
 		              var date = Date.UTC(this.date.getUTCFullYear(),
 		                                  this.date.getUTCMonth(),
 		                                  this.date.getUTCDate(),
-	                                          this.date.getUTCHours());
+	                                      this.date.getUTCHours());
 		              emit({date: date, session: this.session}, 1);
 		          }`
 		mr.Reduce = reduce
@@ -224,6 +224,123 @@ func (m *MR) GetMonthVisits(start time.Time, statsColl *mgo.Collection) ([]Visit
 
 	var result []Visits
 	monthlyColl := m.database.C(MONTHLY_VISITS_COLL)
+	err := monthlyColl.Find(nil).All(&result)
+	return result, err
+}
+
+func (m *MR) GetHourDownloads(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {
+	if m.isOutdated(HOURLY_DOWNLOADS_COLL, MINUTES_UPDATE_HOURLY) {
+		const reduce = `function(date, vals) {
+		                    var count = 0;
+		                    vals.forEach(function(v) { count += v; });
+		                    return count;
+		                }`
+		var mr mgo.MapReduce
+		mr.Map = `function() {
+		              if (this.section == "download") {
+						  var date = Date.UTC(this.date.getUTCFullYear(),
+											  this.date.getUTCMonth(),
+											  this.date.getUTCDate(),
+											  this.date.getUTCHours());
+						  emit({date: date}, 1);
+					  }
+		          }`
+		mr.Reduce = reduce
+		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, HOURLY_DOWNLOADS_COLL+"_raw")
+		if err != nil {
+			return nil, err
+		}
+		var mr2 mgo.MapReduce
+		mr2.Map = `function() {
+		               emit(this['_id']['date'], 1);
+		           }`
+		mr2.Reduce = reduce
+		hourly_raw := m.database.C(HOURLY_DOWNLOADS_COLL + "_raw")
+		err = m.update(&mr2, bson.M{}, hourly_raw, HOURLY_DOWNLOADS_COLL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var result []Visits
+	hourlyColl := m.database.C(HOURLY_DOWNLOADS_COLL)
+	err := hourlyColl.Find(nil).All(&result)
+	return result, err
+}
+
+func (m *MR) GetDayDowloads(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {
+	if m.isOutdated(DAILY_DOWNLOADS_COLL, MINUTES_UPDATE_DAILY) {
+		const reduce = `function(date, vals) {
+		                    var count = 0;
+		                    vals.forEach(function(v) { count += v; });
+		                    return count;
+		                }`
+		var mr mgo.MapReduce
+		mr.Map = `function() {
+		              if (this.section == "download") {
+						  var date = Date.UTC(this.date.getUTCFullYear(),
+											  this.date.getUTCMonth(),
+											  this.date.getUTCDate());
+						  emit({date: date, session: this.session}, 1);
+					  }
+		          }`
+		mr.Reduce = reduce
+		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, DAILY_DOWNLOADS_COLL+"_raw")
+		if err != nil {
+			return nil, err
+		}
+		var mr2 mgo.MapReduce
+		mr2.Map = `function() {
+		               emit(this['_id']['date'], 1);
+		           }`
+		mr2.Reduce = reduce
+		daily_raw := m.database.C(DAILY_DOWNLOADS_COLL + "_raw")
+		err = m.update(&mr2, bson.M{}, daily_raw, DAILY_DOWNLOADS_COLL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var result []Visits
+	dailyColl := m.database.C(DAILY_DOWNLOADS_COLL)
+	err := dailyColl.Find(nil).All(&result)
+	return result, err
+}
+
+func (m *MR) GetMonthDowloads(start time.Time, statsColl *mgo.Collection) ([]Visits, error) {
+	if m.isOutdated(MONTHLY_DOWNLOADS_COLL, MINUTES_UPDATE_MONTHLY) {
+		const reduce = `function(date, vals) {
+		                    var count = 0;
+		                    vals.forEach(function(v) { count += v; });
+		                    return count;
+		                }`
+		var mr mgo.MapReduce
+		mr.Map = `function() {
+		              if (this.section == "download") {
+						  var date = Date.UTC(this.date.getUTCFullYear(),
+											  this.date.getUTCMonth());
+						  emit({date: date, session: this.session}, 1);
+			          }
+		          }`
+		mr.Reduce = reduce
+		err := m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, MONTHLY_DOWNLOADS_COLL+"_raw")
+		if err != nil {
+			return nil, err
+		}
+		var mr2 mgo.MapReduce
+		mr2.Map = `function() {
+		               emit(this['_id']['date'], 1);
+		           }`
+		mr2.Reduce = reduce
+		monthly_raw := m.database.C(MONTHLY_DOWNLOADS_COLL + "_raw")
+		err = m.update(&mr2, bson.M{}, monthly_raw, MONTHLY_DOWNLOADS_COLL)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var result []Visits
+	monthlyColl := m.database.C(MONTHLY_DOWNLOADS_COLL)
 	err := monthlyColl.Find(nil).All(&result)
 	return result, err
 }

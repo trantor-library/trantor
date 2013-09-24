@@ -3,12 +3,24 @@
 <script src="/js/Chart.min.js"></script>
 
 <div class="row">
-	<h4>Hourly visits:</h4>
-	<canvas id="hourly" height="400" width="800"></canvas>
-	<h4>Daily visits:</h4>
-	<canvas id="daily" height="400" width="800"></canvas>
-	<h4>Monthly visits:</h4>
-	<canvas id="monthly" height="400" width="800"></canvas>
+	<div id="visits" class="span6">
+	    <h2>Visits</h2>
+		<h4>Hourly:</h4>
+		<canvas id="hvisits" height="400" width="500"></canvas>
+		<h4>Daily:</h4>
+		<canvas id="dvisits" height="400" width="500"></canvas>
+		<h4>Monthly:</h4>
+		<canvas id="mvisits" height="400" width="500"></canvas>
+	</div>
+	<div id="downloads" class="span6">
+	    <h2>Downloads</h2>
+		<h4>Hourly:</h4>
+		<canvas id="hdownloads" height="400" width="500"></canvas>
+		<h4>Daily:</h4>
+		<canvas id="ddownloads" height="400" width="500"></canvas>
+		<h4>Monthly:</h4>
+		<canvas id="mdownlodas" height="400" width="500"></canvas>
+	</div>
 </div>
 
 <script type="text/javascript">
@@ -30,12 +42,21 @@
 		new Chart(ctx).Line(data);
 	}
 
-	chart("#hourly", [{{range .Hourly}}"{{.Label}}",{{end}}],
-			 [{{range .Hourly}}{{.Count}},{{end}}])
-	chart("#daily", [{{range .Daily}}"{{.Label}}",{{end}}],
-			[{{range .Daily}}{{.Count}},{{end}}])
-	chart("#monthly", [{{range .Monthly}}"{{.Label}}",{{end}}],
-			  [{{range .Monthly}}{{.Count}},{{end}}])
+	$(document).ready(function() {
+		chart("#hvisits", [{{range .HVisits}}"{{.Label}}",{{end}}],
+			[{{range .HVisits}}{{.Count}},{{end}}])
+		chart("#dvisits", [{{range .DVisits}}"{{.Label}}",{{end}}],
+			[{{range .DVisits}}{{.Count}},{{end}}])
+		chart("#mvisits", [{{range .MVisits}}"{{.Label}}",{{end}}],
+			[{{range .MVisits}}{{.Count}},{{end}}])
+
+		chart("#hdownloads", [{{range .HDownloads}}"{{.Label}}",{{end}}],
+			[{{range .HDownloads}}{{.Count}},{{end}}])
+		chart("#ddownloads", [{{range .DDownloads}}"{{.Label}}",{{end}}],
+			[{{range .DDownloads}}{{.Count}},{{end}}])
+		chart("#mdownlodas", [{{range .MDownloads}}"{{.Label}}",{{end}}],
+			[{{range .MDownloads}}{{.Count}},{{end}}])
+	})
 </script>
 
 {{template "footer.html"}}
