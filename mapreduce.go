@@ -237,7 +237,7 @@ func (m *MR) GetHourDownloads(start time.Time, statsColl *mgo.Collection) ([]Vis
 											  this.date.getUTCMonth(),
 											  this.date.getUTCDate(),
 											  this.date.getUTCHours());
-						  emit({date: date}, 1);
+						  emit(date, 1);
 					  }
 		          }`
 		mr.Reduce = `function(date, vals) {
@@ -265,7 +265,7 @@ func (m *MR) GetDayDowloads(start time.Time, statsColl *mgo.Collection) ([]Visit
 						  var date = Date.UTC(this.date.getUTCFullYear(),
 											  this.date.getUTCMonth(),
 											  this.date.getUTCDate());
-						  emit({date: date}, 1);
+						  emit(date, 1);
 					  }
 		          }`
 		mr.Reduce = `function(date, vals) {
@@ -292,7 +292,7 @@ func (m *MR) GetMonthDowloads(start time.Time, statsColl *mgo.Collection) ([]Vis
 		              if (this.section == "download") {
 						  var date = Date.UTC(this.date.getUTCFullYear(),
 											  this.date.getUTCMonth());
-						  emit({date: date}, 1);
+						  emit(date, 1);
 			          }
 		          }`
 		mr.Reduce = `function(date, vals) {
