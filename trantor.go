@@ -151,11 +151,11 @@ func main() {
 	InitStats(db)
 	InitUpload(db)
 
-	setUpRouter(db)
+	initRouter(db)
 	panic(http.ListenAndServe(":"+PORT, nil))
 }
 
-func setUpRouter(db *DB) {
+func initRouter(db *DB) {
 	r := mux.NewRouter()
 	var notFoundHandler http.HandlerFunc
 	notFoundHandler = GatherStats(notFound, db)
