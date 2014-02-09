@@ -173,9 +173,8 @@ func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error)
 /* Get the most visited books
  */
 func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	bookId, err := mr.GetMostVisited(num, statsColl)
+	visitedColl := d.session.DB(DB_NAME).C(VISITED_COLL)
+	bookId, err := GetBooksVisited(num, visitedColl)
 	if err != nil {
 		return nil, err
 	}
@@ -189,12 +188,17 @@ func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
 	return
 }
 
+func (d *DB) UpdateMostVisited() error {
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.UpdateMostVisited(statsColl)
+}
+
 /* Get the most downloaded books
  */
 func (d *DB) GetDownloadedBooks(num int) (books []Book, err error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	bookId, err := mr.GetMostDownloaded(num, statsColl)
+	downloadedColl := d.session.DB(DB_NAME).C(DOWNLOADED_COLL)
+	bookId, err := GetBooksVisited(num, downloadedColl)
 	if err != nil {
 		return nil, err
 	}
@@ -206,6 +210,12 @@ func (d *DB) GetDownloadedBooks(num int) (books []Book, err error) {
 		books[i].Id = bson.ObjectId(books[i].Id).Hex()
 	}
 	return
+}
+
+func (d *DB) UpdateDownloadedBooks() error {
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.UpdateMostDownloaded(statsColl)
 }
 
 /* optional parameters: length and start index
@@ -231,9 +241,14 @@ func (d *DB) GetFS(prefix string) *mgo.GridFS {
 }
 
 func (d *DB) GetTags(numTags int) ([]string, error) {
+	tagsColl := d.session.DB(DB_NAME).C(TAGS_COLL)
+	return GetTags(numTags, tagsColl)
+}
+
+func (d *DB) UpdateTags() error {
 	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
 	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetTags(numTags, booksColl)
+	return mr.UpdateTags(booksColl)
 }
 
 type Visits struct {
@@ -241,38 +256,68 @@ type Visits struct {
 	Count int   "value"
 }
 
-func (d *DB) GetHourVisits(start time.Time) ([]Visits, error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetHourVisits(start, statsColl)
+func (d *DB) GetHourVisits() ([]Visits, error) {
+	hourlyColl := d.session.DB(DB_NAME).C(HOURLY_VISITS_COLL)
+	return GetVisits(hourlyColl)
 }
 
-func (d *DB) GetDayVisits(start time.Time) ([]Visits, error) {
+func (d *DB) UpdateHourVisits() error {
 	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
 	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetDayVisits(start, statsColl)
+	return mr.UpdateHourVisits(statsColl)
 }
 
-func (d *DB) GetMonthVisits(start time.Time) ([]Visits, error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetMonthVisits(start, statsColl)
+func (d *DB) GetDayVisits() ([]Visits, error) {
+	dailyColl := d.session.DB(DB_NAME).C(DAILY_VISITS_COLL)
+	return GetVisits(dailyColl)
 }
 
-func (d *DB) GetHourDownloads(start time.Time) ([]Visits, error) {
+func (d *DB) UpdateDayVisits() error {
 	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
 	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetHourDownloads(start, statsColl)
+	return mr.UpdateDayVisits(statsColl)
 }
 
-func (d *DB) GetDayDownloads(start time.Time) ([]Visits, error) {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetDayDowloads(start, statsColl)
+func (d *DB) GetMonthVisits() ([]Visits, error) {
+	monthlyColl := d.session.DB(DB_NAME).C(MONTHLY_VISITS_COLL)
+	return GetVisits(monthlyColl)
 }
 
-func (d *DB) GetMonthDownloads(start time.Time) ([]Visits, error) {
+func (d *DB) UpdateMonthVisits() error {
 	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
 	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.GetMonthDowloads(start, statsColl)
+	return mr.UpdateMonthVisits(statsColl)
+}
+
+func (d *DB) GetHourDownloads() ([]Visits, error) {
+	hourlyColl := d.session.DB(DB_NAME).C(HOURLY_DOWNLOADS_COLL)
+	return GetVisits(hourlyColl)
+}
+
+func (d *DB) UpdateHourDownloads() error {
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.UpdateHourDownloads(statsColl)
+}
+
+func (d *DB) GetDayDownloads() ([]Visits, error) {
+	dailyColl := d.session.DB(DB_NAME).C(DAILY_DOWNLOADS_COLL)
+	return GetVisits(dailyColl)
+}
+
+func (d *DB) UpdateDayDownloads() error {
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.UpdateDayDownloads(statsColl)
+}
+
+func (d *DB) GetMonthDownloads() ([]Visits, error) {
+	monthlyColl := d.session.DB(DB_NAME).C(MONTHLY_DOWNLOADS_COLL)
+	return GetVisits(monthlyColl)
+}
+
+func (d *DB) UpdateMonthDownloads() error {
+	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
+	mr := NewMR(d.session.DB(DB_NAME))
+	return mr.UpdateMonthDownloads(statsColl)
 }

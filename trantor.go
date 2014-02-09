@@ -148,6 +148,7 @@ func main() {
 	db := initDB()
 	defer db.Close()
 
+	InitTasks(db)
 	InitStats(db)
 	InitUpload(db)
 
