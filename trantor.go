@@ -145,8 +145,18 @@ func notFound(h handler) {
 	loadTemplate(h.w, "404", data)
 }
 
+func updateLogger() error {
+	logger, err := log.LoggerFromConfigAsFile(LOGGER_CONFIG)
+	if err != nil {
+		return err
+	}
+
+	return log.ReplaceLogger(logger)
+}
+
 func main() {
 	defer log.Flush()
+	updateLogger()
 
 	db := initDB()
 	defer db.Close()

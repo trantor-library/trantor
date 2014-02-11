@@ -7,6 +7,7 @@ import (
 )
 
 func InitTasks(db *DB) {
+	periodicTask(updateLogger, MINUTES_UPDATE_LOGGER*time.Minute)
 	periodicTask(db.UpdateTags, MINUTES_UPDATE_TAGS*time.Minute)
 	periodicTask(db.UpdateMostVisited, MINUTES_UPDATE_VISITED*time.Minute)
 	periodicTask(db.UpdateDownloadedBooks, MINUTES_UPDATE_DOWNLOADED*time.Minute)

@@ -32,6 +32,7 @@ const (
 	MINUTES_UPDATE_HOURLY_D   = 29
 	MINUTES_UPDATE_DAILY_D    = 60*12 + 13
 	MINUTES_UPDATE_MONTHLY_D  = 60*24 + 17
+	MINUTES_UPDATE_LOGGER     = 5
 	TAGS_DISPLAY              = 50
 	SEARCH_ITEMS_PAGE         = 20
 	NEW_ITEMS_PAGE            = 50
@@ -42,6 +43,7 @@ const (
 	CSS_PATH      = "css/"
 	JS_PATH       = "js/"
 	IMG_PATH      = "img/"
+	LOGGER_CONFIG = "logger.xml"
 
 	IMG_WIDTH_BIG   = 300
 	IMG_WIDTH_SMALL = 60

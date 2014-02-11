@@ -1,0 +1,8 @@
+<seelog>
+	<outputs>
+		<console formatid="colored"/>
+	</outputs>
+	<formats>
+		<format id="colored"  format="%EscM(35)%Date %Time%EscM(39) [%EscM(32)%LEVEL%EscM(39)] %EscM(36)%RelFile:%Func%EscM(39) %Msg%n%EscM(0)"/>
+	</formats>
+</seelog>
