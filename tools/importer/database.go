@@ -88,12 +88,6 @@ func (d *DB) UserValid(user string, pass string) bool {
 	return n != 0
 }
 
-func (d *DB) AddUser(user string, pass string) error {
-	hash := md5Pass(pass)
-	userColl := d.session.DB(DB_NAME).C(USERS_COLL)
-	return userColl.Insert(bson.M{"user": user, "pass": hash, "role": ""})
-}
-
 func (d *DB) UserRole(user string) string {
 	type result struct {
 		Role string

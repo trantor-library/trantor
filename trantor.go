@@ -1,10 +1,11 @@
 package main
 
+import log "github.com/cihub/seelog"
+
 import (
 	"github.com/gorilla/mux"
 	"io"
 	"labix.org/v2/mgo/bson"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -31,7 +32,7 @@ func logoutHandler(h handler) {
 	h.sess.LogOut()
 	h.sess.Notify("Log out!", "Bye bye "+h.sess.User, "success")
 	h.sess.Save(h.w, h.r)
-	log.Println("User", h.sess.User, "log out")
+	log.Info("User ", h.sess.User, " log out")
 	http.Redirect(h.w, h.r, "/", http.StatusFound)
 }
 
@@ -129,18 +130,35 @@ func notFound(h handler) {
 	loadTemplate(h.w, "404", data)
 }
 
+func updateLogger() error {
+	logger, err := log.LoggerFromConfigAsFile(LOGGER_CONFIG)
+	if err != nil {
+		return err
+	}
+
+	return log.ReplaceLogger(logger)
+}
+
 func main() {
+	defer log.Flush()
+	err := updateLogger()
+	if err != nil {
+		log.Error("Error loading the logger xml: ", err)
+	}
+	log.Info("Start the imperial library of trantor")
+
 	db := initDB()
 	defer db.Close()
 
+	InitTasks(db)
 	InitStats(db)
 	InitUpload(db)
 
-	setUpRouter(db)
-	panic(http.ListenAndServe(":"+PORT, nil))
+	initRouter(db)
+	log.Error(http.ListenAndServe(":"+PORT, nil))
 }
 
-func setUpRouter(db *DB) {
+func initRouter(db *DB) {
 	r := mux.NewRouter()
 	var notFoundHandler http.HandlerFunc
 	notFoundHandler = GatherStats(notFound, db)

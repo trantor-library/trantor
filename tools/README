@@ -4,6 +4,8 @@ Some dirty tools to manage trantor:
 $ adduser myNick
 Password:
 
+- importer. import all epubs passed as parameter into the database and approve them
+
 - update. Update the cover of all the books. It might be outdated.
 
 - togridfs (23/4/2013). Migrate all files and covers to gridfs

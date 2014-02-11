@@ -1,9 +1,10 @@
 package main
 
+import log "github.com/cihub/seelog"
+
 import (
 	"github.com/gorilla/mux"
 	"labix.org/v2/mgo/bson"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -195,7 +196,7 @@ func storeHandler(h handler) {
 		book := books[0]
 		if err != nil {
 			h.sess.Notify("An error ocurred!", err.Error(), "error")
-			log.Println("Error storing book '", book.Title, "': ", err.Error())
+			log.Error("Error storing book '", book.Title, "': ", err.Error())
 			continue
 		}
 		h.db.UpdateBook(id, bson.M{"active": true})
