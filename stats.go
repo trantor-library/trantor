@@ -1,5 +1,7 @@
 package main
 
+import log "github.com/cihub/seelog"
+
 import (
 	"github.com/gorilla/mux"
 	"labix.org/v2/mgo/bson"
@@ -23,6 +25,8 @@ func InitStats(database *DB) {
 
 func GatherStats(function func(handler), database *DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		log.Info("Query ", r.Method, " ", r.RequestURI)
+
 		var h handler
 		h.db = database.Copy()
 		defer h.db.Close()
