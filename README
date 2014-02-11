@@ -25,7 +25,9 @@ Under Debian Wheezy you can simply run:
 
 Yo also need to install go dependences:
 
-# go get labix.org/v2/mgo/bson labix.org/v2/mgo/ github.com/gorilla/sessions github.com/gorilla/securecookie github.com/gorilla/mux github.com/nfnt/resize
+# go get labix.org/v2/mgo/bson labix.org/v2/mgo/ github.com/gorilla/sessions \
+         github.com/gorilla/securecookie github.com/gorilla/mux \
+         github.com/nfnt/resize github.com/cihub/seelog
 
 == Installation ==
 === For admins ("for developers" below) ===

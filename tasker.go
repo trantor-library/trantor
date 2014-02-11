@@ -1,5 +1,7 @@
 package main
 
+import log "github.com/cihub/seelog"
+
 import (
 	"time"
 )
@@ -23,6 +25,9 @@ func periodicTask(task func() error, periodicity time.Duration) {
 func tasker(task func() error, periodicity time.Duration) {
 	for true {
 		time.Sleep(periodicity)
-		task()
+		err := task()
+		if err != nil {
+			log.Error("Task error:", err)
+		}
 	}
 }

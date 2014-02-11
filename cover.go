@@ -1,5 +1,6 @@
 package main
 
+import log "github.com/cihub/seelog"
 import _ "image/png"
 import _ "image/jpeg"
 import _ "image/gif"
@@ -15,7 +16,6 @@ import (
 	"io/ioutil"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
-	"log"
 	"regexp"
 	"strings"
 )
@@ -49,7 +49,7 @@ func coverHandler(h handler) {
 		f, err = fs.OpenId(book.Cover)
 	}
 	if err != nil {
-		log.Println("Error while opening image:", err)
+		log.Error("Error while opening image:", err)
 		notFound(h)
 		return
 	}
@@ -145,14 +145,14 @@ func storeImg(img io.Reader, title string, db *DB) (bson.ObjectId, bson.ObjectId
 	/* open the files */
 	fBig, err := createCoverFile(title, db)
 	if err != nil {
-		log.Println("Error creating", title, ":", err.Error())
+		log.Error("Error creating", title, ":", err.Error())
 		return "", ""
 	}
 	defer fBig.Close()
 
 	fSmall, err := createCoverFile(title+"_small", db)
 	if err != nil {
-		log.Println("Error creating", title+"_small", ":", err.Error())
+		log.Error("Error creating", title+"_small", ":", err.Error())
 		return "", ""
 	}
 	defer fSmall.Close()
@@ -163,22 +163,22 @@ func storeImg(img io.Reader, title string, db *DB) (bson.ObjectId, bson.ObjectId
 	jpgOptions := jpeg.Options{IMG_QUALITY}
 	imgResized, err := resizeImg(img1, IMG_WIDTH_BIG)
 	if err != nil {
-		log.Println("Error resizing big image:", err.Error())
+		log.Error("Error resizing big image:", err.Error())
 		return "", ""
 	}
 	err = jpeg.Encode(fBig, imgResized, &jpgOptions)
 	if err != nil {
-		log.Println("Error encoding big image:", err.Error())
+		log.Error("Error encoding big image:", err.Error())
 		return "", ""
 	}
 	imgSmallResized, err := resizeImg(&img2, IMG_WIDTH_SMALL)
 	if err != nil {
-		log.Println("Error resizing small image:", err.Error())
+		log.Error("Error resizing small image:", err.Error())
 		return "", ""
 	}
 	err = jpeg.Encode(fSmall, imgSmallResized, &jpgOptions)
 	if err != nil {
-		log.Println("Error encoding small image:", err.Error())
+		log.Error("Error encoding small image:", err.Error())
 		return "", ""
 	}
 

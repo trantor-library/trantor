@@ -1,10 +1,11 @@
 package main
 
+import log "github.com/cihub/seelog"
+
 import (
 	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"strings"
 )
@@ -35,7 +36,7 @@ func processFile(req uploadRequest, db *DB) {
 
 	epub, err := openMultipartEpub(req.file)
 	if err != nil {
-		log.Println("Not valid epub uploaded file", req.filename, ":", err)
+		log.Warn("Not valid epub uploaded file", req.filename, ":", err)
 		return
 	}
 	defer epub.Close()
@@ -45,7 +46,7 @@ func processFile(req uploadRequest, db *DB) {
 	req.file.Seek(0, 0)
 	id, size, err := StoreNewFile(title+".epub", req.file, db)
 	if err != nil {
-		log.Println("Error storing book (", title, "):", err)
+		log.Error("Error storing book (", title, "):", err)
 		return
 	}
 
@@ -53,10 +54,10 @@ func processFile(req uploadRequest, db *DB) {
 	book["filesize"] = size
 	err = db.InsertBook(book)
 	if err != nil {
-		log.Println("Error storing metadata (", title, "):", err)
+		log.Error("Error storing metadata (", title, "):", err)
 		return
 	}
-	log.Println("File uploaded:", req.filename)
+	log.Info("File uploaded:", req.filename)
 }
 
 func uploadPostHandler(h handler) {
@@ -67,7 +68,7 @@ func uploadPostHandler(h handler) {
 	for _, f := range filesForm {
 		file, err := f.Open()
 		if err != nil {
-			log.Println("Can not open uploaded file", f.Filename, ":", err)
+			log.Error("Can not open uploaded file", f.Filename, ":", err)
 			h.sess.Notify("Upload problem!", "There was a problem with book "+f.Filename, "error")
 			problem = true
 			continue
