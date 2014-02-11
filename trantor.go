@@ -156,7 +156,11 @@ func updateLogger() error {
 
 func main() {
 	defer log.Flush()
-	updateLogger()
+	err := updateLogger()
+	if err != nil {
+		log.Error("Error loading the logger xml: ", err)
+	}
+	log.Info("Start the imperial library of trantor")
 
 	db := initDB()
 	defer db.Close()
