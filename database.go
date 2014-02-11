@@ -1,9 +1,12 @@
 package main
 
+import log "github.com/cihub/seelog"
+
 import (
 	"crypto/md5"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
+	"os"
 	"time"
 )
 
@@ -47,7 +50,8 @@ func initDB() *DB {
 	d := new(DB)
 	d.session, err = mgo.Dial(DB_IP)
 	if err != nil {
-		panic(err)
+		log.Critical(err)
+		os.Exit(1)
 	}
 	return d
 }

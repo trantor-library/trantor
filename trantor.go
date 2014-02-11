@@ -156,7 +156,7 @@ func main() {
 	InitUpload(db)
 
 	initRouter(db)
-	panic(http.ListenAndServe(":"+PORT, nil))
+	log.Error(http.ListenAndServe(":"+PORT, nil))
 }
 
 func initRouter(db *DB) {
