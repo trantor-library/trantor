@@ -28,7 +28,7 @@ func tasker(task func() error, periodicity time.Duration) {
 		time.Sleep(periodicity)
 		err := task()
 		if err != nil {
-			log.Error("Task error:", err)
+			log.Error("Task error: ", err)
 		}
 	}
 }

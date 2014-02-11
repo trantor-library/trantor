@@ -32,7 +32,7 @@ func logoutHandler(h handler) {
 	h.sess.LogOut()
 	h.sess.Notify("Log out!", "Bye bye "+h.sess.User, "success")
 	h.sess.Save(h.w, h.r)
-	log.Info("User", h.sess.User, "log out")
+	log.Info("User ", h.sess.User, " log out")
 	http.Redirect(h.w, h.r, "/", http.StatusFound)
 }
 
@@ -40,11 +40,11 @@ func loginHandler(h handler) {
 	user := h.r.FormValue("user")
 	pass := h.r.FormValue("pass")
 	if h.db.UserValid(user, pass) {
-		log.Info("User", user, "log in")
+		log.Info("User ", user, " log in")
 		h.sess.LogIn(user)
 		h.sess.Notify("Successful login!", "Welcome "+user, "success")
 	} else {
-		log.Warn("User", user, "bad user or password")
+		log.Warn("User ", user, " bad user or password")
 		h.sess.Notify("Invalid login!", "user or password invalid", "error")
 	}
 	h.sess.Save(h.w, h.r)
