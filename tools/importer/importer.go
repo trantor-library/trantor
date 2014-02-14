@@ -40,8 +40,8 @@ func uploadEpub(filename string, db *DB) {
 		return
 	}
 
-	book["filename"] = id
-	book["filenamesize"] = size
+	book["file"] = id
+	book["filesize"] = size
 	err = db.InsertBook(book)
 	if err != nil {
 		log.Error("Error storing metadata (", title, "): ", err)
