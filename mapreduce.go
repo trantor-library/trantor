@@ -256,17 +256,3 @@ func (m *MR) update(mr *mgo.MapReduce, query bson.M, queryColl *mgo.Collection, 
 
 	return metaColl.Insert(bson.M{"type": storeColl})
 }
-
-func (m *MR) isOutdated(coll string, minutes float64) bool {
-	var result struct {
-		Id bson.ObjectId `bson:"_id"`
-	}
-	metaColl := m.database.C(META_COLL)
-	err := metaColl.Find(bson.M{"type": coll}).One(&result)
-	if err != nil {
-		return true
-	}
-
-	lastUpdate := result.Id.Time()
-	return time.Since(lastUpdate).Minutes() > minutes
-}
