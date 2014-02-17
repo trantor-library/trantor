@@ -70,21 +70,17 @@ func (m *MR) UpdateTags(booksColl *mgo.Collection) error {
 }
 
 func (m *MR) UpdateMostVisited(statsColl *mgo.Collection) error {
-	var mr mgo.MapReduce
-	mr.Map = `function() {
-	              if (this.id) {
-	                  emit(this.id, 1);
-	              }
-	          }`
-	mr.Reduce = `function(tag, vals) {
-	                 var count = 0;
-	                 vals.forEach(function() { count += 1; });
-	                 return count;
-	             }`
-	return m.update(&mr, bson.M{"section": "book"}, statsColl, VISITED_COLL)
+	return m.updateMostBooks(statsColl, "book", VISITED_COLL)
 }
 
 func (m *MR) UpdateMostDownloaded(statsColl *mgo.Collection) error {
+	return m.updateMostBooks(statsColl, "download", DOWNLOADED_COLL)
+}
+
+func (m *MR) updateMostBooks(statsColl *mgo.Collection, section string, resColl string) error {
+	const numDays = 30
+	start := time.Now().UTC().Add(-numDays * 24 * time.Hour)
+
 	var mr mgo.MapReduce
 	mr.Map = `function() {
 	              emit(this.id, 1);
@@ -94,7 +90,7 @@ func (m *MR) UpdateMostDownloaded(statsColl *mgo.Collection) error {
 	                 vals.forEach(function() { count += 1; });
 	                 return count;
 	             }`
-	return m.update(&mr, bson.M{"section": "download"}, statsColl, DOWNLOADED_COLL)
+	return m.update(&mr, bson.M{"date": bson.M{"$gt": start}, "section": section}, statsColl, resColl)
 }
 
 func (m *MR) UpdateHourVisits(statsColl *mgo.Collection) error {
@@ -233,7 +229,6 @@ func (m *MR) UpdateDayDownloads(statsColl *mgo.Collection) error {
 
 func (m *MR) UpdateMonthDownloads(statsColl *mgo.Collection) error {
 	const numDays = 365
-
 	start := time.Now().UTC().Add(-numDays * 24 * time.Hour).Truncate(24 * time.Hour)
 
 	var mr mgo.MapReduce
