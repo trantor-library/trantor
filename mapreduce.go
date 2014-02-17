@@ -190,20 +190,18 @@ func (m *MR) UpdateHourDownloads(statsColl *mgo.Collection) error {
 
 	var mr mgo.MapReduce
 	mr.Map = `function() {
-	              if (this.section == "download") {
-	                  var date = Date.UTC(this.date.getUTCFullYear(),
-	                                      this.date.getUTCMonth(),
-	                                      this.date.getUTCDate(),
-	                                      this.date.getUTCHours());
-	                  emit(date, 1);
-	              }
-                  }`
+	              var date = Date.UTC(this.date.getUTCFullYear(),
+	                                  this.date.getUTCMonth(),
+	                                  this.date.getUTCDate(),
+	                                  this.date.getUTCHours());
+	              emit(date, 1);
+              }`
 	mr.Reduce = `function(date, vals) {
 	                 var count = 0;
 	                 vals.forEach(function(v) { count += v; });
 	                 return count;
 	             }`
-	return m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, HOURLY_DOWNLOADS_COLL)
+	return m.update(&mr, bson.M{"date": bson.M{"$gte": start}, "section": "download"}, statsColl, HOURLY_DOWNLOADS_COLL)
 }
 
 func (m *MR) UpdateDayDownloads(statsColl *mgo.Collection) error {
@@ -212,19 +210,17 @@ func (m *MR) UpdateDayDownloads(statsColl *mgo.Collection) error {
 
 	var mr mgo.MapReduce
 	mr.Map = `function() {
-	              if (this.section == "download") {
-	                  var date = Date.UTC(this.date.getUTCFullYear(),
-	                                      this.date.getUTCMonth(),
-	                                      this.date.getUTCDate());
-	                  emit(date, 1);
-	              }
+	              var date = Date.UTC(this.date.getUTCFullYear(),
+	                                  this.date.getUTCMonth(),
+	                                  this.date.getUTCDate());
+	              emit(date, 1);
 	          }`
 	mr.Reduce = `function(date, vals) {
 	                 var count = 0;
 	                 vals.forEach(function(v) { count += v; });
 	                 return count;
 	             }`
-	return m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, DAILY_DOWNLOADS_COLL)
+	return m.update(&mr, bson.M{"date": bson.M{"$gte": start}, "section": "download"}, statsColl, DAILY_DOWNLOADS_COLL)
 }
 
 func (m *MR) UpdateMonthDownloads(statsColl *mgo.Collection) error {
@@ -233,18 +229,16 @@ func (m *MR) UpdateMonthDownloads(statsColl *mgo.Collection) error {
 
 	var mr mgo.MapReduce
 	mr.Map = `function() {
-	              if (this.section == "download") {
-	                  var date = Date.UTC(this.date.getUTCFullYear(),
-	                                      this.date.getUTCMonth());
-	                  emit(date, 1);
-	              }
+	             var date = Date.UTC(this.date.getUTCFullYear(),
+	                                 this.date.getUTCMonth());
+	             emit(date, 1);
 	          }`
 	mr.Reduce = `function(date, vals) {
 	                 var count = 0;
 	                 vals.forEach(function(v) { count += v; });
 	                 return count;
 	             }`
-	return m.update(&mr, bson.M{"date": bson.M{"$gte": start}}, statsColl, MONTHLY_DOWNLOADS_COLL)
+	return m.update(&mr, bson.M{"date": bson.M{"$gte": start}, "section": "download"}, statsColl, MONTHLY_DOWNLOADS_COLL)
 }
 
 func (m *MR) update(mr *mgo.MapReduce, query bson.M, queryColl *mgo.Collection, storeColl string) error {
