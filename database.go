@@ -4,6 +4,7 @@ import log "github.com/cihub/seelog"
 
 import (
 	"crypto/md5"
+	"errors"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"os"
@@ -258,14 +259,41 @@ func (d *DB) UpdateTags() error {
 	return u.UpdateTags()
 }
 
+type VisitType int
+
+const (
+	hourly_visits = iota
+	daily_visits
+	monthly_visits
+	hourly_downloads
+	daily_downloads
+	monthly_downloads
+)
+
 type Visits struct {
 	Date  time.Time "date"
 	Count int       "count"
 }
 
-func (d *DB) GetHourVisits() ([]Visits, error) {
-	hourlyColl := d.session.DB(DB_NAME).C(HOURLY_VISITS_COLL)
-	return GetVisits(hourlyColl)
+func (d *DB) GetVisits(visitType VisitType) ([]Visits, error) {
+	var coll *mgo.Collection
+	switch visitType {
+	case hourly_visits:
+		coll = d.session.DB(DB_NAME).C(HOURLY_VISITS_COLL)
+	case daily_visits:
+		coll = d.session.DB(DB_NAME).C(DAILY_VISITS_COLL)
+	case monthly_visits:
+		coll = d.session.DB(DB_NAME).C(MONTHLY_VISITS_COLL)
+	case hourly_downloads:
+		coll = d.session.DB(DB_NAME).C(HOURLY_DOWNLOADS_COLL)
+	case daily_downloads:
+		coll = d.session.DB(DB_NAME).C(DAILY_DOWNLOADS_COLL)
+	case monthly_downloads:
+		coll = d.session.DB(DB_NAME).C(MONTHLY_DOWNLOADS_COLL)
+	default:
+		return nil, errors.New("Not valid VisitType")
+	}
+	return GetVisits(coll)
 }
 
 func (d *DB) UpdateHourVisits() error {
@@ -275,21 +303,11 @@ func (d *DB) UpdateHourVisits() error {
 	return u.UpdateHourVisits()
 }
 
-func (d *DB) GetDayVisits() ([]Visits, error) {
-	dailyColl := d.session.DB(DB_NAME).C(DAILY_VISITS_COLL)
-	return GetVisits(dailyColl)
-}
-
 func (d *DB) UpdateDayVisits() error {
 	var u DBUpdate
 	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
 	u.dst = d.session.DB(DB_NAME).C(DAILY_VISITS_COLL)
 	return u.UpdateDayVisits()
-}
-
-func (d *DB) GetMonthVisits() ([]Visits, error) {
-	monthlyColl := d.session.DB(DB_NAME).C(MONTHLY_VISITS_COLL)
-	return GetVisits(monthlyColl)
 }
 
 func (d *DB) UpdateMonthVisits() error {
@@ -299,11 +317,6 @@ func (d *DB) UpdateMonthVisits() error {
 	return u.UpdateMonthVisits()
 }
 
-func (d *DB) GetHourDownloads() ([]Visits, error) {
-	hourlyColl := d.session.DB(DB_NAME).C(HOURLY_DOWNLOADS_COLL)
-	return GetVisits(hourlyColl)
-}
-
 func (d *DB) UpdateHourDownloads() error {
 	var u DBUpdate
 	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
@@ -311,21 +324,11 @@ func (d *DB) UpdateHourDownloads() error {
 	return u.UpdateHourDownloads()
 }
 
-func (d *DB) GetDayDownloads() ([]Visits, error) {
-	dailyColl := d.session.DB(DB_NAME).C(DAILY_DOWNLOADS_COLL)
-	return GetVisits(dailyColl)
-}
-
 func (d *DB) UpdateDayDownloads() error {
 	var u DBUpdate
 	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
 	u.dst = d.session.DB(DB_NAME).C(DAILY_DOWNLOADS_COLL)
 	return u.UpdateDayDownloads()
-}
-
-func (d *DB) GetMonthDownloads() ([]Visits, error) {
-	monthlyColl := d.session.DB(DB_NAME).C(MONTHLY_DOWNLOADS_COLL)
-	return GetVisits(monthlyColl)
 }
 
 func (d *DB) UpdateMonthDownloads() error {
