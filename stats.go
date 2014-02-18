@@ -100,7 +100,7 @@ func getHourlyVisits(db *DB) []visitData {
 	visit, _ := db.GetHourVisits()
 	for _, v := range visit {
 		var elem visitData
-		hour := time.Unix(v.Date/1000, 0).UTC().Hour()
+		hour := v.Date.UTC().Hour()
 		elem.Label = strconv.Itoa(hour + 1)
 		elem.Count = v.Count
 		visits = append(visits, elem)
@@ -115,7 +115,7 @@ func getDailyVisits(db *DB) []visitData {
 	visit, _ := db.GetDayVisits()
 	for _, v := range visit {
 		var elem visitData
-		day := time.Unix(v.Date/1000, 0).UTC().Day()
+		day := v.Date.UTC().Day()
 		elem.Label = strconv.Itoa(day)
 		elem.Count = v.Count
 		visits = append(visits, elem)
@@ -130,7 +130,7 @@ func getMonthlyVisits(db *DB) []visitData {
 	visit, _ := db.GetMonthVisits()
 	for _, v := range visit {
 		var elem visitData
-		month := time.Unix(v.Date/1000, 0).UTC().Month()
+		month := v.Date.UTC().Month()
 		elem.Label = month.String()
 		elem.Count = v.Count
 		visits = append(visits, elem)
@@ -145,7 +145,7 @@ func getHourlyDownloads(db *DB) []visitData {
 	visit, _ := db.GetHourDownloads()
 	for _, v := range visit {
 		var elem visitData
-		hour := time.Unix(v.Date/1000, 0).UTC().Hour()
+		hour := v.Date.UTC().Hour()
 		elem.Label = strconv.Itoa(hour + 1)
 		elem.Count = v.Count
 		visits = append(visits, elem)
@@ -160,7 +160,7 @@ func getDailyDownloads(db *DB) []visitData {
 	visit, _ := db.GetDayDownloads()
 	for _, v := range visit {
 		var elem visitData
-		day := time.Unix(v.Date/1000, 0).UTC().Day()
+		day := v.Date.UTC().Day()
 		elem.Label = strconv.Itoa(day)
 		elem.Count = v.Count
 		visits = append(visits, elem)
@@ -175,7 +175,7 @@ func getMonthlyDownloads(db *DB) []visitData {
 	visit, _ := db.GetMonthDownloads()
 	for _, v := range visit {
 		var elem visitData
-		month := time.Unix(v.Date/1000, 0).UTC().Month()
+		month := v.Date.UTC().Month()
 		elem.Label = month.String()
 		elem.Count = v.Count
 		visits = append(visits, elem)

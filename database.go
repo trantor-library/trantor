@@ -256,8 +256,8 @@ func (d *DB) UpdateTags() error {
 }
 
 type Visits struct {
-	Date  int64 "_id"
-	Count int   "value"
+	Date  time.Time "date"
+	Count int       "count"
 }
 
 func (d *DB) GetHourVisits() ([]Visits, error) {
