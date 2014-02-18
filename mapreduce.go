@@ -10,7 +10,7 @@ func GetTags(numTags int, tagsColl *mgo.Collection) ([]string, error) {
 	var result []struct {
 		Tag string "_id"
 	}
-	err := tagsColl.Find(nil).Sort("-value").Limit(numTags).All(&result)
+	err := tagsColl.Find(nil).Sort("-count").Limit(numTags).All(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -55,18 +55,30 @@ func NewMR(database *mgo.Database) *MR {
 }
 
 func (m *MR) UpdateTags(booksColl *mgo.Collection) error {
-	var mr mgo.MapReduce
-	mr.Map = `function() {
-	              if (this.subject) {
-	                  this.subject.forEach(function(s) { emit(s, 1); });
-	              }
-	          }`
-	mr.Reduce = `function(tag, vals) {
-	                 var count = 0;
-	                 vals.forEach(function() { count += 1; });
-	                 return count;
-	             }`
-	return m.update(&mr, bson.M{"active": true}, booksColl, TAGS_COLL)
+	var tags []struct {
+		Tag   string "_id"
+		Count int    "count"
+	}
+	err := booksColl.Pipe([]bson.M{
+		{"$project": bson.M{"subject": 1}},
+		{"$unwind": "$subject"},
+		{"$group": bson.M{"_id": "$subject", "count": bson.M{"$sum": 1}}},
+		{"$sort": bson.M{"count": -1}},
+		{"$limit": TAGS_DISPLAY},
+	}).All(&tags)
+	if err != nil {
+		return err
+	}
+
+	tagsColl := m.database.C(TAGS_COLL)
+	tagsColl.DropCollection()
+	for _, tag := range tags {
+		err = tagsColl.Insert(tag)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *MR) UpdateMostVisited(statsColl *mgo.Collection) error {
