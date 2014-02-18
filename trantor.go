@@ -130,9 +130,9 @@ func indexHandler(h handler) {
 	data.Tags, _ = h.db.GetTags(TAGS_DISPLAY)
 	data.S = GetStatus(h)
 	data.S.Home = true
-	data.Books, data.Count, _ = h.db.GetBooks(bson.M{"active": true}, 6)
-	data.VisitedBooks, _ = h.db.GetVisitedBooks(6)
-	data.DownloadedBooks, _ = h.db.GetDownloadedBooks(6)
+	data.Books, data.Count, _ = h.db.GetBooks(bson.M{"active": true}, BOOKS_FRONT_PAGE)
+	data.VisitedBooks, _ = h.db.GetVisitedBooks(BOOKS_FRONT_PAGE)
+	data.DownloadedBooks, _ = h.db.GetDownloadedBooks(BOOKS_FRONT_PAGE)
 	data.News = getNews(1, DAYS_NEWS_INDEXPAGE, h.db)
 	loadTemplate(h.w, "index", data)
 }

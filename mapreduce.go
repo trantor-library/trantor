@@ -26,7 +26,7 @@ func GetBooksVisited(num int, visitedColl *mgo.Collection) ([]bson.ObjectId, err
 	var result []struct {
 		Book bson.ObjectId "_id"
 	}
-	err := visitedColl.Find(nil).Sort("-value").Limit(num).All(&result)
+	err := visitedColl.Find(nil).Sort("-count").Limit(num).All(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -93,16 +93,30 @@ func (m *MR) updateMostBooks(statsColl *mgo.Collection, section string, resColl 
 	const numDays = 30
 	start := time.Now().UTC().Add(-numDays * 24 * time.Hour)
 
-	var mr mgo.MapReduce
-	mr.Map = `function() {
-	              emit(this.id, 1);
-	          }`
-	mr.Reduce = `function(tag, vals) {
-	                 var count = 0;
-	                 vals.forEach(function() { count += 1; });
-	                 return count;
-	             }`
-	return m.update(&mr, bson.M{"date": bson.M{"$gt": start}, "section": section}, statsColl, resColl)
+	var books []struct {
+		Book  string "_id"
+		Count int    "count"
+	}
+	err := statsColl.Pipe([]bson.M{
+		{"$match": bson.M{"date": bson.M{"$gt": start}, "section": section}},
+		{"$project": bson.M{"id": 1}},
+		{"$group": bson.M{"_id": "$id", "count": bson.M{"$sum": 1}}},
+		{"$sort": bson.M{"count": -1}},
+		{"$limit": BOOKS_FRONT_PAGE},
+	}).All(&books)
+	if err != nil {
+		return err
+	}
+
+	coll := m.database.C(resColl)
+	coll.DropCollection()
+	for _, book := range books {
+		err = coll.Insert(book)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *MR) UpdateHourVisits(statsColl *mgo.Collection) error {

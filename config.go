@@ -34,6 +34,7 @@ const (
 	MINUTES_UPDATE_MONTHLY_D  = 60*24 + 17
 	MINUTES_UPDATE_LOGGER     = 5
 	TAGS_DISPLAY              = 50
+	BOOKS_FRONT_PAGE          = 6
 	SEARCH_ITEMS_PAGE         = 20
 	NEW_ITEMS_PAGE            = 50
 	NUM_NEWS                  = 10
