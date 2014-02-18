@@ -6,11 +6,16 @@ import (
 	"time"
 )
 
-func GetTags(numTags int, tagsColl *mgo.Collection) ([]string, error) {
+type DBUpdate struct {
+	src *mgo.Collection
+	dst *mgo.Collection
+}
+
+func GetTags(tagsColl *mgo.Collection) ([]string, error) {
 	var result []struct {
 		Tag string "_id"
 	}
-	err := tagsColl.Find(nil).Sort("-count").Limit(numTags).All(&result)
+	err := tagsColl.Find(nil).Sort("-count").All(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -22,11 +27,11 @@ func GetTags(numTags int, tagsColl *mgo.Collection) ([]string, error) {
 	return tags, nil
 }
 
-func GetBooksVisited(num int, visitedColl *mgo.Collection) ([]bson.ObjectId, error) {
+func GetBooksVisited(visitedColl *mgo.Collection) ([]bson.ObjectId, error) {
 	var result []struct {
 		Book bson.ObjectId "_id"
 	}
-	err := visitedColl.Find(nil).Sort("-count").Limit(num).All(&result)
+	err := visitedColl.Find(nil).Sort("-count").All(&result)
 	if err != nil {
 		return nil, err
 	}
@@ -44,22 +49,12 @@ func GetVisits(visitsColl *mgo.Collection) ([]Visits, error) {
 	return result, err
 }
 
-type MR struct {
-	database *mgo.Database
-}
-
-func NewMR(database *mgo.Database) *MR {
-	m := new(MR)
-	m.database = database
-	return m
-}
-
-func (m *MR) UpdateTags(booksColl *mgo.Collection) error {
+func (u *DBUpdate) UpdateTags() error {
 	var tags []struct {
 		Tag   string "_id"
 		Count int    "count"
 	}
-	err := booksColl.Pipe([]bson.M{
+	err := u.src.Pipe([]bson.M{
 		{"$project": bson.M{"subject": 1}},
 		{"$unwind": "$subject"},
 		{"$group": bson.M{"_id": "$subject", "count": bson.M{"$sum": 1}}},
@@ -70,10 +65,9 @@ func (m *MR) UpdateTags(booksColl *mgo.Collection) error {
 		return err
 	}
 
-	tagsColl := m.database.C(TAGS_COLL)
-	tagsColl.DropCollection()
+	u.dst.DropCollection()
 	for _, tag := range tags {
-		err = tagsColl.Insert(tag)
+		err = u.dst.Insert(tag)
 		if err != nil {
 			return err
 		}
@@ -81,15 +75,7 @@ func (m *MR) UpdateTags(booksColl *mgo.Collection) error {
 	return nil
 }
 
-func (m *MR) UpdateMostVisited(statsColl *mgo.Collection) error {
-	return m.updateMostBooks(statsColl, "book", VISITED_COLL)
-}
-
-func (m *MR) UpdateMostDownloaded(statsColl *mgo.Collection) error {
-	return m.updateMostBooks(statsColl, "download", DOWNLOADED_COLL)
-}
-
-func (m *MR) updateMostBooks(statsColl *mgo.Collection, section string, resColl string) error {
+func (u *DBUpdate) UpdateMostBooks(section string) error {
 	const numDays = 30
 	start := time.Now().UTC().Add(-numDays * 24 * time.Hour)
 
@@ -97,7 +83,7 @@ func (m *MR) updateMostBooks(statsColl *mgo.Collection, section string, resColl 
 		Book  string "_id"
 		Count int    "count"
 	}
-	err := statsColl.Pipe([]bson.M{
+	err := u.src.Pipe([]bson.M{
 		{"$match": bson.M{"date": bson.M{"$gt": start}, "section": section}},
 		{"$project": bson.M{"id": 1}},
 		{"$group": bson.M{"_id": "$id", "count": bson.M{"$sum": 1}}},
@@ -108,10 +94,9 @@ func (m *MR) updateMostBooks(statsColl *mgo.Collection, section string, resColl 
 		return err
 	}
 
-	coll := m.database.C(resColl)
-	coll.DropCollection()
+	u.dst.DropCollection()
 	for _, book := range books {
-		err = coll.Insert(book)
+		err = u.dst.Insert(book)
 		if err != nil {
 			return err
 		}
@@ -119,84 +104,83 @@ func (m *MR) updateMostBooks(statsColl *mgo.Collection, section string, resColl 
 	return nil
 }
 
-func (m *MR) UpdateHourVisits(statsColl *mgo.Collection) error {
+func (u *DBUpdate) UpdateHourVisits() error {
 	f := func(t time.Time) time.Time {
 		const span = time.Hour
 		return t.Add(span).Truncate(span)
 	}
 	const numDays = 2
 	spanStore := numDays * 24 * time.Hour
-	return m.updateVisits(f, spanStore, HOURLY_VISITS_COLL, true)
+	return u.updateVisits(f, spanStore, HOURLY_VISITS_COLL, true)
 }
 
-func (m *MR) UpdateDayVisits(statsColl *mgo.Collection) error {
+func (u *DBUpdate) UpdateDayVisits() error {
 	f := func(t time.Time) time.Time {
 		const span = 24 * time.Hour
 		return t.Add(span).Truncate(span)
 	}
 	const numDays = 30
 	spanStore := numDays * 24 * time.Hour
-	return m.updateVisits(f, spanStore, DAILY_VISITS_COLL, true)
+	return u.updateVisits(f, spanStore, DAILY_VISITS_COLL, true)
 }
 
-func (m *MR) UpdateMonthVisits(statsColl *mgo.Collection) error {
+func (u *DBUpdate) UpdateMonthVisits() error {
 	f := func(t time.Time) time.Time {
 		const span = 24 * time.Hour
 		return t.AddDate(0, 1, 1-t.Day()).Truncate(span)
 	}
 	const numDays = 365
 	spanStore := numDays * 24 * time.Hour
-	return m.updateVisits(f, spanStore, MONTHLY_VISITS_COLL, true)
+	return u.updateVisits(f, spanStore, MONTHLY_VISITS_COLL, true)
 }
 
-func (m *MR) UpdateHourDownloads(statsColl *mgo.Collection) error {
+func (u *DBUpdate) UpdateHourDownloads() error {
 	f := func(t time.Time) time.Time {
 		const span = time.Hour
 		return t.Add(span).Truncate(span)
 	}
 	const numDays = 2
 	spanStore := numDays * 24 * time.Hour
-	return m.updateVisits(f, spanStore, HOURLY_DOWNLOADS_COLL, false)
+	return u.updateVisits(f, spanStore, HOURLY_DOWNLOADS_COLL, false)
 }
 
-func (m *MR) UpdateDayDownloads(statsColl *mgo.Collection) error {
+func (u *DBUpdate) UpdateDayDownloads() error {
 	f := func(t time.Time) time.Time {
 		const span = 24 * time.Hour
 		return t.Add(span).Truncate(span)
 	}
 	const numDays = 30
 	spanStore := numDays * 24 * time.Hour
-	return m.updateVisits(f, spanStore, DAILY_DOWNLOADS_COLL, false)
+	return u.updateVisits(f, spanStore, DAILY_DOWNLOADS_COLL, false)
 }
 
-func (m *MR) UpdateMonthDownloads(statsColl *mgo.Collection) error {
+func (u *DBUpdate) UpdateMonthDownloads() error {
 	f := func(t time.Time) time.Time {
 		const span = 24 * time.Hour
 		return t.AddDate(0, 1, 1-t.Day()).Truncate(span)
 	}
 	const numDays = 365
 	spanStore := numDays * 24 * time.Hour
-	return m.updateVisits(f, spanStore, MONTHLY_DOWNLOADS_COLL, false)
+	return u.updateVisits(f, spanStore, MONTHLY_DOWNLOADS_COLL, false)
 }
 
-func (m *MR) updateVisits(incTime func(time.Time) time.Time, spanStore time.Duration, coll string, useSession bool) error {
-	storeColl := m.database.C(coll)
-	start := m.calculateStart(spanStore, storeColl)
+func (u *DBUpdate) updateVisits(incTime func(time.Time) time.Time, spanStore time.Duration, coll string, useSession bool) error {
+	start := u.calculateStart(spanStore)
 	for start.Before(time.Now().UTC()) {
 		stop := incTime(start)
 
 		var count int
 		var err error
 		if useSession {
-			count = m.countVisits(start, stop)
+			count = u.countVisits(start, stop)
 		} else {
-			count, err = m.countDownloads(start, stop)
+			count, err = u.countDownloads(start, stop)
 		}
 		if err != nil {
 			return err
 		}
 
-		err = storeColl.Insert(bson.M{"date": start, "count": count})
+		err = u.dst.Insert(bson.M{"date": start, "count": count})
 		if err != nil {
 			return err
 		}
@@ -204,29 +188,28 @@ func (m *MR) updateVisits(incTime func(time.Time) time.Time, spanStore time.Dura
 		start = stop
 	}
 
-	_, err := storeColl.RemoveAll(bson.M{"date": bson.M{"$lt": time.Now().UTC().Add(-spanStore)}})
+	_, err := u.dst.RemoveAll(bson.M{"date": bson.M{"$lt": time.Now().UTC().Add(-spanStore)}})
 	return err
 }
 
-func (m *MR) calculateStart(spanStore time.Duration, storeColl *mgo.Collection) time.Time {
+func (u *DBUpdate) calculateStart(spanStore time.Duration) time.Time {
 	var date struct {
 		Id   bson.ObjectId `bson:"_id"`
 		Date time.Time     `bson:"date"`
 	}
-	err := storeColl.Find(bson.M{}).Sort("-date").One(&date)
+	err := u.dst.Find(bson.M{}).Sort("-date").One(&date)
 	if err == nil {
-		storeColl.RemoveId(date.Id)
+		u.dst.RemoveId(date.Id)
 		return date.Date
 	}
 	return time.Now().UTC().Add(-spanStore).Truncate(time.Hour)
 }
 
-func (m *MR) countVisits(start time.Time, stop time.Time) int {
-	statsColl := m.database.C(STATS_COLL)
+func (u *DBUpdate) countVisits(start time.Time, stop time.Time) int {
 	var result struct {
 		Count int "count"
 	}
-	err := statsColl.Pipe([]bson.M{
+	err := u.src.Pipe([]bson.M{
 		{"$match": bson.M{"date": bson.M{"$gte": start, "$lt": stop}}},
 		{"$group": bson.M{"_id": "$session"}},
 		{"$group": bson.M{"_id": 1, "count": bson.M{"$sum": 1}}},
@@ -238,24 +221,7 @@ func (m *MR) countVisits(start time.Time, stop time.Time) int {
 	return result.Count
 }
 
-func (m *MR) countDownloads(start time.Time, stop time.Time) (int, error) {
+func (u *DBUpdate) countDownloads(start time.Time, stop time.Time) (int, error) {
 	query := bson.M{"date": bson.M{"$gte": start, "$lt": stop}, "section": "download"}
-	statsColl := m.database.C(STATS_COLL)
-	return statsColl.Find(query).Count()
-}
-
-func (m *MR) update(mr *mgo.MapReduce, query bson.M, queryColl *mgo.Collection, storeColl string) error {
-	metaColl := m.database.C(META_COLL)
-	_, err := metaColl.RemoveAll(bson.M{"type": storeColl})
-	if err != nil {
-		return err
-	}
-
-	mr.Out = bson.M{"replace": storeColl}
-	_, err = queryColl.Find(query).MapReduce(mr, nil)
-	if err != nil {
-		return err
-	}
-
-	return metaColl.Insert(bson.M{"type": storeColl})
+	return u.src.Find(query).Count()
 }
