@@ -1,0 +1,18 @@
+{{template "header.html" .S}}
+
+<h4>Dashboard</h4>
+
+<div class="span8 offset2">
+	<ul class="nav nav-tabs nav-stacked">
+		{{if .S.IsAdmin}}
+		<li><a href="/new/"><i class="icon-book"></i> New books</a></li>
+		<li><a href="/news/edit"><i class="icon-certificate"></i> Edit news</a></li>
+		<li class="divider"></li>
+		{{end}}
+		<li><a href="/settings/"><i class="icon-wrench"></i> Settings</a></li>
+		<li class="divider"></li>
+		<li><a href="/logout/"><i class="icon-off"></i> Log Out</a></li>
+	</ul>
+</div>
+
+{{template "footer.html"}}

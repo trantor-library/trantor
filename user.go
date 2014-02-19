@@ -6,6 +6,11 @@ import (
 )
 
 func loginHandler(h handler) {
+	if h.sess.User != "" {
+		http.Redirect(h.w, h.r, "/dashboard/", http.StatusFound)
+		return
+	}
+
 	var data statusData
 	data.S = GetStatus(h)
 	loadTemplate(h.w, "login", data)
@@ -44,8 +49,16 @@ func createUserHandler(h handler) {
 	http.Redirect(h.w, h.r, h.r.Referer(), http.StatusFound)
 }
 
-type settingsData struct {
-	S Status
+func dashboardHandler(h handler) {
+	if h.sess.User == "" {
+		notFound(h)
+		return
+	}
+
+	var data statusData
+	data.S = GetStatus(h)
+	data.S.Dasboard = true
+	loadTemplate(h.w, "dashboard", data)
 }
 
 func settingsHandler(h handler) {
@@ -69,7 +82,7 @@ func settingsHandler(h handler) {
 		h.sess.Save(h.w, h.r)
 	}
 
-	var data settingsData
+	var data statusData
 	data.S = GetStatus(h)
 	loadTemplate(h.w, "settings", data)
 }

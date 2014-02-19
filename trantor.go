@@ -185,6 +185,7 @@ func initRouter(db *DB) {
 	r.HandleFunc("/help/", GatherStats(helpHandler, db))
 	r.HandleFunc("/download/{id:[0-9a-fA-F]+}/{epub:.*}", GatherStats(downloadHandler, db))
 	r.HandleFunc("/cover/{id:[0-9a-fA-F]+}/{size}/{img:.*}", GatherStats(coverHandler, db))
+	r.HandleFunc("/dashboard/", GatherStats(dashboardHandler, db))
 	r.HandleFunc("/settings/", GatherStats(settingsHandler, db))
 	r.HandleFunc("/stats/", GatherStats(statsHandler, db))
 	r.HandleFunc("/news/", GatherStats(newsHandler, db))

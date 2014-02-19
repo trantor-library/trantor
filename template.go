@@ -8,18 +8,19 @@ import (
 import txt_tmpl "text/template"
 
 type Status struct {
-	BaseURL string
-	FullURL string
-	Search  string
-	User    string
-	IsAdmin bool
-	Notif   []Notification
-	Home    bool
-	About   bool
-	News    bool
-	Upload  bool
-	Stats   bool
-	Help    bool
+	BaseURL  string
+	FullURL  string
+	Search   string
+	User     string
+	IsAdmin  bool
+	Notif    []Notification
+	Home     bool
+	About    bool
+	News     bool
+	Upload   bool
+	Stats    bool
+	Help     bool
+	Dasboard bool
 }
 
 func GetStatus(h handler) Status {
@@ -47,6 +48,7 @@ var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
 	TEMPLATE_PATH+"new.html",
 	TEMPLATE_PATH+"read.html",
 	TEMPLATE_PATH+"edit.html",
+	TEMPLATE_PATH+"dashboard.html",
 	TEMPLATE_PATH+"settings.html",
 	TEMPLATE_PATH+"stats.html",
 	TEMPLATE_PATH+"help.html",
