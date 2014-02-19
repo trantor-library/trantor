@@ -104,77 +104,50 @@ func (u *DBUpdate) UpdateMostBooks(section string) error {
 	return nil
 }
 
-func (u *DBUpdate) UpdateHourVisits() error {
-	f := func(t time.Time) time.Time {
-		const span = time.Hour
-		return t.Add(span).Truncate(span)
-	}
+func (u *DBUpdate) UpdateHourVisits(isDownloads bool) error {
 	const numDays = 2
 	spanStore := numDays * 24 * time.Hour
-	return u.updateVisits(f, spanStore, HOURLY_VISITS_COLL, true)
+	return u.updateVisits(hourInc, spanStore, isDownloads)
 }
 
-func (u *DBUpdate) UpdateDayVisits() error {
-	f := func(t time.Time) time.Time {
-		const span = 24 * time.Hour
-		return t.Add(span).Truncate(span)
-	}
+func (u *DBUpdate) UpdateDayVisits(isDownloads bool) error {
 	const numDays = 30
 	spanStore := numDays * 24 * time.Hour
-	return u.updateVisits(f, spanStore, DAILY_VISITS_COLL, true)
+	return u.updateVisits(dayInc, spanStore, isDownloads)
 }
 
-func (u *DBUpdate) UpdateMonthVisits() error {
-	f := func(t time.Time) time.Time {
-		const span = 24 * time.Hour
-		return t.AddDate(0, 1, 1-t.Day()).Truncate(span)
-	}
+func (u *DBUpdate) UpdateMonthVisits(isDownloads bool) error {
 	const numDays = 365
 	spanStore := numDays * 24 * time.Hour
-	return u.updateVisits(f, spanStore, MONTHLY_VISITS_COLL, true)
+	return u.updateVisits(monthInc, spanStore, isDownloads)
 }
 
-func (u *DBUpdate) UpdateHourDownloads() error {
-	f := func(t time.Time) time.Time {
-		const span = time.Hour
-		return t.Add(span).Truncate(span)
-	}
-	const numDays = 2
-	spanStore := numDays * 24 * time.Hour
-	return u.updateVisits(f, spanStore, HOURLY_DOWNLOADS_COLL, false)
+func hourInc(date time.Time) time.Time {
+	const span = time.Hour
+	return date.Add(span).Truncate(span)
 }
 
-func (u *DBUpdate) UpdateDayDownloads() error {
-	f := func(t time.Time) time.Time {
-		const span = 24 * time.Hour
-		return t.Add(span).Truncate(span)
-	}
-	const numDays = 30
-	spanStore := numDays * 24 * time.Hour
-	return u.updateVisits(f, spanStore, DAILY_DOWNLOADS_COLL, false)
+func dayInc(date time.Time) time.Time {
+	const span = 24 * time.Hour
+	return date.Add(span).Truncate(span)
 }
 
-func (u *DBUpdate) UpdateMonthDownloads() error {
-	f := func(t time.Time) time.Time {
-		const span = 24 * time.Hour
-		return t.AddDate(0, 1, 1-t.Day()).Truncate(span)
-	}
-	const numDays = 365
-	spanStore := numDays * 24 * time.Hour
-	return u.updateVisits(f, spanStore, MONTHLY_DOWNLOADS_COLL, false)
+func monthInc(date time.Time) time.Time {
+	const span = 24 * time.Hour
+	return date.AddDate(0, 1, 1-date.Day()).Truncate(span)
 }
 
-func (u *DBUpdate) updateVisits(incTime func(time.Time) time.Time, spanStore time.Duration, coll string, useSession bool) error {
+func (u *DBUpdate) updateVisits(incTime func(time.Time) time.Time, spanStore time.Duration, isDownloads bool) error {
 	start := u.calculateStart(spanStore)
 	for start.Before(time.Now().UTC()) {
 		stop := incTime(start)
 
 		var count int
 		var err error
-		if useSession {
-			count = u.countVisits(start, stop)
-		} else {
+		if isDownloads {
 			count, err = u.countDownloads(start, stop)
+		} else {
+			count = u.countVisits(start, stop)
 		}
 		if err != nil {
 			return err

@@ -300,40 +300,40 @@ func (d *DB) UpdateHourVisits() error {
 	var u DBUpdate
 	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
 	u.dst = d.session.DB(DB_NAME).C(HOURLY_VISITS_COLL)
-	return u.UpdateHourVisits()
+	return u.UpdateHourVisits(false)
 }
 
 func (d *DB) UpdateDayVisits() error {
 	var u DBUpdate
 	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
 	u.dst = d.session.DB(DB_NAME).C(DAILY_VISITS_COLL)
-	return u.UpdateDayVisits()
+	return u.UpdateDayVisits(false)
 }
 
 func (d *DB) UpdateMonthVisits() error {
 	var u DBUpdate
 	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
 	u.dst = d.session.DB(DB_NAME).C(MONTHLY_VISITS_COLL)
-	return u.UpdateMonthVisits()
+	return u.UpdateMonthVisits(false)
 }
 
 func (d *DB) UpdateHourDownloads() error {
 	var u DBUpdate
 	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
 	u.dst = d.session.DB(DB_NAME).C(HOURLY_DOWNLOADS_COLL)
-	return u.UpdateHourDownloads()
+	return u.UpdateHourVisits(true)
 }
 
 func (d *DB) UpdateDayDownloads() error {
 	var u DBUpdate
 	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
 	u.dst = d.session.DB(DB_NAME).C(DAILY_DOWNLOADS_COLL)
-	return u.UpdateDayDownloads()
+	return u.UpdateDayVisits(true)
 }
 
 func (d *DB) UpdateMonthDownloads() error {
 	var u DBUpdate
 	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
 	u.dst = d.session.DB(DB_NAME).C(MONTHLY_DOWNLOADS_COLL)
-	return u.UpdateMonthDownloads()
+	return u.UpdateMonthVisits(true)
 }
