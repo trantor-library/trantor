@@ -4,6 +4,7 @@ import log "github.com/cihub/seelog"
 
 import (
 	"crypto/md5"
+	"errors"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 	"os"
@@ -182,14 +183,14 @@ func (d *DB) GetBooks(query bson.M, r ...int) (books []Book, num int, err error)
 
 /* Get the most visited books
  */
-func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
+func (d *DB) GetVisitedBooks() (books []Book, err error) {
 	visitedColl := d.session.DB(DB_NAME).C(VISITED_COLL)
-	bookId, err := GetBooksVisited(num, visitedColl)
+	bookId, err := GetBooksVisited(visitedColl)
 	if err != nil {
 		return nil, err
 	}
 
-	books = make([]Book, num)
+	books = make([]Book, len(bookId))
 	for i, id := range bookId {
 		booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
 		booksColl.Find(bson.M{"_id": id}).One(&books[i])
@@ -199,21 +200,22 @@ func (d *DB) GetVisitedBooks(num int) (books []Book, err error) {
 }
 
 func (d *DB) UpdateMostVisited() error {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.UpdateMostVisited(statsColl)
+	var u DBUpdate
+	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
+	u.dst = d.session.DB(DB_NAME).C(VISITED_COLL)
+	return u.UpdateMostBooks("book")
 }
 
 /* Get the most downloaded books
  */
-func (d *DB) GetDownloadedBooks(num int) (books []Book, err error) {
+func (d *DB) GetDownloadedBooks() (books []Book, err error) {
 	downloadedColl := d.session.DB(DB_NAME).C(DOWNLOADED_COLL)
-	bookId, err := GetBooksVisited(num, downloadedColl)
+	bookId, err := GetBooksVisited(downloadedColl)
 	if err != nil {
 		return nil, err
 	}
 
-	books = make([]Book, num)
+	books = make([]Book, len(bookId))
 	for i, id := range bookId {
 		booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
 		booksColl.Find(bson.M{"_id": id}).One(&books[i])
@@ -223,9 +225,10 @@ func (d *DB) GetDownloadedBooks(num int) (books []Book, err error) {
 }
 
 func (d *DB) UpdateDownloadedBooks() error {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.UpdateMostDownloaded(statsColl)
+	var u DBUpdate
+	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
+	u.dst = d.session.DB(DB_NAME).C(DOWNLOADED_COLL)
+	return u.UpdateMostBooks("download")
 }
 
 /* optional parameters: length and start index
@@ -250,84 +253,93 @@ func (d *DB) GetFS(prefix string) *mgo.GridFS {
 	return d.session.DB(DB_NAME).GridFS(prefix)
 }
 
-func (d *DB) GetTags(numTags int) ([]string, error) {
+func (d *DB) GetTags() ([]string, error) {
 	tagsColl := d.session.DB(DB_NAME).C(TAGS_COLL)
-	return GetTags(numTags, tagsColl)
+	return GetTags(tagsColl)
 }
 
 func (d *DB) UpdateTags() error {
-	booksColl := d.session.DB(DB_NAME).C(BOOKS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.UpdateTags(booksColl)
+	var u DBUpdate
+	u.src = d.session.DB(DB_NAME).C(BOOKS_COLL)
+	u.dst = d.session.DB(DB_NAME).C(TAGS_COLL)
+	return u.UpdateTags()
 }
+
+type VisitType int
+
+const (
+	hourly_visits = iota
+	daily_visits
+	monthly_visits
+	hourly_downloads
+	daily_downloads
+	monthly_downloads
+)
 
 type Visits struct {
-	Date  int64 "_id"
-	Count int   "value"
+	Date  time.Time "date"
+	Count int       "count"
 }
 
-func (d *DB) GetHourVisits() ([]Visits, error) {
-	hourlyColl := d.session.DB(DB_NAME).C(HOURLY_VISITS_COLL)
-	return GetVisits(hourlyColl)
+func (d *DB) GetVisits(visitType VisitType) ([]Visits, error) {
+	var coll *mgo.Collection
+	switch visitType {
+	case hourly_visits:
+		coll = d.session.DB(DB_NAME).C(HOURLY_VISITS_COLL)
+	case daily_visits:
+		coll = d.session.DB(DB_NAME).C(DAILY_VISITS_COLL)
+	case monthly_visits:
+		coll = d.session.DB(DB_NAME).C(MONTHLY_VISITS_COLL)
+	case hourly_downloads:
+		coll = d.session.DB(DB_NAME).C(HOURLY_DOWNLOADS_COLL)
+	case daily_downloads:
+		coll = d.session.DB(DB_NAME).C(DAILY_DOWNLOADS_COLL)
+	case monthly_downloads:
+		coll = d.session.DB(DB_NAME).C(MONTHLY_DOWNLOADS_COLL)
+	default:
+		return nil, errors.New("Not valid VisitType")
+	}
+	return GetVisits(coll)
 }
 
 func (d *DB) UpdateHourVisits() error {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.UpdateHourVisits(statsColl)
-}
-
-func (d *DB) GetDayVisits() ([]Visits, error) {
-	dailyColl := d.session.DB(DB_NAME).C(DAILY_VISITS_COLL)
-	return GetVisits(dailyColl)
+	var u DBUpdate
+	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
+	u.dst = d.session.DB(DB_NAME).C(HOURLY_VISITS_COLL)
+	return u.UpdateHourVisits(false)
 }
 
 func (d *DB) UpdateDayVisits() error {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.UpdateDayVisits(statsColl)
-}
-
-func (d *DB) GetMonthVisits() ([]Visits, error) {
-	monthlyColl := d.session.DB(DB_NAME).C(MONTHLY_VISITS_COLL)
-	return GetVisits(monthlyColl)
+	var u DBUpdate
+	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
+	u.dst = d.session.DB(DB_NAME).C(DAILY_VISITS_COLL)
+	return u.UpdateDayVisits(false)
 }
 
 func (d *DB) UpdateMonthVisits() error {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.UpdateMonthVisits(statsColl)
-}
-
-func (d *DB) GetHourDownloads() ([]Visits, error) {
-	hourlyColl := d.session.DB(DB_NAME).C(HOURLY_DOWNLOADS_COLL)
-	return GetVisits(hourlyColl)
+	var u DBUpdate
+	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
+	u.dst = d.session.DB(DB_NAME).C(MONTHLY_VISITS_COLL)
+	return u.UpdateMonthVisits(false)
 }
 
 func (d *DB) UpdateHourDownloads() error {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.UpdateHourDownloads(statsColl)
-}
-
-func (d *DB) GetDayDownloads() ([]Visits, error) {
-	dailyColl := d.session.DB(DB_NAME).C(DAILY_DOWNLOADS_COLL)
-	return GetVisits(dailyColl)
+	var u DBUpdate
+	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
+	u.dst = d.session.DB(DB_NAME).C(HOURLY_DOWNLOADS_COLL)
+	return u.UpdateHourVisits(true)
 }
 
 func (d *DB) UpdateDayDownloads() error {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.UpdateDayDownloads(statsColl)
-}
-
-func (d *DB) GetMonthDownloads() ([]Visits, error) {
-	monthlyColl := d.session.DB(DB_NAME).C(MONTHLY_DOWNLOADS_COLL)
-	return GetVisits(monthlyColl)
+	var u DBUpdate
+	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
+	u.dst = d.session.DB(DB_NAME).C(DAILY_DOWNLOADS_COLL)
+	return u.UpdateDayVisits(true)
 }
 
 func (d *DB) UpdateMonthDownloads() error {
-	statsColl := d.session.DB(DB_NAME).C(STATS_COLL)
-	mr := NewMR(d.session.DB(DB_NAME))
-	return mr.UpdateMonthDownloads(statsColl)
+	var u DBUpdate
+	u.src = d.session.DB(DB_NAME).C(STATS_COLL)
+	u.dst = d.session.DB(DB_NAME).C(MONTHLY_DOWNLOADS_COLL)
+	return u.UpdateMonthVisits(true)
 }

@@ -69,12 +69,12 @@ func statsHandler(h handler) {
 	var data statsData
 	data.S = GetStatus(h)
 	data.S.Stats = true
-	data.HVisits = getHourlyVisits(h.db)
-	data.DVisits = getDailyVisits(h.db)
-	data.MVisits = getMonthlyVisits(h.db)
-	data.HDownloads = getHourlyDownloads(h.db)
-	data.DDownloads = getDailyDownloads(h.db)
-	data.MDownloads = getMonthlyDownloads(h.db)
+	data.HVisits = getVisits(hourlyLabel, h.db, hourly_visits)
+	data.DVisits = getVisits(dailyLabel, h.db, daily_visits)
+	data.MVisits = getVisits(monthlyLabel, h.db, monthly_visits)
+	data.HDownloads = getVisits(hourlyLabel, h.db, hourly_downloads)
+	data.DDownloads = getVisits(dailyLabel, h.db, daily_downloads)
+	data.MDownloads = getVisits(monthlyLabel, h.db, monthly_downloads)
 
 	loadTemplate(h.w, "stats", data)
 }
@@ -94,89 +94,28 @@ type visitData struct {
 	Count int
 }
 
-func getHourlyVisits(db *DB) []visitData {
-	var visits []visitData
-
-	visit, _ := db.GetHourVisits()
-	for _, v := range visit {
-		var elem visitData
-		hour := time.Unix(v.Date/1000, 0).UTC().Hour()
-		elem.Label = strconv.Itoa(hour + 1)
-		elem.Count = v.Count
-		visits = append(visits, elem)
-	}
-
-	return visits
+func hourlyLabel(date time.Time) string {
+	return strconv.Itoa(date.Hour() + 1)
 }
 
-func getDailyVisits(db *DB) []visitData {
-	var visits []visitData
-
-	visit, _ := db.GetDayVisits()
-	for _, v := range visit {
-		var elem visitData
-		day := time.Unix(v.Date/1000, 0).UTC().Day()
-		elem.Label = strconv.Itoa(day)
-		elem.Count = v.Count
-		visits = append(visits, elem)
-	}
-
-	return visits
+func dailyLabel(date time.Time) string {
+	return strconv.Itoa(date.Day())
 }
 
-func getMonthlyVisits(db *DB) []visitData {
-	var visits []visitData
-
-	visit, _ := db.GetMonthVisits()
-	for _, v := range visit {
-		var elem visitData
-		month := time.Unix(v.Date/1000, 0).UTC().Month()
-		elem.Label = month.String()
-		elem.Count = v.Count
-		visits = append(visits, elem)
-	}
-
-	return visits
+func monthlyLabel(date time.Time) string {
+	return date.Month().String()
 }
 
-func getHourlyDownloads(db *DB) []visitData {
+func getVisits(funcLabel func(time.Time) string, db *DB, visitType VisitType) []visitData {
 	var visits []visitData
 
-	visit, _ := db.GetHourDownloads()
-	for _, v := range visit {
-		var elem visitData
-		hour := time.Unix(v.Date/1000, 0).UTC().Hour()
-		elem.Label = strconv.Itoa(hour + 1)
-		elem.Count = v.Count
-		visits = append(visits, elem)
+	visit, err := db.GetVisits(visitType)
+	if err != nil {
+		log.Warn("GetVisits error (", visitType, "): ", err)
 	}
-
-	return visits
-}
-
-func getDailyDownloads(db *DB) []visitData {
-	var visits []visitData
-
-	visit, _ := db.GetDayDownloads()
 	for _, v := range visit {
 		var elem visitData
-		day := time.Unix(v.Date/1000, 0).UTC().Day()
-		elem.Label = strconv.Itoa(day)
-		elem.Count = v.Count
-		visits = append(visits, elem)
-	}
-
-	return visits
-}
-
-func getMonthlyDownloads(db *DB) []visitData {
-	var visits []visitData
-
-	visit, _ := db.GetMonthDownloads()
-	for _, v := range visit {
-		var elem visitData
-		month := time.Unix(v.Date/1000, 0).UTC().Month()
-		elem.Label = month.String()
+		elem.Label = funcLabel(v.Date.UTC())
 		elem.Count = v.Count
 		visits = append(visits, elem)
 	}

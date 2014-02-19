@@ -13,11 +13,9 @@ https://gitorious.org/trantor/
 In order to run Trantor, you need to install the following packages:
 
 * Go language
-* Epub development library
 * Mongodb
 * Bazaar
-* Mercurial
-* Git (necessary only if you want to deal with the repository)
+* Git
 
 Under Debian Wheezy you can simply run:
 
