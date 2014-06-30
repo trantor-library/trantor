@@ -9,7 +9,7 @@ import (
 )
 
 func buildQuery(q string) bson.M {
-	var reg []bson.RegEx
+	var keywords []string
 	query := bson.M{"active": true}
 	words := strings.Split(q, " ")
 	for _, w := range words {
@@ -17,11 +17,12 @@ func buildQuery(q string) bson.M {
 		if len(tag) > 1 {
 			query[tag[0]] = bson.RegEx{tag[1], "i"}
 		} else {
-			reg = append(reg, bson.RegEx{w, "i"})
+			toks := tokens(w)
+			keywords = append(keywords, toks...)
 		}
 	}
-	if len(reg) > 0 {
-		query["keywords"] = bson.M{"$all": reg}
+	if len(keywords) > 0 {
+		query["keywords"] = bson.M{"$all": keywords}
 	}
 	return query
 }
