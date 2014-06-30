@@ -15,3 +15,5 @@ Password:
 - coverNew. Reload the cover from all the new books
 
 - addsize. Add the size of the books to the book metadata
+
+- keywords. Recalculate keywords

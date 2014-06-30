@@ -6,5 +6,6 @@ tools/getISBNnDesc/getISBNnDesc
 tools/coverNew/coverNew
 tools/addsize/addsize
 tools/importer/importer
+tools/keywords/keywords
 tags
 .*.swp
