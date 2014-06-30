@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
+	"git.gitorious.org/trantor/trantor.git/database"
 	"io"
 	"io/ioutil"
 	"labix.org/v2/mgo/bson"
@@ -10,7 +11,7 @@ import (
 	"strings"
 )
 
-func OpenBook(id bson.ObjectId, db *DB) (*epubgo.Epub, error) {
+func OpenBook(id bson.ObjectId, db *database.DB) (*epubgo.Epub, error) {
 	fs := db.GetFS(FS_BOOKS)
 	f, err := fs.OpenId(id)
 	if err != nil {
@@ -24,7 +25,7 @@ func OpenBook(id bson.ObjectId, db *DB) (*epubgo.Epub, error) {
 	return epubgo.Load(reader, int64(len(buff)))
 }
 
-func StoreNewFile(name string, file io.Reader, db *DB) (bson.ObjectId, int64, error) {
+func StoreNewFile(name string, file io.Reader, db *database.DB) (bson.ObjectId, int64, error) {
 	fs := db.GetFS(FS_BOOKS)
 	fw, err := fs.Create(name)
 	if err != nil {
@@ -37,17 +38,17 @@ func StoreNewFile(name string, file io.Reader, db *DB) (bson.ObjectId, int64, er
 	return id, size, err
 }
 
-func DeleteFile(id bson.ObjectId, db *DB) error {
+func DeleteFile(id bson.ObjectId, db *database.DB) error {
 	fs := db.GetFS(FS_BOOKS)
 	return fs.RemoveId(id)
 }
 
-func DeleteCover(id bson.ObjectId, db *DB) error {
+func DeleteCover(id bson.ObjectId, db *database.DB) error {
 	fs := db.GetFS(FS_IMGS)
 	return fs.RemoveId(id)
 }
 
-func DeleteBook(book Book, db *DB) {
+func DeleteBook(book database.Book, db *database.DB) {
 	if book.Cover != "" {
 		DeleteCover(book.Cover, db)
 	}

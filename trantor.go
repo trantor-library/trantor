@@ -3,6 +3,7 @@ package main
 import log "github.com/cihub/seelog"
 
 import (
+	"git.gitorious.org/trantor/trantor.git/database"
 	"github.com/gorilla/mux"
 	"io"
 	"labix.org/v2/mgo/bson"
@@ -38,7 +39,7 @@ func logoutHandler(h handler) {
 
 type bookData struct {
 	S           Status
-	Book        Book
+	Book        database.Book
 	Description []string
 }
 
@@ -52,7 +53,7 @@ func bookHandler(h handler) {
 	var data bookData
 	data.S = GetStatus(h)
 	id := bson.ObjectIdHex(idStr)
-	books, _, err := h.db.GetBooks(bson.M{"_id": id})
+	books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
 	if err != nil || len(books) == 0 {
 		notFound(h)
 		return
@@ -70,7 +71,7 @@ func downloadHandler(h handler) {
 	}
 
 	id := bson.ObjectIdHex(idStr)
-	books, _, err := h.db.GetBooks(bson.M{"_id": id})
+	books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
 	if err != nil || len(books) == 0 {
 		notFound(h)
 		return
@@ -101,9 +102,9 @@ func downloadHandler(h handler) {
 
 type indexData struct {
 	S               Status
-	Books           []Book
-	VisitedBooks    []Book
-	DownloadedBooks []Book
+	Books           []database.Book
+	VisitedBooks    []database.Book
+	DownloadedBooks []database.Book
 	Count           int
 	Tags            []string
 	News            []newsEntry
@@ -115,7 +116,7 @@ func indexHandler(h handler) {
 	data.Tags, _ = h.db.GetTags()
 	data.S = GetStatus(h)
 	data.S.Home = true
-	data.Books, data.Count, _ = h.db.GetBooks(bson.M{"active": true}, BOOKS_FRONT_PAGE)
+	data.Books, data.Count, _ = h.db.GetBooks(bson.M{"active": true}, BOOKS_FRONT_PAGE, 0)
 	data.VisitedBooks, _ = h.db.GetVisitedBooks()
 	data.DownloadedBooks, _ = h.db.GetDownloadedBooks()
 	data.News = getNews(1, DAYS_NEWS_INDEXPAGE, h.db)
@@ -147,7 +148,7 @@ func main() {
 	}
 	log.Info("Start the imperial library of trantor")
 
-	db := initDB()
+	db := database.Init(DB_IP, DB_NAME)
 	defer db.Close()
 
 	InitTasks(db)
@@ -158,7 +159,7 @@ func main() {
 	log.Error(http.ListenAndServe(":"+PORT, nil))
 }
 
-func initRouter(db *DB) {
+func initRouter(db *database.DB) {
 	r := mux.NewRouter()
 	var notFoundHandler http.HandlerFunc
 	notFoundHandler = GatherStats(notFound, db)

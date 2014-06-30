@@ -3,24 +3,11 @@ package main
 const (
 	PORT = "8080"
 
-	DB_IP                  = "127.0.0.1"
-	DB_NAME                = "trantor"
-	META_COLL              = "meta"
-	BOOKS_COLL             = "books"
-	TAGS_COLL              = "tags"
-	VISITED_COLL           = "visited"
-	DOWNLOADED_COLL        = "downloaded"
-	HOURLY_VISITS_COLL     = "visits.hourly"
-	DAILY_VISITS_COLL      = "visits.daily"
-	MONTHLY_VISITS_COLL    = "visits.monthly"
-	HOURLY_DOWNLOADS_COLL  = "downloads.hourly"
-	DAILY_DOWNLOADS_COLL   = "downloads.daily"
-	MONTHLY_DOWNLOADS_COLL = "downloads.monthly"
-	USERS_COLL             = "users"
-	NEWS_COLL              = "news"
-	STATS_COLL             = "statistics"
-	FS_BOOKS               = "fs_books"
-	FS_IMGS                = "fs_imgs"
+	DB_IP     = "127.0.0.1"
+	DB_NAME   = "trantor"
+	META_COLL = "meta"
+	FS_BOOKS  = "fs_books"
+	FS_IMGS   = "fs_imgs"
 
 	PASS_SALT                 = "ImperialLibSalt"
 	MINUTES_UPDATE_TAGS       = 11
@@ -33,7 +20,6 @@ const (
 	MINUTES_UPDATE_DAILY_D    = 60*12 + 13
 	MINUTES_UPDATE_MONTHLY_D  = 60*24 + 17
 	MINUTES_UPDATE_LOGGER     = 5
-	TAGS_DISPLAY              = 50
 	BOOKS_FRONT_PAGE          = 6
 	SEARCH_ITEMS_PAGE         = 20
 	NEW_ITEMS_PAGE            = 50

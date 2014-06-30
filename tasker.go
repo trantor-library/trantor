@@ -3,10 +3,11 @@ package main
 import log "github.com/cihub/seelog"
 
 import (
+	"git.gitorious.org/trantor/trantor.git/database"
 	"time"
 )
 
-func InitTasks(db *DB) {
+func InitTasks(db *database.DB) {
 	periodicTask(updateLogger, MINUTES_UPDATE_LOGGER*time.Minute)
 	periodicTask(db.UpdateTags, MINUTES_UPDATE_TAGS*time.Minute)
 	periodicTask(db.UpdateMostVisited, MINUTES_UPDATE_VISITED*time.Minute)

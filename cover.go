@@ -8,6 +8,7 @@ import _ "image/gif"
 import (
 	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
+	"git.gitorious.org/trantor/trantor.git/database"
 	"github.com/gorilla/mux"
 	"github.com/nfnt/resize"
 	"image"
@@ -27,7 +28,7 @@ func coverHandler(h handler) {
 		return
 	}
 	id := bson.ObjectIdHex(vars["id"])
-	books, _, err := h.db.GetBooks(bson.M{"_id": id})
+	books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
 	if err != nil || len(books) == 0 {
 		notFound(h)
 		return
@@ -61,7 +62,7 @@ func coverHandler(h handler) {
 	io.Copy(h.w, f)
 }
 
-func GetCover(e *epubgo.Epub, title string, db *DB) (bson.ObjectId, bson.ObjectId) {
+func GetCover(e *epubgo.Epub, title string, db *database.DB) (bson.ObjectId, bson.ObjectId) {
 	imgId, smallId := coverFromMetadata(e, title, db)
 	if imgId != "" {
 		return imgId, smallId
@@ -116,7 +117,7 @@ func GetCover(e *epubgo.Epub, title string, db *DB) (bson.ObjectId, bson.ObjectI
 	return "", ""
 }
 
-func coverFromMetadata(e *epubgo.Epub, title string, db *DB) (bson.ObjectId, bson.ObjectId) {
+func coverFromMetadata(e *epubgo.Epub, title string, db *database.DB) (bson.ObjectId, bson.ObjectId) {
 	metaList, _ := e.MetadataAttr("meta")
 	for _, meta := range metaList {
 		if meta["name"] == "cover" {
@@ -130,7 +131,7 @@ func coverFromMetadata(e *epubgo.Epub, title string, db *DB) (bson.ObjectId, bso
 	return "", ""
 }
 
-func searchCommonCoverNames(e *epubgo.Epub, title string, db *DB) (bson.ObjectId, bson.ObjectId) {
+func searchCommonCoverNames(e *epubgo.Epub, title string, db *database.DB) (bson.ObjectId, bson.ObjectId) {
 	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
 		img, err := e.OpenFile(p)
 		if err == nil {
@@ -141,7 +142,7 @@ func searchCommonCoverNames(e *epubgo.Epub, title string, db *DB) (bson.ObjectId
 	return "", ""
 }
 
-func storeImg(img io.Reader, title string, db *DB) (bson.ObjectId, bson.ObjectId) {
+func storeImg(img io.Reader, title string, db *database.DB) (bson.ObjectId, bson.ObjectId) {
 	/* open the files */
 	fBig, err := createCoverFile(title, db)
 	if err != nil {
@@ -187,7 +188,7 @@ func storeImg(img io.Reader, title string, db *DB) (bson.ObjectId, bson.ObjectId
 	return idBig, idSmall
 }
 
-func createCoverFile(title string, db *DB) (*mgo.GridFile, error) {
+func createCoverFile(title string, db *database.DB) (*mgo.GridFile, error) {
 	fs := db.GetFS(FS_IMGS)
 	return fs.Create(title + ".jpg")
 }

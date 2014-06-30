@@ -1,6 +1,7 @@
 package main
 
 import (
+	"git.gitorious.org/trantor/trantor.git/database"
 	"labix.org/v2/mgo/bson"
 	"net/http"
 	"strconv"
@@ -28,7 +29,7 @@ func buildQuery(q string) bson.M {
 type searchData struct {
 	S         Status
 	Found     int
-	Books     []Book
+	Books     []database.Book
 	ItemsPage int
 	Page      int
 	Next      string

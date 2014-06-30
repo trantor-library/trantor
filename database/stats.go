@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"labix.org/v2/mgo"
@@ -6,9 +6,39 @@ import (
 	"time"
 )
 
-type DBUpdate struct {
+const (
+	stats_coll             = "statistics"
+	hourly_visits_coll     = "visits.hourly"
+	daily_visits_coll      = "visits.daily"
+	monthly_visits_coll    = "visits.monthly"
+	hourly_downloads_coll  = "downloads.hourly"
+	daily_downloads_coll   = "downloads.daily"
+	monthly_downloads_coll = "downloads.monthly"
+
+	// FIXME: this should return to the config.go
+	TAGS_DISPLAY     = 50
+	BOOKS_FRONT_PAGE = 6
+)
+
+type dbUpdate struct {
 	src *mgo.Collection
 	dst *mgo.Collection
+}
+
+type VisitType int
+
+const (
+	Hourly_visits = iota
+	Daily_visits
+	Monthly_visits
+	Hourly_downloads
+	Daily_downloads
+	Monthly_downloads
+)
+
+type Visits struct {
+	Date  time.Time "date"
+	Count int       "count"
 }
 
 func GetTags(tagsColl *mgo.Collection) ([]string, error) {
@@ -49,7 +79,7 @@ func GetVisits(visitsColl *mgo.Collection) ([]Visits, error) {
 	return result, err
 }
 
-func (u *DBUpdate) UpdateTags() error {
+func (u *dbUpdate) UpdateTags() error {
 	var tags []struct {
 		Tag   string "_id"
 		Count int    "count"
@@ -75,7 +105,7 @@ func (u *DBUpdate) UpdateTags() error {
 	return nil
 }
 
-func (u *DBUpdate) UpdateMostBooks(section string) error {
+func (u *dbUpdate) UpdateMostBooks(section string) error {
 	const numDays = 30
 	start := time.Now().UTC().Add(-numDays * 24 * time.Hour)
 
@@ -104,19 +134,19 @@ func (u *DBUpdate) UpdateMostBooks(section string) error {
 	return nil
 }
 
-func (u *DBUpdate) UpdateHourVisits(isDownloads bool) error {
+func (u *dbUpdate) UpdateHourVisits(isDownloads bool) error {
 	const numDays = 2
 	spanStore := numDays * 24 * time.Hour
 	return u.updateVisits(hourInc, spanStore, isDownloads)
 }
 
-func (u *DBUpdate) UpdateDayVisits(isDownloads bool) error {
+func (u *dbUpdate) UpdateDayVisits(isDownloads bool) error {
 	const numDays = 30
 	spanStore := numDays * 24 * time.Hour
 	return u.updateVisits(dayInc, spanStore, isDownloads)
 }
 
-func (u *DBUpdate) UpdateMonthVisits(isDownloads bool) error {
+func (u *dbUpdate) UpdateMonthVisits(isDownloads bool) error {
 	const numDays = 365
 	spanStore := numDays * 24 * time.Hour
 	return u.updateVisits(monthInc, spanStore, isDownloads)
@@ -137,7 +167,7 @@ func monthInc(date time.Time) time.Time {
 	return date.AddDate(0, 1, 1-date.Day()).Truncate(span)
 }
 
-func (u *DBUpdate) updateVisits(incTime func(time.Time) time.Time, spanStore time.Duration, isDownloads bool) error {
+func (u *dbUpdate) updateVisits(incTime func(time.Time) time.Time, spanStore time.Duration, isDownloads bool) error {
 	start := u.calculateStart(spanStore)
 	for start.Before(time.Now().UTC()) {
 		stop := incTime(start)
@@ -165,7 +195,7 @@ func (u *DBUpdate) updateVisits(incTime func(time.Time) time.Time, spanStore tim
 	return err
 }
 
-func (u *DBUpdate) calculateStart(spanStore time.Duration) time.Time {
+func (u *dbUpdate) calculateStart(spanStore time.Duration) time.Time {
 	var date struct {
 		Id   bson.ObjectId `bson:"_id"`
 		Date time.Time     `bson:"date"`
@@ -178,7 +208,7 @@ func (u *DBUpdate) calculateStart(spanStore time.Duration) time.Time {
 	return time.Now().UTC().Add(-spanStore).Truncate(time.Hour)
 }
 
-func (u *DBUpdate) countVisits(start time.Time, stop time.Time) int {
+func (u *dbUpdate) countVisits(start time.Time, stop time.Time) int {
 	var result struct {
 		Count int "count"
 	}
@@ -194,7 +224,7 @@ func (u *DBUpdate) countVisits(start time.Time, stop time.Time) int {
 	return result.Count
 }
 
-func (u *DBUpdate) countDownloads(start time.Time, stop time.Time) (int, error) {
+func (u *dbUpdate) countDownloads(start time.Time, stop time.Time) (int, error) {
 	query := bson.M{"date": bson.M{"$gte": start, "$lt": stop}, "section": "download"}
 	return u.src.Find(query).Count()
 }

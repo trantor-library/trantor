@@ -3,6 +3,7 @@ package main
 import log "github.com/cihub/seelog"
 
 import (
+	"git.gitorious.org/trantor/trantor.git/database"
 	"github.com/gorilla/mux"
 	"labix.org/v2/mgo/bson"
 	"net/http"
@@ -15,15 +16,15 @@ type handler struct {
 	w    http.ResponseWriter
 	r    *http.Request
 	sess *Session
-	db   *DB
+	db   *database.DB
 }
 
-func InitStats(database *DB) {
+func InitStats(database *database.DB) {
 	statsChannel = make(chan statsRequest, CHAN_SIZE)
 	go statsWorker(database)
 }
 
-func GatherStats(function func(handler), database *DB) func(http.ResponseWriter, *http.Request) {
+func GatherStats(function func(handler), database *database.DB) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Query ", r.Method, " ", r.RequestURI)
 
@@ -49,7 +50,7 @@ type statsRequest struct {
 	r    *http.Request
 }
 
-func statsWorker(database *DB) {
+func statsWorker(database *database.DB) {
 	db := database.Copy()
 	defer db.Close()
 
@@ -61,7 +62,7 @@ func statsWorker(database *DB) {
 		appendSession(req.sess, stats)
 		stats["method"] = req.r.Method
 		stats["date"] = req.date
-		db.InsertStats(stats)
+		db.AddStats(stats)
 	}
 }
 
@@ -69,12 +70,12 @@ func statsHandler(h handler) {
 	var data statsData
 	data.S = GetStatus(h)
 	data.S.Stats = true
-	data.HVisits = getVisits(hourlyLabel, h.db, hourly_visits)
-	data.DVisits = getVisits(dailyLabel, h.db, daily_visits)
-	data.MVisits = getVisits(monthlyLabel, h.db, monthly_visits)
-	data.HDownloads = getVisits(hourlyLabel, h.db, hourly_downloads)
-	data.DDownloads = getVisits(dailyLabel, h.db, daily_downloads)
-	data.MDownloads = getVisits(monthlyLabel, h.db, monthly_downloads)
+	data.HVisits = getVisits(hourlyLabel, h.db, database.Hourly_visits)
+	data.DVisits = getVisits(dailyLabel, h.db, database.Daily_visits)
+	data.MVisits = getVisits(monthlyLabel, h.db, database.Monthly_visits)
+	data.HDownloads = getVisits(hourlyLabel, h.db, database.Hourly_downloads)
+	data.DDownloads = getVisits(dailyLabel, h.db, database.Daily_downloads)
+	data.MDownloads = getVisits(monthlyLabel, h.db, database.Monthly_downloads)
 
 	loadTemplate(h.w, "stats", data)
 }
@@ -106,7 +107,7 @@ func monthlyLabel(date time.Time) string {
 	return date.Month().String()
 }
 
-func getVisits(funcLabel func(time.Time) string, db *DB, visitType VisitType) []visitData {
+func getVisits(funcLabel func(time.Time) string, db *database.DB, visitType database.VisitType) []visitData {
 	var visits []visitData
 
 	visit, err := db.GetVisits(visitType)

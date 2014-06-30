@@ -5,12 +5,13 @@ import log "github.com/cihub/seelog"
 import (
 	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
+	"git.gitorious.org/trantor/trantor.git/database"
 	"io/ioutil"
 	"mime/multipart"
 	"strings"
 )
 
-func InitUpload(database *DB) {
+func InitUpload(database *database.DB) {
 	uploadChannel = make(chan uploadRequest, CHAN_SIZE)
 	go uploadWorker(database)
 }
@@ -22,7 +23,7 @@ type uploadRequest struct {
 	filename string
 }
 
-func uploadWorker(database *DB) {
+func uploadWorker(database *database.DB) {
 	db := database.Copy()
 	defer db.Close()
 
@@ -31,7 +32,7 @@ func uploadWorker(database *DB) {
 	}
 }
 
-func processFile(req uploadRequest, db *DB) {
+func processFile(req uploadRequest, db *database.DB) {
 	defer req.file.Close()
 
 	epub, err := openMultipartEpub(req.file)
@@ -52,7 +53,7 @@ func processFile(req uploadRequest, db *DB) {
 
 	book["file"] = id
 	book["filesize"] = size
-	err = db.InsertBook(book)
+	err = db.AddBook(book)
 	if err != nil {
 		log.Error("Error storing metadata (", title, "): ", err)
 		return
@@ -103,7 +104,7 @@ func openMultipartEpub(file multipart.File) (*epubgo.Epub, error) {
 	return epubgo.Load(reader, int64(len(buff)))
 }
 
-func parseFile(epub *epubgo.Epub, db *DB) map[string]interface{} {
+func parseFile(epub *epubgo.Epub, db *database.DB) map[string]interface{} {
 	book := map[string]interface{}{}
 	for _, m := range epub.MetadataFields() {
 		data, err := epub.Metadata(m)

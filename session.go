@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/hex"
+	"git.gitorious.org/trantor/trantor.git/database"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"net/http"
@@ -21,13 +22,13 @@ type Session struct {
 	S    *sessions.Session
 }
 
-func GetSession(r *http.Request, db *DB) (s *Session) {
+func GetSession(r *http.Request, db *database.DB) (s *Session) {
 	s = new(Session)
 	var err error
 	s.S, err = sesStore.Get(r, "session")
 	if err == nil && !s.S.IsNew {
 		s.User, _ = s.S.Values["user"].(string)
-		s.Role = db.UserRole(s.User)
+		s.Role = db.User(s.User).Role()
 	}
 
 	if s.S.IsNew {

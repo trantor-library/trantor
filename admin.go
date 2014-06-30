@@ -3,6 +3,7 @@ package main
 import log "github.com/cihub/seelog"
 
 import (
+	"git.gitorious.org/trantor/trantor.git/database"
 	"github.com/gorilla/mux"
 	"labix.org/v2/mgo/bson"
 	"net/http"
@@ -25,14 +26,14 @@ func deleteHandler(h handler) {
 		}
 
 		id := bson.ObjectIdHex(idStr)
-		books, _, err := h.db.GetBooks(bson.M{"_id": id})
+		books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
 		if err != nil {
 			h.sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
 			continue
 		}
 		book := books[0]
 		DeleteBook(book, h.db)
-		h.db.RemoveBook(id)
+		h.db.DeleteBook(id)
 
 		if !book.Active {
 			isNew = true
@@ -57,7 +58,7 @@ func editHandler(h handler) {
 		return
 	}
 	id := bson.ObjectIdHex(idStr)
-	books, _, err := h.db.GetBooks(bson.M{"_id": id})
+	books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
 	if err != nil {
 		notFound(h)
 		return
@@ -120,7 +121,7 @@ func saveHandler(h handler) {
 type newBook struct {
 	TitleFound  int
 	AuthorFound int
-	B           Book
+	B           database.Book
 }
 type newData struct {
 	S     Status
@@ -161,8 +162,8 @@ func newHandler(h handler) {
 	}
 	for i, b := range res {
 		data.Books[i].B = b
-		_, data.Books[i].TitleFound, _ = h.db.GetBooks(buildQuery("title:"+b.Title), 1)
-		_, data.Books[i].AuthorFound, _ = h.db.GetBooks(buildQuery("author:"+strings.Join(b.Author, " author:")), 1)
+		_, data.Books[i].TitleFound, _ = h.db.GetBooks(buildQuery("title:"+b.Title), 1, 0)
+		_, data.Books[i].AuthorFound, _ = h.db.GetBooks(buildQuery("author:"+strings.Join(b.Author, " author:")), 1, 0)
 	}
 	data.Page = page + 1
 	if num > (page+1)*NEW_ITEMS_PAGE {
@@ -188,7 +189,7 @@ func storeHandler(h handler) {
 		}
 
 		id := bson.ObjectIdHex(idStr)
-		books, _, err := h.db.GetBooks(bson.M{"_id": id})
+		books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
 		if err != nil {
 			h.sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
 			continue

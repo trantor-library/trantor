@@ -2,6 +2,7 @@ package main
 
 import (
 	"git.gitorious.org/go-pkg/epubgo.git"
+	"git.gitorious.org/trantor/trantor.git/database"
 	"github.com/gorilla/mux"
 	"io"
 	"labix.org/v2/mgo/bson"
@@ -21,7 +22,7 @@ type chapter struct {
 
 type readData struct {
 	S        Status
-	Book     Book
+	Book     database.Book
 	Content  string
 	Chapters []chapter
 	Next     string
@@ -171,13 +172,13 @@ func readHandler(h handler) {
 	loadTemplate(h.w, "read", data)
 }
 
-func openReadEpub(h handler) (*epubgo.Epub, Book) {
-	var book Book
+func openReadEpub(h handler) (*epubgo.Epub, database.Book) {
+	var book database.Book
 	id := mux.Vars(h.r)["id"]
 	if !bson.IsObjectIdHex(id) {
 		return nil, book
 	}
-	books, _, err := h.db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
+	books, _, err := h.db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)}, 0, 0)
 	if err != nil || len(books) == 0 {
 		return nil, book
 	}
@@ -204,7 +205,7 @@ func contentHandler(h handler) {
 		return
 	}
 
-	books, _, err := h.db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)})
+	books, _, err := h.db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)}, 0, 0)
 	if err != nil || len(books) == 0 {
 		notFound(h)
 		return

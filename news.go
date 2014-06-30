@@ -1,6 +1,7 @@
 package main
 
 import (
+	"git.gitorious.org/trantor/trantor.git/database"
 	"net/http"
 )
 
@@ -57,7 +58,7 @@ func postNewsHandler(h handler) {
 	http.Redirect(h.w, h.r, "/news/", http.StatusFound)
 }
 
-func getNews(num int, days int, db *DB) []newsEntry {
+func getNews(num int, days int, db *database.DB) []newsEntry {
 	dbnews, _ := db.GetNews(num, days)
 	news := make([]newsEntry, len(dbnews))
 	for i, n := range dbnews {
