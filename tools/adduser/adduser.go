@@ -2,37 +2,26 @@ package main
 
 import (
 	"code.google.com/p/gopass"
-	"crypto/md5"
-	"fmt"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
+	"git.gitorious.org/trantor/trantor.git/database"
 	"os"
 )
 
 const (
-	IP         = "127.0.0.1"
-	DB_NAME    = "trantor"
-	USERS_COLL = "users"
-	PASS_SALT  = "ImperialLibSalt"
+	DB_IP   = "127.0.0.1"
+	DB_NAME = "trantor"
 )
 
 func main() {
-	session, err := mgo.Dial(IP)
-	if err != nil {
-		panic(err)
-	}
-	defer session.Close()
-	coll := session.DB(DB_NAME).C(USERS_COLL)
+	db := database.Init(DB_IP, DB_NAME)
+	defer db.Close()
 
 	user := os.Args[1]
 	pass, err := gopass.GetPass("Password: ")
 	if err != nil {
 		panic(err)
 	}
-	h := md5.New()
-	hash := h.Sum(([]byte)(PASS_SALT + pass))
-	fmt.Println(user, " - ", hash)
-	err = coll.Insert(bson.M{"user": user, "pass": hash, "role": "admin"})
+
+	err = db.AddUser(user, pass)
 	if err != nil {
 		panic(err)
 	}

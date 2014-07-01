@@ -9,7 +9,6 @@ const (
 	FS_BOOKS  = "fs_books"
 	FS_IMGS   = "fs_imgs"
 
-	PASS_SALT                 = "ImperialLibSalt"
 	MINUTES_UPDATE_TAGS       = 11
 	MINUTES_UPDATE_VISITED    = 41
 	MINUTES_UPDATE_DOWNLOADED = 47

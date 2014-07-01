@@ -4,7 +4,8 @@ import log "github.com/cihub/seelog"
 
 import (
 	"bytes"
-	"crypto/md5"
+	"code.google.com/p/go.crypto/scrypt"
+	"crypto/rand"
 	"errors"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
@@ -24,6 +25,7 @@ type User struct {
 type db_user struct {
 	User string
 	Pass []byte
+	Salt []byte
 	Role string
 }
 
@@ -58,7 +60,11 @@ func addUser(coll *mgo.Collection, name string, pass string) error {
 	}
 
 	var user db_user
-	user.Pass = md5Pass(pass)
+	user.Pass, user.Salt, err = hashPass(pass)
+	if err != nil {
+		log.Error("Error hashing password: ", err)
+		return errors.New("An error happen storing the password")
+	}
 	user.User = name
 	user.Role = ""
 	return coll.Insert(user)
@@ -72,8 +78,7 @@ func (u User) Valid(pass string) bool {
 	if u.err != nil {
 		return false
 	}
-	hash := md5Pass(pass)
-	return bytes.Compare(u.user.Pass, hash) == 0
+	return validatePass(pass, u.user)
 }
 
 func (u User) Role() string {
@@ -84,13 +89,48 @@ func (u *User) SetPassword(pass string) error {
 	if u.err != nil {
 		return u.err
 	}
-	hash := md5Pass(pass)
-	return u.coll.Update(bson.M{"user": u.user.User}, bson.M{"$set": bson.M{"pass": hash}})
+	hash, salt, err := hashPass(pass)
+	if err != nil {
+		return err
+	}
+	return u.coll.Update(bson.M{"user": u.user.User}, bson.M{"$set": bson.M{"pass": hash, "salt": salt}})
 }
 
-// FIXME: use a proper salting algorithm
-func md5Pass(pass string) []byte {
-	h := md5.New()
-	hash := h.Sum(([]byte)(pass_salt + pass))
-	return hash
+func hashPass(pass string) (hash []byte, salt []byte, err error) {
+	salt, err = genSalt()
+	if err != nil {
+		return
+	}
+	hash, err = calculateHash(pass, salt)
+	return
+}
+
+func genSalt() ([]byte, error) {
+	const (
+		saltLen = 64
+	)
+
+	b := make([]byte, saltLen)
+	_, err := rand.Read(b)
+	return b, err
+}
+
+func validatePass(pass string, user db_user) bool {
+	hash, err := calculateHash(pass, user.Salt)
+	if err != nil {
+		return false
+	}
+	return bytes.Compare(user.Pass, hash) == 0
+}
+
+func calculateHash(pass string, salt []byte) ([]byte, error) {
+	const (
+		N      = 16384
+		r      = 8
+		p      = 1
+		keyLen = 32
+	)
+
+	bpass := []byte(pass)
+	return scrypt.Key(bpass, salt, N, r, p, keyLen)
 }
