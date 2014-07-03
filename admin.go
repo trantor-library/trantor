@@ -95,7 +95,6 @@ func saveHandler(h handler) {
 		"author":      author,
 		"subject":     subject,
 		"lang":        lang}
-	book["keywords"] = keywords(book)
 	err := h.db.UpdateBook(id, book)
 	if err != nil {
 		notFound(h)
@@ -155,8 +154,8 @@ func newHandler(h handler) {
 	}
 	for i, b := range res {
 		data.Books[i].B = b
-		_, data.Books[i].TitleFound, _ = h.db.GetBooks(buildQuery("title:"+b.Title), 1, 0)
-		_, data.Books[i].AuthorFound, _ = h.db.GetBooks(buildQuery("author:"+strings.Join(b.Author, " author:")), 1, 0)
+		_, data.Books[i].TitleFound, _ = h.db.GetBooks("title:"+b.Title, 1, 0)
+		_, data.Books[i].AuthorFound, _ = h.db.GetBooks("author:"+strings.Join(b.Author, " author:"), 1, 0)
 	}
 	data.Page = page + 1
 	if num > (page+1)*NEW_ITEMS_PAGE {

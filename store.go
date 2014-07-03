@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
 	"git.gitorious.org/trantor/trantor.git/database"
-	"gopkgs.com/unidecode.v1"
 	"io"
 	"io/ioutil"
 	"labix.org/v2/mgo/bson"
 	"regexp"
 	"strings"
-	"unicode"
 )
 
 func OpenBook(id bson.ObjectId, db *database.DB) (*epubgo.Epub, error) {
@@ -114,29 +112,4 @@ func parseDate(date []string) string {
 		return ""
 	}
 	return strings.Replace(date[0], "Unspecified: ", "", -1)
-}
-
-func keywords(b map[string]interface{}) (k []string) {
-	title, _ := b["title"].(string)
-	k = tokens(title)
-	author, _ := b["author"].([]string)
-	for _, a := range author {
-		k = append(k, tokens(a)...)
-	}
-	publisher, _ := b["publisher"].(string)
-	k = append(k, tokens(publisher)...)
-	subject, _ := b["subject"].([]string)
-	for _, s := range subject {
-		k = append(k, tokens(s)...)
-	}
-	return
-}
-
-func tokens(str string) []string {
-	str = unidecode.Unidecode(str)
-	str = strings.ToLower(str)
-	f := func(r rune) bool {
-		return unicode.IsControl(r) || unicode.IsPunct(r) || unicode.IsSpace(r)
-	}
-	return strings.FieldsFunc(str, f)
 }

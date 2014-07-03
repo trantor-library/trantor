@@ -6,7 +6,6 @@ import (
 	"git.gitorious.org/trantor/trantor.git/database"
 	"github.com/gorilla/mux"
 	"io"
-	"labix.org/v2/mgo/bson"
 	"net/http"
 	"strings"
 )
@@ -103,7 +102,7 @@ func indexHandler(h handler) {
 	data.Tags, _ = h.db.GetTags()
 	data.S = GetStatus(h)
 	data.S.Home = true
-	data.Books, data.Count, _ = h.db.GetBooks(bson.M{"active": true}, BOOKS_FRONT_PAGE, 0)
+	data.Books, data.Count, _ = h.db.GetBooks("", BOOKS_FRONT_PAGE, 0)
 	data.VisitedBooks, _ = h.db.GetVisitedBooks()
 	data.DownloadedBooks, _ = h.db.GetDownloadedBooks()
 	data.News = getNews(1, DAYS_NEWS_INDEXPAGE, h.db)

@@ -142,6 +142,5 @@ func parseFile(epub *epubgo.Epub, db *database.DB) map[string]interface{} {
 		book["cover"] = cover
 		book["coversmall"] = coverSmall
 	}
-	book["keywords"] = keywords(book)
 	return book
 }

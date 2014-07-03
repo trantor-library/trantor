@@ -2,30 +2,10 @@ package main
 
 import (
 	"git.gitorious.org/trantor/trantor.git/database"
-	"labix.org/v2/mgo/bson"
 	"net/http"
 	"strconv"
 	"strings"
 )
-
-func buildQuery(q string) bson.M {
-	var keywords []string
-	query := bson.M{"active": true}
-	words := strings.Split(q, " ")
-	for _, w := range words {
-		tag := strings.SplitN(w, ":", 2)
-		if len(tag) > 1 {
-			query[tag[0]] = bson.RegEx{tag[1], "i"}
-		} else {
-			toks := tokens(w)
-			keywords = append(keywords, toks...)
-		}
-	}
-	if len(keywords) > 0 {
-		query["keywords"] = bson.M{"$all": keywords}
-	}
-	return query
-}
 
 type searchData struct {
 	S         Status
@@ -52,7 +32,7 @@ func searchHandler(h handler) {
 		}
 	}
 	items_page := itemsPage(h.r)
-	res, num, _ := h.db.GetBooks(buildQuery(req), items_page, page*items_page)
+	res, num, _ := h.db.GetBooks(req, items_page, page*items_page)
 
 	var data searchData
 	data.S = GetStatus(h)

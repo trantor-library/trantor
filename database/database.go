@@ -43,15 +43,19 @@ func (db *DB) Copy() *DB {
 	return dbCopy
 }
 
-func (db *DB) AddBook(book interface{}) error {
+func (db *DB) AddBook(book map[string]interface{}) error {
 	booksColl := db.session.DB(db.name).C(books_coll)
 	return addBook(booksColl, book)
 }
 
-// FIXME: don't export bson data
-func (db *DB) GetBooks(query bson.M, length int, start int) (books []Book, num int, err error) {
+func (db *DB) GetBooks(query string, length int, start int) (books []Book, num int, err error) {
 	booksColl := db.session.DB(db.name).C(books_coll)
 	return getBooks(booksColl, query, length, start)
+}
+
+func (db *DB) GetNewBooks(length int, start int) (books []Book, num int, err error) {
+	booksColl := db.session.DB(db.name).C(books_coll)
+	return getNewBooks(booksColl, length, start)
 }
 
 func (db *DB) GetBookId(id string) (Book, error) {
@@ -59,19 +63,15 @@ func (db *DB) GetBookId(id string) (Book, error) {
 	return getBookId(booksColl, id)
 }
 
+// FIXME: don't export bson data
 func (db *DB) DeleteBook(id bson.ObjectId) error {
 	booksColl := db.session.DB(db.name).C(books_coll)
 	return deleteBook(booksColl, id)
 }
 
-func (db *DB) UpdateBook(id bson.ObjectId, data interface{}) error {
+func (db *DB) UpdateBook(id bson.ObjectId, data map[string]interface{}) error {
 	booksColl := db.session.DB(db.name).C(books_coll)
 	return updateBook(booksColl, id, data)
-}
-
-func (db *DB) GetNewBooks(length int, start int) (books []Book, num int, err error) {
-	booksColl := db.session.DB(db.name).C(books_coll)
-	return getBooks(booksColl, bson.M{"$nor": []bson.M{{"active": true}}}, length, start)
 }
 
 func (db *DB) BookActive(id bson.ObjectId) bool {
