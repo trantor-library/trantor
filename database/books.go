@@ -83,18 +83,18 @@ func getBookId(coll *mgo.Collection, id string) (Book, error) {
 	return book, err
 }
 
-func deleteBook(coll *mgo.Collection, id bson.ObjectId) error {
-	return coll.Remove(bson.M{"_id": id})
+func deleteBook(coll *mgo.Collection, id string) error {
+	return coll.RemoveId(bson.ObjectIdHex(id))
 }
 
-func updateBook(coll *mgo.Collection, id bson.ObjectId, data map[string]interface{}) error {
+func updateBook(coll *mgo.Collection, id string, data map[string]interface{}) error {
 	data["keywords"] = keywords(data)
-	return coll.Update(bson.M{"_id": id}, bson.M{"$set": data})
+	return coll.UpdateId(bson.ObjectIdHex(id), bson.M{"$set": data})
 }
 
-func bookActive(coll *mgo.Collection, id bson.ObjectId) bool {
+func bookActive(coll *mgo.Collection, id string) bool {
 	var book Book
-	err := coll.Find(bson.M{"_id": id}).One(&book)
+	err := coll.FindId(bson.ObjectIdHex(id)).One(&book)
 	if err != nil {
 		return false
 	}

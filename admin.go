@@ -5,7 +5,6 @@ import log "github.com/cihub/seelog"
 import (
 	"git.gitorious.org/trantor/trantor.git/database"
 	"github.com/gorilla/mux"
-	"labix.org/v2/mgo/bson"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,7 +26,7 @@ func deleteHandler(h handler) {
 			continue
 		}
 		DeleteBook(book, h.db)
-		h.db.DeleteBook(bson.ObjectIdHex(id))
+		h.db.DeleteBook(id)
 
 		if !book.Active {
 			isNew = true
@@ -74,13 +73,12 @@ func cleanEmptyStr(s []string) []string {
 }
 
 func saveHandler(h handler) {
-	idStr := mux.Vars(h.r)["id"]
-	if !h.sess.IsAdmin() || !bson.IsObjectIdHex(idStr) {
+	id := mux.Vars(h.r)["id"]
+	if !h.sess.IsAdmin() {
 		notFound(h)
 		return
 	}
 
-	id := bson.ObjectIdHex(idStr)
 	title := h.r.FormValue("title")
 	publisher := h.r.FormValue("publisher")
 	date := h.r.FormValue("date")
@@ -104,7 +102,7 @@ func saveHandler(h handler) {
 	h.sess.Notify("Book Modified!", "", "success")
 	h.sess.Save(h.w, h.r)
 	if h.db.BookActive(id) {
-		http.Redirect(h.w, h.r, "/book/"+idStr, http.StatusFound)
+		http.Redirect(h.w, h.r, "/book/"+id, http.StatusFound)
 	} else {
 		http.Redirect(h.w, h.r, "/new/", http.StatusFound)
 	}
@@ -186,7 +184,7 @@ func storeHandler(h handler) {
 			log.Error("Error storing book '", book.Title, "': ", err.Error())
 			continue
 		}
-		h.db.UpdateBook(bson.ObjectIdHex(id), bson.M{"active": true})
+		h.db.UpdateBook(id, map[string]interface{}{"active": true})
 		titles = append(titles, book.Title)
 	}
 	if titles != nil {

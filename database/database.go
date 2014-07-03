@@ -63,18 +63,17 @@ func (db *DB) GetBookId(id string) (Book, error) {
 	return getBookId(booksColl, id)
 }
 
-// FIXME: don't export bson data
-func (db *DB) DeleteBook(id bson.ObjectId) error {
+func (db *DB) DeleteBook(id string) error {
 	booksColl := db.session.DB(db.name).C(books_coll)
 	return deleteBook(booksColl, id)
 }
 
-func (db *DB) UpdateBook(id bson.ObjectId, data map[string]interface{}) error {
+func (db *DB) UpdateBook(id string, data map[string]interface{}) error {
 	booksColl := db.session.DB(db.name).C(books_coll)
 	return updateBook(booksColl, id, data)
 }
 
-func (db *DB) BookActive(id bson.ObjectId) bool {
+func (db *DB) BookActive(id string) bool {
 	booksColl := db.session.DB(db.name).C(books_coll)
 	return bookActive(booksColl, id)
 }
