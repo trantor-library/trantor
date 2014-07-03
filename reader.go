@@ -178,12 +178,11 @@ func openReadEpub(h handler) (*epubgo.Epub, database.Book) {
 	if !bson.IsObjectIdHex(id) {
 		return nil, book
 	}
-	books, _, err := h.db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)}, 0, 0)
-	if err != nil || len(books) == 0 {
+	book, err := h.db.GetBookId(id)
+	if err != nil {
 		return nil, book
 	}
 
-	book = books[0]
 	if !book.Active {
 		if !h.sess.IsAdmin() {
 			return nil, book
@@ -205,12 +204,11 @@ func contentHandler(h handler) {
 		return
 	}
 
-	books, _, err := h.db.GetBooks(bson.M{"_id": bson.ObjectIdHex(id)}, 0, 0)
-	if err != nil || len(books) == 0 {
+	book, err := h.db.GetBookId(id)
+	if err != nil {
 		notFound(h)
 		return
 	}
-	book := books[0]
 	if !book.Active {
 		if !h.sess.IsAdmin() {
 			notFound(h)

@@ -20,20 +20,14 @@ func deleteHandler(h handler) {
 	var titles []string
 	var isNew bool
 	ids := strings.Split(mux.Vars(h.r)["ids"], "/")
-	for _, idStr := range ids {
-		if !bson.IsObjectIdHex(idStr) {
-			continue
-		}
-
-		id := bson.ObjectIdHex(idStr)
-		books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
+	for _, id := range ids {
+		book, err := h.db.GetBookId(id)
 		if err != nil {
-			h.sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
+			h.sess.Notify("Book not found!", "The book with id '"+id+"' is not there", "error")
 			continue
 		}
-		book := books[0]
 		DeleteBook(book, h.db)
-		h.db.DeleteBook(id)
+		h.db.DeleteBook(bson.ObjectIdHex(id))
 
 		if !book.Active {
 			isNew = true
@@ -52,20 +46,19 @@ func deleteHandler(h handler) {
 }
 
 func editHandler(h handler) {
-	idStr := mux.Vars(h.r)["id"]
-	if !h.sess.IsAdmin() || !bson.IsObjectIdHex(idStr) {
+	id := mux.Vars(h.r)["id"]
+	if !h.sess.IsAdmin() {
 		notFound(h)
 		return
 	}
-	id := bson.ObjectIdHex(idStr)
-	books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
+	book, err := h.db.GetBookId(id)
 	if err != nil {
 		notFound(h)
 		return
 	}
 
 	var data bookData
-	data.Book = books[0]
+	data.Book = book
 	data.S = GetStatus(h)
 	loadTemplate(h.w, "edit", data)
 }
@@ -183,24 +176,18 @@ func storeHandler(h handler) {
 
 	var titles []string
 	ids := strings.Split(mux.Vars(h.r)["ids"], "/")
-	for _, idStr := range ids {
-		if !bson.IsObjectIdHex(idStr) {
-			continue
-		}
-
-		id := bson.ObjectIdHex(idStr)
-		books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
+	for _, id := range ids {
+		book, err := h.db.GetBookId(id)
 		if err != nil {
-			h.sess.Notify("Book not found!", "The book with id '"+idStr+"' is not there", "error")
+			h.sess.Notify("Book not found!", "The book with id '"+id+"' is not there", "error")
 			continue
 		}
-		book := books[0]
 		if err != nil {
 			h.sess.Notify("An error ocurred!", err.Error(), "error")
 			log.Error("Error storing book '", book.Title, "': ", err.Error())
 			continue
 		}
-		h.db.UpdateBook(id, bson.M{"active": true})
+		h.db.UpdateBook(bson.ObjectIdHex(id), bson.M{"active": true})
 		titles = append(titles, book.Title)
 	}
 	if titles != nil {

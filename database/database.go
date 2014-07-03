@@ -54,6 +54,11 @@ func (db *DB) GetBooks(query bson.M, length int, start int) (books []Book, num i
 	return getBooks(booksColl, query, length, start)
 }
 
+func (db *DB) GetBookId(id string) (Book, error) {
+	booksColl := db.session.DB(db.name).C(books_coll)
+	return getBookId(booksColl, id)
+}
+
 func (db *DB) DeleteBook(id bson.ObjectId) error {
 	booksColl := db.session.DB(db.name).C(books_coll)
 	return deleteBook(booksColl, id)

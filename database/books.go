@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"labix.org/v2/mgo"
 	"labix.org/v2/mgo/bson"
 )
@@ -57,6 +58,17 @@ func getBooks(coll *mgo.Collection, query bson.M, length int, start int) (books 
 		books[i].Id = bson.ObjectId(b.Id).Hex()
 	}
 	return
+}
+
+func getBookId(coll *mgo.Collection, id string) (Book, error) {
+	var book Book
+	if !bson.IsObjectIdHex(id) {
+		return book, errors.New("Not valid book id")
+	}
+
+	err := coll.FindId(bson.ObjectIdHex(id)).One(&book)
+	book.Id = bson.ObjectId(book.Id).Hex()
+	return book, err
 }
 
 func deleteBook(coll *mgo.Collection, id bson.ObjectId) error {

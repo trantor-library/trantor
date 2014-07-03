@@ -44,39 +44,26 @@ type bookData struct {
 }
 
 func bookHandler(h handler) {
-	idStr := mux.Vars(h.r)["id"]
-	if !bson.IsObjectIdHex(idStr) {
-		notFound(h)
-		return
-	}
-
+	id := mux.Vars(h.r)["id"]
 	var data bookData
 	data.S = GetStatus(h)
-	id := bson.ObjectIdHex(idStr)
-	books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
-	if err != nil || len(books) == 0 {
+	book, err := h.db.GetBookId(id)
+	if err != nil {
 		notFound(h)
 		return
 	}
-	data.Book = books[0]
+	data.Book = book
 	data.Description = strings.Split(data.Book.Description, "\n")
 	loadTemplate(h.w, "book", data)
 }
 
 func downloadHandler(h handler) {
-	idStr := mux.Vars(h.r)["id"]
-	if !bson.IsObjectIdHex(idStr) {
+	id := mux.Vars(h.r)["id"]
+	book, err := h.db.GetBookId(id)
+	if err != nil {
 		notFound(h)
 		return
 	}
-
-	id := bson.ObjectIdHex(idStr)
-	books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
-	if err != nil || len(books) == 0 {
-		notFound(h)
-		return
-	}
-	book := books[0]
 
 	if !book.Active {
 		if !h.sess.IsAdmin() {

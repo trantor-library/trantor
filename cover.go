@@ -23,17 +23,11 @@ import (
 
 func coverHandler(h handler) {
 	vars := mux.Vars(h.r)
-	if !bson.IsObjectIdHex(vars["id"]) {
+	book, err := h.db.GetBookId(vars["id"])
+	if err != nil {
 		notFound(h)
 		return
 	}
-	id := bson.ObjectIdHex(vars["id"])
-	books, _, err := h.db.GetBooks(bson.M{"_id": id}, 0, 0)
-	if err != nil || len(books) == 0 {
-		notFound(h)
-		return
-	}
-	book := books[0]
 
 	if !book.Active {
 		if !h.sess.IsAdmin() {
