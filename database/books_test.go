@@ -2,10 +2,6 @@ package database
 
 import "testing"
 
-import (
-	"labix.org/v2/mgo/bson"
-)
-
 var book = map[string]interface{}{
 	"title":  "some title",
 	"author": []string{"Alice", "Bob"},
@@ -17,7 +13,7 @@ func TestAddBook(t *testing.T) {
 
 	tAddBook(t, db)
 
-	books, num, err := db.GetBooks(bson.M{}, 1, 0)
+	books, num, err := db.GetNewBooks(1, 0)
 	if err != nil {
 		t.Fatalf("db.GetBooks() return an error: ", err)
 	}
