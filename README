@@ -23,7 +23,7 @@ Under Debian Wheezy you can simply run:
 
 Yo also need to install go dependences:
 
-# go get labix.org/v2/mgo/bson labix.org/v2/mgo/ github.com/gorilla/sessions \
+# go get gopkg.in/mgo.v2 gopkg.in/mgo.v2/bson github.com/gorilla/sessions \
          github.com/gorilla/securecookie github.com/gorilla/mux \
          github.com/nfnt/resize github.com/cihub/seelog \
          gopkgs.com/unidecode.v1 \

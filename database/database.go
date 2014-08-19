@@ -4,8 +4,8 @@ import log "github.com/cihub/seelog"
 
 import (
 	"errors"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"os"
 )
 

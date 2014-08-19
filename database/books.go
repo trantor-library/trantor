@@ -2,9 +2,9 @@ package database
 
 import (
 	"errors"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"gopkgs.com/unidecode.v1"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
 	"strings"
 	"unicode"
 )
