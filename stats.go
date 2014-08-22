@@ -4,32 +4,49 @@ import log "github.com/cihub/seelog"
 
 import (
 	"git.gitorious.org/trantor/trantor.git/database"
+	"git.gitorious.org/trantor/trantor.git/storage"
 	"github.com/gorilla/mux"
-	"labix.org/v2/mgo/bson"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 )
 
+const (
+	stats_version = 2
+)
+
 type handler struct {
-	w    http.ResponseWriter
-	r    *http.Request
-	sess *Session
-	db   *database.DB
+	w     http.ResponseWriter
+	r     *http.Request
+	sess  *Session
+	db    *database.DB
+	store *storage.Store
 }
 
-func InitStats(database *database.DB) {
-	statsChannel = make(chan statsRequest, CHAN_SIZE)
-	go statsWorker(database)
+type StatsGatherer struct {
+	db      *database.DB
+	store   *storage.Store
+	channel chan statsRequest
 }
 
-func GatherStats(function func(handler), database *database.DB) func(http.ResponseWriter, *http.Request) {
+func InitStats(database *database.DB, store *storage.Store) *StatsGatherer {
+	sg := new(StatsGatherer)
+	sg.channel = make(chan statsRequest, CHAN_SIZE)
+	sg.db = database
+	sg.store = store
+
+	go sg.worker()
+	return sg
+}
+
+func (sg StatsGatherer) Gather(function func(handler)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		log.Info("Query ", r.Method, " ", r.RequestURI)
 
 		var h handler
-		h.db = database.Copy()
+		h.store = sg.store
+		h.db = sg.db.Copy()
 		defer h.db.Close()
 
 		h.w = w
@@ -37,11 +54,9 @@ func GatherStats(function func(handler), database *database.DB) func(http.Respon
 		h.sess = GetSession(r, h.db)
 		function(h)
 
-		statsChannel <- statsRequest{bson.Now(), mux.Vars(r), h.sess, r}
+		sg.channel <- statsRequest{time.Now(), mux.Vars(r), h.sess, r}
 	}
 }
-
-var statsChannel chan statsRequest
 
 type statsRequest struct {
 	date time.Time
@@ -50,16 +65,17 @@ type statsRequest struct {
 	r    *http.Request
 }
 
-func statsWorker(database *database.DB) {
-	db := database.Copy()
+func (sg StatsGatherer) worker() {
+	db := sg.db.Copy()
 	defer db.Close()
 
-	for req := range statsChannel {
+	for req := range sg.channel {
 		stats := make(map[string]interface{})
 		appendFiles(req.r, stats)
 		appendMuxVars(req.vars, stats)
 		appendUrl(req.r, stats)
 		appendSession(req.sess, stats)
+		stats["version"] = stats_version
 		stats["method"] = req.r.Method
 		stats["date"] = req.date
 		db.AddStats(stats)
@@ -141,16 +157,12 @@ func appendMuxVars(vars map[string]string, stats map[string]interface{}) {
 	for key, value := range vars {
 		switch {
 		case key == "id":
-			if bson.IsObjectIdHex(value) {
-				stats["id"] = bson.ObjectIdHex(value)
-			}
+			stats["id"] = value
 		case key == "ids":
-			var objectIds []bson.ObjectId
+			var objectIds []string
 			ids := strings.Split(value, "/")
 			for _, id := range ids {
-				if bson.IsObjectIdHex(value) {
-					objectIds = append(objectIds, bson.ObjectIdHex(id))
-				}
+				objectIds = append(objectIds, id)
 			}
 			if len(objectIds) > 0 {
 				stats["ids"] = objectIds

@@ -4,16 +4,20 @@ import log "github.com/cihub/seelog"
 
 import (
 	"bytes"
+	"crypto/rand"
+	"encoding/base64"
 	"git.gitorious.org/go-pkg/epubgo.git"
 	"git.gitorious.org/trantor/trantor.git/database"
+	"git.gitorious.org/trantor/trantor.git/storage"
 	"io/ioutil"
 	"mime/multipart"
+	"regexp"
 	"strings"
 )
 
-func InitUpload(database *database.DB) {
+func InitUpload(database *database.DB, store *storage.Store) {
 	uploadChannel = make(chan uploadRequest, CHAN_SIZE)
-	go uploadWorker(database)
+	go uploadWorker(database, store)
 }
 
 var uploadChannel chan uploadRequest
@@ -23,16 +27,16 @@ type uploadRequest struct {
 	filename string
 }
 
-func uploadWorker(database *database.DB) {
+func uploadWorker(database *database.DB, store *storage.Store) {
 	db := database.Copy()
 	defer db.Close()
 
 	for req := range uploadChannel {
-		processFile(req, db)
+		processFile(req, db, store)
 	}
 }
 
-func processFile(req uploadRequest, db *database.DB) {
+func processFile(req uploadRequest, db *database.DB, store *storage.Store) {
 	defer req.file.Close()
 
 	epub, err := openMultipartEpub(req.file)
@@ -42,20 +46,18 @@ func processFile(req uploadRequest, db *database.DB) {
 	}
 	defer epub.Close()
 
-	book := parseFile(epub, db)
-	title, _ := book["title"].(string)
+	book, id := parseFile(epub, store)
 	req.file.Seek(0, 0)
-	id, size, err := StoreNewFile(title+".epub", req.file, db)
+	size, err := store.Store(id, req.file, EPUB_FILE)
 	if err != nil {
-		log.Error("Error storing book (", title, "): ", err)
+		log.Error("Error storing book (", id, "): ", err)
 		return
 	}
 
-	book["file"] = id
 	book["filesize"] = size
 	err = db.AddBook(book)
 	if err != nil {
-		log.Error("Error storing metadata (", title, "): ", err)
+		log.Error("Error storing metadata (", id, "): ", err)
 		return
 	}
 	log.Info("File uploaded: ", req.filename)
@@ -104,7 +106,7 @@ func openMultipartEpub(file multipart.File) (*epubgo.Epub, error) {
 	return epubgo.Load(reader, int64(len(buff)))
 }
 
-func parseFile(epub *epubgo.Epub, db *database.DB) map[string]interface{} {
+func parseFile(epub *epubgo.Epub, store *storage.Store) (metadata map[string]interface{}, id string) {
 	book := map[string]interface{}{}
 	for _, m := range epub.MetadataFields() {
 		data, err := epub.Metadata(m)
@@ -135,12 +137,71 @@ func parseFile(epub *epubgo.Epub, db *database.DB) map[string]interface{} {
 			book[m] = strings.Join(data, ", ")
 		}
 	}
-	title, _ := book["title"].(string)
-	book["file"] = nil
-	cover, coverSmall := GetCover(epub, title, db)
-	if cover != "" {
-		book["cover"] = cover
-		book["coversmall"] = coverSmall
+
+	id = genId()
+	book["id"] = id //TODO
+	book["cover"] = GetCover(epub, id, store)
+	return book, id
+}
+
+func genId() string {
+	b := make([]byte, 12)
+	rand.Read(b)
+	return base64.URLEncoding.EncodeToString(b)
+}
+
+func cleanStr(str string) string {
+	str = strings.Replace(str, "&#39;", "'", -1)
+	exp, _ := regexp.Compile("&[^;]*;")
+	str = exp.ReplaceAllString(str, "")
+	exp, _ = regexp.Compile("[ ,]*$")
+	str = exp.ReplaceAllString(str, "")
+	return str
+}
+
+func parseAuthr(creator []string) []string {
+	exp1, _ := regexp.Compile("^(.*\\( *([^\\)]*) *\\))*$")
+	exp2, _ := regexp.Compile("^[^:]*: *(.*)$")
+	res := make([]string, len(creator))
+	for i, s := range creator {
+		auth := exp1.FindStringSubmatch(s)
+		if auth != nil {
+			res[i] = cleanStr(strings.Join(auth[2:], ", "))
+		} else {
+			auth := exp2.FindStringSubmatch(s)
+			if auth != nil {
+				res[i] = cleanStr(auth[1])
+			} else {
+				res[i] = cleanStr(s)
+			}
+		}
 	}
-	return book
+	return res
+}
+
+func parseDescription(description []string) string {
+	str := cleanStr(strings.Join(description, "\n"))
+	str = strings.Replace(str, "</p>", "\n", -1)
+	exp, _ := regexp.Compile("<[^>]*>")
+	str = exp.ReplaceAllString(str, "")
+	str = strings.Replace(str, "&amp;", "&", -1)
+	str = strings.Replace(str, "&lt;", "<", -1)
+	str = strings.Replace(str, "&gt;", ">", -1)
+	str = strings.Replace(str, "\\n", "\n", -1)
+	return str
+}
+
+func parseSubject(subject []string) []string {
+	var res []string
+	for _, s := range subject {
+		res = append(res, strings.Split(s, " / ")...)
+	}
+	return res
+}
+
+func parseDate(date []string) string {
+	if len(date) == 0 {
+		return ""
+	}
+	return strings.Replace(date[0], "Unspecified: ", "", -1)
 }

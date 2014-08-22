@@ -1,7 +1,6 @@
 package database
 
 import (
-	"errors"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"gopkgs.com/unidecode.v1"
@@ -14,7 +13,7 @@ const (
 )
 
 type Book struct {
-	Id          string `bson:"_id"`
+	Id          string
 	Title       string
 	Author      []string
 	Contributor string
@@ -31,10 +30,8 @@ type Book struct {
 	Coverage    string
 	Rights      string
 	Meta        string
-	File        bson.ObjectId
 	FileSize    int
-	Cover       bson.ObjectId
-	CoverSmall  bson.ObjectId
+	Cover       bool
 	Active      bool
 	Keywords    []string
 }
@@ -66,35 +63,41 @@ func _getBooks(coll *mgo.Collection, query bson.M, length int, start int) (books
 	}
 
 	err = q.All(&books)
-	for i, b := range books {
-		books[i].Id = bson.ObjectId(b.Id).Hex()
-	}
 	return
 }
 
 func getBookId(coll *mgo.Collection, id string) (Book, error) {
 	var book Book
-	if !bson.IsObjectIdHex(id) {
-		return book, errors.New("Not valid book id")
-	}
-
-	err := coll.FindId(bson.ObjectIdHex(id)).One(&book)
-	book.Id = bson.ObjectId(book.Id).Hex()
+	err := coll.Find(bson.M{"id": id}).One(&book)
 	return book, err
 }
 
 func deleteBook(coll *mgo.Collection, id string) error {
-	return coll.RemoveId(bson.ObjectIdHex(id))
+	return coll.Remove(bson.M{"id": id})
 }
 
 func updateBook(coll *mgo.Collection, id string, data map[string]interface{}) error {
-	data["keywords"] = keywords(data)
-	return coll.UpdateId(bson.ObjectIdHex(id), bson.M{"$set": data})
+	var book map[string]interface{}
+	err := coll.Find(bson.M{"id": id}).One(&book)
+	if err != nil {
+		return err
+	}
+	for k, v := range data {
+		book[k] = v
+	}
+
+	data["keywords"] = keywords(book)
+	return coll.Update(bson.M{"id": id}, bson.M{"$set": data})
 }
 
-func bookActive(coll *mgo.Collection, id string) bool {
+func activeBook(coll *mgo.Collection, id string) error {
+	data := map[string]interface{}{"active": true}
+	return coll.Update(bson.M{"id": id}, bson.M{"$set": data})
+}
+
+func isBookActive(coll *mgo.Collection, id string) bool {
 	var book Book
-	err := coll.FindId(bson.ObjectIdHex(id)).One(&book)
+	err := coll.Find(bson.M{"id": id}).One(&book)
 	if err != nil {
 		return false
 	}
@@ -123,15 +126,29 @@ func buildQuery(q string) bson.M {
 func keywords(b map[string]interface{}) (k []string) {
 	title, _ := b["title"].(string)
 	k = tokens(title)
-	author, _ := b["author"].([]string)
-	for _, a := range author {
-		k = append(k, tokens(a)...)
-	}
+
+	k = append(k, listKeywords(b["author"])...)
+
 	publisher, _ := b["publisher"].(string)
 	k = append(k, tokens(publisher)...)
-	subject, _ := b["subject"].([]string)
-	for _, s := range subject {
-		k = append(k, tokens(s)...)
+
+	k = append(k, listKeywords(b["subject"])...)
+	return
+}
+
+func listKeywords(v interface{}) (k []string) {
+	list, ok := v.([]string)
+	if !ok {
+		list, _ := v.([]interface{})
+		for _, e := range list {
+			str := e.(string)
+			k = append(k, tokens(str)...)
+		}
+		return
+	}
+
+	for _, e := range list {
+		k = append(k, tokens(e)...)
 	}
 	return
 }

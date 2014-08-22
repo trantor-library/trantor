@@ -8,15 +8,13 @@ import _ "image/gif"
 import (
 	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
-	"git.gitorious.org/trantor/trantor.git/database"
+	"git.gitorious.org/trantor/trantor.git/storage"
 	"github.com/gorilla/mux"
 	"github.com/nfnt/resize"
 	"image"
 	"image/jpeg"
 	"io"
 	"io/ioutil"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
 	"regexp"
 	"strings"
 )
@@ -36,13 +34,11 @@ func coverHandler(h handler) {
 		}
 	}
 
-	fs := h.db.GetFS(FS_IMGS)
-	var f *mgo.GridFile
+	file := COVER_FILE
 	if vars["size"] == "small" {
-		f, err = fs.OpenId(book.CoverSmall)
-	} else {
-		f, err = fs.OpenId(book.Cover)
+		file = COVER_SMALL_FILE
 	}
+	f, err := h.store.Get(book.Id, file)
 	if err != nil {
 		log.Error("Error while opening image: ", err)
 		notFound(h)
@@ -53,18 +49,21 @@ func coverHandler(h handler) {
 	headers := h.w.Header()
 	headers["Content-Type"] = []string{"image/jpeg"}
 
-	io.Copy(h.w, f)
+	_, err = io.Copy(h.w, f)
+	if err != nil {
+		log.Error("Error while copying image: ", err)
+		notFound(h)
+		return
+	}
 }
 
-func GetCover(e *epubgo.Epub, title string, db *database.DB) (bson.ObjectId, bson.ObjectId) {
-	imgId, smallId := coverFromMetadata(e, title, db)
-	if imgId != "" {
-		return imgId, smallId
+func GetCover(e *epubgo.Epub, id string, store *storage.Store) bool {
+	if coverFromMetadata(e, id, store) {
+		return true
 	}
 
-	imgId, smallId = searchCommonCoverNames(e, title, db)
-	if imgId != "" {
-		return imgId, smallId
+	if searchCommonCoverNames(e, id, store) {
+		return true
 	}
 
 	/* search for img on the text */
@@ -103,52 +102,52 @@ func GetCover(e *epubgo.Epub, title string, db *database.DB) (bson.ObjectId, bso
 			img, err := e.OpenFile(url)
 			if err == nil {
 				defer img.Close()
-				return storeImg(img, title, db)
+				return storeImg(img, id, store)
 			}
 		}
 		errNext = it.Next()
 	}
-	return "", ""
+	return false
 }
 
-func coverFromMetadata(e *epubgo.Epub, title string, db *database.DB) (bson.ObjectId, bson.ObjectId) {
+func coverFromMetadata(e *epubgo.Epub, id string, store *storage.Store) bool {
 	metaList, _ := e.MetadataAttr("meta")
 	for _, meta := range metaList {
 		if meta["name"] == "cover" {
 			img, err := e.OpenFileId(meta["content"])
 			if err == nil {
 				defer img.Close()
-				return storeImg(img, title, db)
+				return storeImg(img, id, store)
 			}
 		}
 	}
-	return "", ""
+	return false
 }
 
-func searchCommonCoverNames(e *epubgo.Epub, title string, db *database.DB) (bson.ObjectId, bson.ObjectId) {
+func searchCommonCoverNames(e *epubgo.Epub, id string, store *storage.Store) bool {
 	for _, p := range []string{"cover.jpg", "Images/cover.jpg", "images/cover.jpg", "cover.jpeg", "cover1.jpg", "cover1.jpeg"} {
 		img, err := e.OpenFile(p)
 		if err == nil {
 			defer img.Close()
-			return storeImg(img, title, db)
+			return storeImg(img, id, store)
 		}
 	}
-	return "", ""
+	return false
 }
 
-func storeImg(img io.Reader, title string, db *database.DB) (bson.ObjectId, bson.ObjectId) {
+func storeImg(img io.Reader, id string, store *storage.Store) bool {
 	/* open the files */
-	fBig, err := createCoverFile(title, db)
+	fBig, err := store.Create(id, COVER_FILE)
 	if err != nil {
-		log.Error("Error creating ", title, ": ", err.Error())
-		return "", ""
+		log.Error("Error creating cover ", id, ": ", err.Error())
+		return false
 	}
 	defer fBig.Close()
 
-	fSmall, err := createCoverFile(title+"_small", db)
+	fSmall, err := store.Create(id, COVER_SMALL_FILE)
 	if err != nil {
-		log.Error("Error creating ", title+"_small", ": ", err.Error())
-		return "", ""
+		log.Error("Error creating small cover ", id, ": ", err.Error())
+		return false
 	}
 	defer fSmall.Close()
 
@@ -159,32 +158,24 @@ func storeImg(img io.Reader, title string, db *database.DB) (bson.ObjectId, bson
 	imgResized, err := resizeImg(img1, IMG_WIDTH_BIG)
 	if err != nil {
 		log.Error("Error resizing big image: ", err.Error())
-		return "", ""
+		return false
 	}
 	err = jpeg.Encode(fBig, imgResized, &jpgOptions)
 	if err != nil {
 		log.Error("Error encoding big image: ", err.Error())
-		return "", ""
+		return false
 	}
 	imgSmallResized, err := resizeImg(&img2, IMG_WIDTH_SMALL)
 	if err != nil {
 		log.Error("Error resizing small image: ", err.Error())
-		return "", ""
+		return false
 	}
 	err = jpeg.Encode(fSmall, imgSmallResized, &jpgOptions)
 	if err != nil {
 		log.Error("Error encoding small image: ", err.Error())
-		return "", ""
+		return false
 	}
-
-	idBig, _ := fBig.Id().(bson.ObjectId)
-	idSmall, _ := fSmall.Id().(bson.ObjectId)
-	return idBig, idSmall
-}
-
-func createCoverFile(title string, db *database.DB) (*mgo.GridFile, error) {
-	fs := db.GetFS(FS_IMGS)
-	return fs.Create(title + ".jpg")
+	return true
 }
 
 func resizeImg(imgReader io.Reader, width uint) (image.Image, error) {

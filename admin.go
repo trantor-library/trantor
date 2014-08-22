@@ -25,7 +25,7 @@ func deleteHandler(h handler) {
 			h.sess.Notify("Book not found!", "The book with id '"+id+"' is not there", "error")
 			continue
 		}
-		DeleteBook(book, h.db)
+		h.store.Delete(id)
 		h.db.DeleteBook(id)
 
 		if !book.Active {
@@ -101,7 +101,7 @@ func saveHandler(h handler) {
 
 	h.sess.Notify("Book Modified!", "", "success")
 	h.sess.Save(h.w, h.r)
-	if h.db.BookActive(id) {
+	if h.db.IsBookActive(id) {
 		http.Redirect(h.w, h.r, "/book/"+id, http.StatusFound)
 	} else {
 		http.Redirect(h.w, h.r, "/new/", http.StatusFound)
@@ -174,6 +174,9 @@ func storeHandler(h handler) {
 	var titles []string
 	ids := strings.Split(mux.Vars(h.r)["ids"], "/")
 	for _, id := range ids {
+		if id == "" {
+			continue
+		}
 		book, err := h.db.GetBookId(id)
 		if err != nil {
 			h.sess.Notify("Book not found!", "The book with id '"+id+"' is not there", "error")
@@ -181,10 +184,15 @@ func storeHandler(h handler) {
 		}
 		if err != nil {
 			h.sess.Notify("An error ocurred!", err.Error(), "error")
+			log.Error("Error getting book for storing '", book.Title, "': ", err.Error())
+			continue
+		}
+		err = h.db.ActiveBook(id)
+		if err != nil {
+			h.sess.Notify("An error ocurred!", err.Error(), "error")
 			log.Error("Error storing book '", book.Title, "': ", err.Error())
 			continue
 		}
-		h.db.UpdateBook(id, map[string]interface{}{"active": true})
 		titles = append(titles, book.Title)
 	}
 	if titles != nil {

@@ -6,8 +6,10 @@ const (
 	DB_IP     = "127.0.0.1"
 	DB_NAME   = "trantor"
 	META_COLL = "meta"
-	FS_BOOKS  = "fs_books"
-	FS_IMGS   = "fs_imgs"
+
+	EPUB_FILE        = "book.epub"
+	COVER_FILE       = "cover.jpg"
+	COVER_SMALL_FILE = "coverSmall.jpg"
 
 	MINUTES_UPDATE_TAGS       = 11
 	MINUTES_UPDATE_VISITED    = 41
@@ -25,6 +27,7 @@ const (
 	NUM_NEWS                  = 10
 	DAYS_NEWS_INDEXPAGE       = 15
 
+	STORE_PATH    = "store/"
 	TEMPLATE_PATH = "templates/"
 	CSS_PATH      = "css/"
 	JS_PATH       = "js/"

@@ -21,7 +21,7 @@
 	{{range .}}
 	<div class="row">
 		<div class="span1">
-		<p class="pull-right"><a href="/book/{{.Id}}">{{if .CoverSmall}}<img class="img-rounded" src="/cover/{{.Id}}/small/{{.Title}}.jpg" alt="{{.Title}}" />{{end}}</a></p>
+		<p class="pull-right"><a href="/book/{{.Id}}">{{if .Cover}}<img class="img-rounded" src="/cover/{{.Id}}/small/{{.Title}}.jpg" alt="{{.Title}}" />{{end}}</a></p>
 		</div>
 		<div class="span10 well">
 		<div class="row">

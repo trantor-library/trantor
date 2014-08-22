@@ -1,11 +1,15 @@
 package main
 
+import log "github.com/cihub/seelog"
+
 import (
+	"bytes"
 	"git.gitorious.org/go-pkg/epubgo.git"
 	"git.gitorious.org/trantor/trantor.git/database"
+	"git.gitorious.org/trantor/trantor.git/storage"
 	"github.com/gorilla/mux"
 	"io"
-	"labix.org/v2/mgo/bson"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -134,6 +138,7 @@ func readStartHandler(h handler) {
 	id := mux.Vars(h.r)["id"]
 	e, _ := openReadEpub(h)
 	if e == nil {
+		log.Warn("Open epub returns an empty file")
 		notFound(h)
 		return
 	}
@@ -141,6 +146,7 @@ func readStartHandler(h handler) {
 
 	it, err := e.Spine()
 	if err != nil {
+		log.Warn("No spine in the epub")
 		notFound(h)
 		return
 	}
@@ -175,7 +181,7 @@ func readHandler(h handler) {
 func openReadEpub(h handler) (*epubgo.Epub, database.Book) {
 	var book database.Book
 	id := mux.Vars(h.r)["id"]
-	if !bson.IsObjectIdHex(id) {
+	if id == "" {
 		return nil, book
 	}
 	book, err := h.db.GetBookId(id)
@@ -188,7 +194,7 @@ func openReadEpub(h handler) (*epubgo.Epub, database.Book) {
 			return nil, book
 		}
 	}
-	e, err := OpenBook(book.File, h.db)
+	e, err := openBook(book.Id, h.store)
 	if err != nil {
 		return nil, book
 	}
@@ -199,7 +205,7 @@ func contentHandler(h handler) {
 	vars := mux.Vars(h.r)
 	id := vars["id"]
 	file := vars["file"]
-	if file == "" || !bson.IsObjectIdHex(id) {
+	if file == "" || id == "" {
 		notFound(h)
 		return
 	}
@@ -215,7 +221,7 @@ func contentHandler(h handler) {
 			return
 		}
 	}
-	e, err := OpenBook(book.File, h.db)
+	e, err := openBook(book.Id, h.store)
 	if err != nil {
 		notFound(h)
 		return
@@ -229,4 +235,17 @@ func contentHandler(h handler) {
 	}
 	defer html.Close()
 	io.Copy(h.w, html)
+}
+
+func openBook(id string, store *storage.Store) (*epubgo.Epub, error) {
+	f, err := store.Get(id, EPUB_FILE)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	buff, err := ioutil.ReadAll(f)
+	reader := bytes.NewReader(buff)
+
+	return epubgo.Load(reader, int64(len(buff)))
 }

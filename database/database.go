@@ -73,9 +73,14 @@ func (db *DB) UpdateBook(id string, data map[string]interface{}) error {
 	return updateBook(booksColl, id, data)
 }
 
-func (db *DB) BookActive(id string) bool {
+func (db *DB) ActiveBook(id string) error {
 	booksColl := db.session.DB(db.name).C(books_coll)
-	return bookActive(booksColl, id)
+	return activeBook(booksColl, id)
+}
+
+func (db *DB) IsBookActive(id string) bool {
+	booksColl := db.session.DB(db.name).C(books_coll)
+	return isBookActive(booksColl, id)
 }
 
 func (db *DB) User(name string) *User {
@@ -152,10 +157,6 @@ func (db *DB) UpdateDownloadedBooks() error {
 	u.src = db.session.DB(db.name).C(stats_coll)
 	u.dst = db.session.DB(db.name).C(downloaded_coll)
 	return u.UpdateMostBooks("download")
-}
-
-func (db *DB) GetFS(prefix string) *mgo.GridFS {
-	return db.session.DB(db.name).GridFS(prefix)
 }
 
 func (db *DB) GetTags() ([]string, error) {

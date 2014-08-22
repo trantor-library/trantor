@@ -4,9 +4,11 @@ import log "github.com/cihub/seelog"
 
 import (
 	"git.gitorious.org/trantor/trantor.git/database"
+	"git.gitorious.org/trantor/trantor.git/storage"
 	"github.com/gorilla/mux"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -71,8 +73,7 @@ func downloadHandler(h handler) {
 		}
 	}
 
-	fs := h.db.GetFS(FS_BOOKS)
-	f, err := fs.OpenId(book.File)
+	f, err := h.store.Get(book.Id, EPUB_FILE)
 	if err != nil {
 		notFound(h)
 		return
@@ -81,7 +82,7 @@ func downloadHandler(h handler) {
 
 	headers := h.w.Header()
 	headers["Content-Type"] = []string{"application/epub+zip"}
-	headers["Content-Disposition"] = []string{"attachment; filename=\"" + f.Name() + "\""}
+	headers["Content-Disposition"] = []string{"attachment; filename=\"" + book.Title + ".epub\""}
 
 	io.Copy(h.w, f)
 }
@@ -137,47 +138,55 @@ func main() {
 	db := database.Init(DB_IP, DB_NAME)
 	defer db.Close()
 
-	InitTasks(db)
-	InitStats(db)
-	InitUpload(db)
+	store, err := storage.Init(STORE_PATH)
+	if err != nil {
+		log.Critical("Problem initializing store: ", err)
+		os.Exit(1)
+	}
 
-	initRouter(db)
+	InitTasks(db)
+	sg := InitStats(db, store)
+	InitUpload(db, store)
+
+	initRouter(db, sg)
 	log.Error(http.ListenAndServe(":"+PORT, nil))
 }
 
-func initRouter(db *database.DB) {
+func initRouter(db *database.DB, sg *StatsGatherer) {
+	const id_pattern = "[0-9a-zA-Z\\-\\_]{16}"
+
 	r := mux.NewRouter()
 	var notFoundHandler http.HandlerFunc
-	notFoundHandler = GatherStats(notFound, db)
+	notFoundHandler = sg.Gather(notFound)
 	r.NotFoundHandler = notFoundHandler
 
-	r.HandleFunc("/", GatherStats(indexHandler, db))
-	r.HandleFunc("/book/{id:[0-9a-fA-F]+}", GatherStats(bookHandler, db))
-	r.HandleFunc("/search/", GatherStats(searchHandler, db))
-	r.HandleFunc("/upload/", GatherStats(uploadHandler, db)).Methods("GET")
-	r.HandleFunc("/upload/", GatherStats(uploadPostHandler, db)).Methods("POST")
-	r.HandleFunc("/login/", GatherStats(loginHandler, db)).Methods("GET")
-	r.HandleFunc("/login/", GatherStats(loginPostHandler, db)).Methods("POST")
-	r.HandleFunc("/create_user/", GatherStats(createUserHandler, db)).Methods("POST")
-	r.HandleFunc("/logout/", GatherStats(logoutHandler, db))
-	r.HandleFunc("/new/", GatherStats(newHandler, db))
-	r.HandleFunc("/store/{ids:([0-9a-fA-F]+/)+}", GatherStats(storeHandler, db))
-	r.HandleFunc("/delete/{ids:([0-9a-fA-F]+/)+}", GatherStats(deleteHandler, db))
-	r.HandleFunc("/read/{id:[0-9a-fA-F]+}", GatherStats(readStartHandler, db))
-	r.HandleFunc("/read/{id:[0-9a-fA-F]+}/{file:.*}", GatherStats(readHandler, db))
-	r.HandleFunc("/content/{id:[0-9a-fA-F]+}/{file:.*}", GatherStats(contentHandler, db))
-	r.HandleFunc("/edit/{id:[0-9a-fA-F]+}", GatherStats(editHandler, db))
-	r.HandleFunc("/save/{id:[0-9a-fA-F]+}", GatherStats(saveHandler, db)).Methods("POST")
-	r.HandleFunc("/about/", GatherStats(aboutHandler, db))
-	r.HandleFunc("/help/", GatherStats(helpHandler, db))
-	r.HandleFunc("/download/{id:[0-9a-fA-F]+}/{epub:.*}", GatherStats(downloadHandler, db))
-	r.HandleFunc("/cover/{id:[0-9a-fA-F]+}/{size}/{img:.*}", GatherStats(coverHandler, db))
-	r.HandleFunc("/dashboard/", GatherStats(dashboardHandler, db))
-	r.HandleFunc("/settings/", GatherStats(settingsHandler, db))
-	r.HandleFunc("/stats/", GatherStats(statsHandler, db))
-	r.HandleFunc("/news/", GatherStats(newsHandler, db))
-	r.HandleFunc("/news/edit", GatherStats(editNewsHandler, db)).Methods("GET")
-	r.HandleFunc("/news/edit", GatherStats(postNewsHandler, db)).Methods("POST")
+	r.HandleFunc("/", sg.Gather(indexHandler))
+	r.HandleFunc("/book/{id:"+id_pattern+"}", sg.Gather(bookHandler))
+	r.HandleFunc("/search/", sg.Gather(searchHandler))
+	r.HandleFunc("/upload/", sg.Gather(uploadHandler)).Methods("GET")
+	r.HandleFunc("/upload/", sg.Gather(uploadPostHandler)).Methods("POST")
+	r.HandleFunc("/login/", sg.Gather(loginHandler)).Methods("GET")
+	r.HandleFunc("/login/", sg.Gather(loginPostHandler)).Methods("POST")
+	r.HandleFunc("/create_user/", sg.Gather(createUserHandler)).Methods("POST")
+	r.HandleFunc("/logout/", sg.Gather(logoutHandler))
+	r.HandleFunc("/new/", sg.Gather(newHandler))
+	r.HandleFunc("/store/{ids:("+id_pattern+"/)+}", sg.Gather(storeHandler))
+	r.HandleFunc("/delete/{ids:("+id_pattern+"/)+}", sg.Gather(deleteHandler))
+	r.HandleFunc("/read/{id:"+id_pattern+"}", sg.Gather(readStartHandler))
+	r.HandleFunc("/read/{id:"+id_pattern+"}/{file:.*}", sg.Gather(readHandler))
+	r.HandleFunc("/content/{id:"+id_pattern+"}/{file:.*}", sg.Gather(contentHandler))
+	r.HandleFunc("/edit/{id:"+id_pattern+"}", sg.Gather(editHandler))
+	r.HandleFunc("/save/{id:"+id_pattern+"}", sg.Gather(saveHandler)).Methods("POST")
+	r.HandleFunc("/about/", sg.Gather(aboutHandler))
+	r.HandleFunc("/help/", sg.Gather(helpHandler))
+	r.HandleFunc("/download/{id:"+id_pattern+"}/{epub:.*}", sg.Gather(downloadHandler))
+	r.HandleFunc("/cover/{id:"+id_pattern+"}/{size}/{img:.*}", sg.Gather(coverHandler))
+	r.HandleFunc("/dashboard/", sg.Gather(dashboardHandler))
+	r.HandleFunc("/settings/", sg.Gather(settingsHandler))
+	r.HandleFunc("/stats/", sg.Gather(statsHandler))
+	r.HandleFunc("/news/", sg.Gather(newsHandler))
+	r.HandleFunc("/news/edit", sg.Gather(editNewsHandler)).Methods("GET")
+	r.HandleFunc("/news/edit", sg.Gather(postNewsHandler)).Methods("POST")
 	h := http.FileServer(http.Dir(IMG_PATH))
 	r.Handle("/img/{img}", http.StripPrefix("/img/", h))
 	h = http.FileServer(http.Dir(CSS_PATH))
