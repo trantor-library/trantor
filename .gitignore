@@ -1,5 +1,5 @@
 trantor.git
-store/
+/store/
 tools/adduser/adduser
 tools/update/update
 tools/togridfs/togridfs
@@ -8,5 +8,6 @@ tools/coverNew/coverNew
 tools/addsize/addsize
 tools/importer/importer
 tools/keywords/keywords
+tools/store/store
 tags
 .*.swp

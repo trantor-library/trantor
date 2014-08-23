@@ -17,3 +17,5 @@ Password:
 - addsize. Add the size of the books to the book metadata
 
 - keywords. Recalculate keywords
+
+- store. Move files from the database to the local storage
