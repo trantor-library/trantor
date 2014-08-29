@@ -4,15 +4,16 @@ import log "github.com/cihub/seelog"
 
 import (
 	"bytes"
-	"git.gitorious.org/go-pkg/epubgo.git"
-	"git.gitorious.org/trantor/trantor.git/database"
-	"git.gitorious.org/trantor/trantor.git/storage"
-	"github.com/gorilla/mux"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"git.gitorious.org/go-pkg/epubgo.git"
+	"git.gitorious.org/trantor/trantor.git/database"
+	"git.gitorious.org/trantor/trantor.git/storage"
+	"github.com/gorilla/mux"
 )
 
 type chapter struct {
@@ -113,24 +114,18 @@ func listChapters(nav *epubgo.NavigationIterator, depth int) []chapter {
 		c.Label = nav.Title()
 		c.Link = nav.URL()
 		c.Depth = depth
-		for c.Depth < depth {
-			c.Out = append(c.Out, true)
-			depth--
-		}
 		chapters = append(chapters, c)
 
 		if nav.HasChildren() {
 			nav.In()
 			children := listChapters(nav, depth+1)
-			children[0].In = []bool{true}
-			children[len(children)-1].Out = []bool{true}
 			chapters = append(chapters, children...)
 			nav.Out()
 		}
 		err = nav.Next()
 	}
-	chapters[0].In = []bool{true}
-	chapters[len(chapters)-1].Out = []bool{true}
+	chapters[0].In = append(chapters[0].In, true)
+	chapters[len(chapters)-1].Out = append(chapters[len(chapters)-1].Out, true)
 	return chapters
 }
 
