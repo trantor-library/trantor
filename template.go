@@ -3,13 +3,14 @@ package main
 import (
 	txt_tmpl "text/template"
 
-	"git.gitorious.org/trantor/trantor.git/database"
 	log "github.com/cihub/seelog"
 
 	"encoding/json"
 	"errors"
 	"html/template"
 	"net/http"
+
+	"git.gitorious.org/trantor/trantor.git/database"
 )
 
 type Status struct {

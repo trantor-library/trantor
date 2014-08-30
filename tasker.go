@@ -1,10 +1,11 @@
 package main
 
-import log "github.com/cihub/seelog"
-
 import (
-	"git.gitorious.org/trantor/trantor.git/database"
+	log "github.com/cihub/seelog"
+
 	"time"
+
+	"git.gitorious.org/trantor/trantor.git/database"
 )
 
 func InitTasks(db *database.DB) {

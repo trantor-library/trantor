@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/hex"
+	"net/http"
+
 	"git.gitorious.org/trantor/trantor.git/database"
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
-	"net/http"
 )
 
 var sesStore = sessions.NewCookieStore(securecookie.GenerateRandomKey(64))

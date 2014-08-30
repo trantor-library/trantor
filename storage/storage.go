@@ -1,8 +1,8 @@
 package storage
 
-import p "path"
-
 import (
+	p "path"
+
 	"io"
 	"os"
 )

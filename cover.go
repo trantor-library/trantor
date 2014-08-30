@@ -1,22 +1,24 @@
 package main
 
-import log "github.com/cihub/seelog"
-import _ "image/png"
-import _ "image/jpeg"
-import _ "image/gif"
-
 import (
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+
+	log "github.com/cihub/seelog"
+
 	"bytes"
-	"git.gitorious.org/go-pkg/epubgo.git"
-	"git.gitorious.org/trantor/trantor.git/storage"
-	"github.com/gorilla/mux"
-	"github.com/nfnt/resize"
 	"image"
 	"image/jpeg"
 	"io"
 	"io/ioutil"
 	"regexp"
 	"strings"
+
+	"git.gitorious.org/go-pkg/epubgo.git"
+	"git.gitorious.org/trantor/trantor.git/storage"
+	"github.com/gorilla/mux"
+	"github.com/nfnt/resize"
 )
 
 func coverHandler(h handler) {

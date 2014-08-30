@@ -1,8 +1,8 @@
 package main
 
-import log "github.com/cihub/seelog"
-
 import (
+	log "github.com/cihub/seelog"
+
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"

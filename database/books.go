@@ -1,11 +1,12 @@
 package database
 
 import (
+	"strings"
+	"unicode"
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"gopkgs.com/unidecode.v1"
-	"strings"
-	"unicode"
 )
 
 const (

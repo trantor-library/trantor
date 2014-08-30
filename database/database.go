@@ -1,12 +1,13 @@
 package database
 
-import log "github.com/cihub/seelog"
-
 import (
+	log "github.com/cihub/seelog"
+
 	"errors"
+	"os"
+
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"os"
 )
 
 const (

@@ -1,12 +1,13 @@
 package database
 
-import log "github.com/cihub/seelog"
-
 import (
+	log "github.com/cihub/seelog"
+
 	"bytes"
-	"code.google.com/p/go.crypto/scrypt"
 	"crypto/rand"
 	"errors"
+
+	"code.google.com/p/go.crypto/scrypt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
