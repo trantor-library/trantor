@@ -3,13 +3,14 @@ package main
 import log "github.com/cihub/seelog"
 
 import (
-	"git.gitorious.org/trantor/trantor.git/database"
-	"git.gitorious.org/trantor/trantor.git/storage"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"git.gitorious.org/trantor/trantor.git/database"
+	"git.gitorious.org/trantor/trantor.git/storage"
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -93,7 +94,7 @@ func statsHandler(h handler) {
 	data.DDownloads = getVisits(dailyLabel, h.db, database.Daily_downloads)
 	data.MDownloads = getVisits(monthlyLabel, h.db, database.Monthly_downloads)
 
-	loadTemplate(h.w, "stats", data)
+	loadTemplate(h, "stats", data)
 }
 
 type statsData struct {

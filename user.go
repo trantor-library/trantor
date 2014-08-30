@@ -14,7 +14,7 @@ func loginHandler(h handler) {
 
 	var data statusData
 	data.S = GetStatus(h)
-	loadTemplate(h.w, "login", data)
+	loadTemplate(h, "login", data)
 }
 
 func loginPostHandler(h handler) {
@@ -59,7 +59,7 @@ func dashboardHandler(h handler) {
 	var data statusData
 	data.S = GetStatus(h)
 	data.S.Dasboard = true
-	loadTemplate(h.w, "dashboard", data)
+	loadTemplate(h, "dashboard", data)
 }
 
 func settingsHandler(h handler) {
@@ -85,5 +85,5 @@ func settingsHandler(h handler) {
 
 	var data statusData
 	data.S = GetStatus(h)
-	loadTemplate(h.w, "settings", data)
+	loadTemplate(h, "settings", data)
 }

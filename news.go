@@ -1,8 +1,9 @@
 package main
 
 import (
-	"git.gitorious.org/trantor/trantor.git/database"
 	"net/http"
+
+	"git.gitorious.org/trantor/trantor.git/database"
 )
 
 type newsData struct {
@@ -27,12 +28,7 @@ func newsHandler(h handler) {
 	data.S.News = true
 	data.News = getNews(NUM_NEWS, 0, h.db)
 
-	format := h.r.Form["fmt"]
-	if (len(format) > 0) && (format[0] == "rss") {
-		loadTxtTemplate(h.w, "news_rss.xml", data)
-	} else {
-		loadTemplate(h.w, "news", data)
-	}
+	loadTemplate(h, "news", data)
 }
 
 func editNewsHandler(h handler) {
@@ -44,7 +40,7 @@ func editNewsHandler(h handler) {
 	var data statusData
 	data.S = GetStatus(h)
 	data.S.News = true
-	loadTemplate(h.w, "edit_news", data)
+	loadTemplate(h, "edit_news", data)
 }
 
 func postNewsHandler(h handler) {

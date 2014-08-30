@@ -170,7 +170,7 @@ func readHandler(h handler) {
 	data.Next, data.Prev = getNextPrev(e, file, id, "/read/")
 	data.Chapters = getChapters(e, file, id, "/read/")
 	data.Content = genLink(id, "/content/", file)
-	loadTemplate(h.w, "read", data)
+	loadTemplate(h, "read", data)
 }
 
 func openReadEpub(h handler) (*epubgo.Epub, database.Book) {

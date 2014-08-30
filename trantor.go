@@ -3,13 +3,14 @@ package main
 import log "github.com/cihub/seelog"
 
 import (
-	"git.gitorious.org/trantor/trantor.git/database"
-	"git.gitorious.org/trantor/trantor.git/storage"
-	"github.com/gorilla/mux"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+
+	"git.gitorious.org/trantor/trantor.git/database"
+	"git.gitorious.org/trantor/trantor.git/storage"
+	"github.com/gorilla/mux"
 )
 
 type statusData struct {
@@ -20,14 +21,14 @@ func aboutHandler(h handler) {
 	var data statusData
 	data.S = GetStatus(h)
 	data.S.About = true
-	loadTemplate(h.w, "about", data)
+	loadTemplate(h, "about", data)
 }
 
 func helpHandler(h handler) {
 	var data statusData
 	data.S = GetStatus(h)
 	data.S.Help = true
-	loadTemplate(h.w, "help", data)
+	loadTemplate(h, "help", data)
 }
 
 func logoutHandler(h handler) {
@@ -55,7 +56,7 @@ func bookHandler(h handler) {
 	}
 	data.Book = book
 	data.Description = strings.Split(data.Book.Description, "\n")
-	loadTemplate(h.w, "book", data)
+	loadTemplate(h, "book", data)
 }
 
 func downloadHandler(h handler) {
@@ -107,7 +108,7 @@ func indexHandler(h handler) {
 	data.VisitedBooks, _ = h.db.GetVisitedBooks()
 	data.DownloadedBooks, _ = h.db.GetDownloadedBooks()
 	data.News = getNews(1, DAYS_NEWS_INDEXPAGE, h.db)
-	loadTemplate(h.w, "index", data)
+	loadTemplate(h, "index", data)
 }
 
 func notFound(h handler) {
@@ -115,7 +116,7 @@ func notFound(h handler) {
 
 	data.S = GetStatus(h)
 	h.w.WriteHeader(http.StatusNotFound)
-	loadTemplate(h.w, "404", data)
+	loadTemplate(h, "404", data)
 }
 
 func updateLogger() error {

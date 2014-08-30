@@ -3,11 +3,12 @@ package main
 import log "github.com/cihub/seelog"
 
 import (
-	"git.gitorious.org/trantor/trantor.git/database"
-	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"git.gitorious.org/trantor/trantor.git/database"
+	"github.com/gorilla/mux"
 )
 
 func deleteHandler(h handler) {
@@ -59,7 +60,7 @@ func editHandler(h handler) {
 	var data bookData
 	data.Book = book
 	data.S = GetStatus(h)
-	loadTemplate(h.w, "edit", data)
+	loadTemplate(h, "edit", data)
 }
 
 func cleanEmptyStr(s []string) []string {
@@ -162,7 +163,7 @@ func newHandler(h handler) {
 	if page > 0 {
 		data.Prev = "/new/?p=" + strconv.Itoa(page-1)
 	}
-	loadTemplate(h.w, "new", data)
+	loadTemplate(h, "new", data)
 }
 
 func storeHandler(h handler) {

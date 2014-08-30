@@ -1,10 +1,11 @@
 package main
 
 import (
-	"git.gitorious.org/trantor/trantor.git/database"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"git.gitorious.org/trantor/trantor.git/database"
 )
 
 type searchData struct {
@@ -48,12 +49,7 @@ func searchHandler(h handler) {
 		data.Prev = "/search/?q=" + req + "&p=" + strconv.Itoa(page-1) + "&num=" + strconv.Itoa(items_page)
 	}
 
-	format := h.r.Form["fmt"]
-	if (len(format) > 0) && (format[0] == "rss") {
-		loadTxtTemplate(h.w, "search_rss.xml", data)
-	} else {
-		loadTemplate(h.w, "search", data)
-	}
+	loadTemplate(h, "search", data)
 }
 
 func itemsPage(r *http.Request) int {

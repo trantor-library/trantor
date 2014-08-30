@@ -1,11 +1,9 @@
 package main
 
-import (
-	"html/template"
-	"net/http"
-)
-
+import log "github.com/cihub/seelog"
 import txt_tmpl "text/template"
+
+import "html/template"
 
 type Status struct {
 	BaseURL  string
@@ -34,7 +32,7 @@ func GetStatus(h handler) Status {
 	return s
 }
 
-var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
+var tmpl_html = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
 	TEMPLATE_PATH+"footer.html",
 	TEMPLATE_PATH+"404.html",
 	TEMPLATE_PATH+"index.html",
@@ -54,22 +52,20 @@ var templates = template.Must(template.ParseFiles(TEMPLATE_PATH+"header.html",
 	TEMPLATE_PATH+"help.html",
 ))
 
-func loadTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
-	err := templates.ExecuteTemplate(w, tmpl+".html", data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-var txt_templates = txt_tmpl.Must(txt_tmpl.ParseFiles(TEMPLATE_PATH+"search_rss.xml",
-	TEMPLATE_PATH+"news_rss.xml",
+var tmpl_rss = txt_tmpl.Must(txt_tmpl.ParseFiles(TEMPLATE_PATH+"search.rss",
+	TEMPLATE_PATH+"news.rss",
 ))
 
-func loadTxtTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
-	err := txt_templates.ExecuteTemplate(w, tmpl, data)
+func loadTemplate(h handler, tmpl string, data interface{}) {
+	var err error
+	fmt := h.r.FormValue("fmt")
+	if fmt == "rss" {
+		err = tmpl_rss.ExecuteTemplate(h.w, tmpl+".rss", data)
+	} else {
+		err = tmpl_html.ExecuteTemplate(h.w, tmpl+".html", data)
+	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		tmpl_html.ExecuteTemplate(h.w, "404.html", data)
+		log.Warn("An error ocurred loading the template ", tmpl, ".", fmt, ": ", err)
 	}
 }

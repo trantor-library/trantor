@@ -6,13 +6,14 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/base64"
-	"git.gitorious.org/go-pkg/epubgo.git"
-	"git.gitorious.org/trantor/trantor.git/database"
-	"git.gitorious.org/trantor/trantor.git/storage"
 	"io/ioutil"
 	"mime/multipart"
 	"regexp"
 	"strings"
+
+	"git.gitorious.org/go-pkg/epubgo.git"
+	"git.gitorious.org/trantor/trantor.git/database"
+	"git.gitorious.org/trantor/trantor.git/storage"
 )
 
 func InitUpload(database *database.DB, store *storage.Store) {
@@ -93,7 +94,7 @@ func uploadHandler(h handler) {
 	var data uploadData
 	data.S = GetStatus(h)
 	data.S.Upload = true
-	loadTemplate(h.w, "upload", data)
+	loadTemplate(h, "upload", data)
 }
 
 type uploadData struct {
