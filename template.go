@@ -121,7 +121,7 @@ func indexJson(data interface{}) ([]byte, error) {
 		"count":      index.Count,
 		"news":       news,
 		"tags":       index.Tags,
-		"last added": books,
+		"last_added": books,
 	})
 }
 
