@@ -164,7 +164,12 @@ func searchJson(data interface{}) ([]byte, error) {
 	for i, book := range search.Books {
 		books[i] = bookJsonRaw(book)
 	}
-	return json.Marshal(books)
+	return json.Marshal(map[string]interface{}{
+		"found": search.Found,
+		"page":  search.Page - 1,
+		"items": search.ItemsPage,
+		"books": books,
+	})
 }
 
 func bookJsonRaw(book database.Book) map[string]interface{} {
