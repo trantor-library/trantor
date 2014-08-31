@@ -21,6 +21,9 @@ func deleteHandler(h handler) {
 	var isNew bool
 	ids := strings.Split(mux.Vars(h.r)["ids"], "/")
 	for _, id := range ids {
+		if id == "" {
+			continue
+		}
 		book, err := h.db.GetBookId(id)
 		if err != nil {
 			h.sess.Notify("Book not found!", "The book with id '"+id+"' is not there", "error")
