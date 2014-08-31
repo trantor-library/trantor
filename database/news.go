@@ -21,7 +21,6 @@ type News struct {
 func indexNews(coll *mgo.Collection) {
 	idx := mgo.Index{
 		Key:        []string{"-date"},
-		Unique:     true,
 		Background: true,
 	}
 	err := coll.EnsureIndex(idx)
