@@ -1,6 +1,8 @@
 package database
 
 import (
+	log "github.com/cihub/seelog"
+
 	"time"
 
 	"gopkg.in/mgo.v2"
@@ -14,6 +16,18 @@ const (
 type News struct {
 	Date time.Time
 	Text string
+}
+
+func indexNews(coll *mgo.Collection) {
+	idx := mgo.Index{
+		Key:        []string{"-date"},
+		Unique:     true,
+		Background: true,
+	}
+	err := coll.EnsureIndex(idx)
+	if err != nil {
+		log.Error("Error indexing news: ", err)
+	}
 }
 
 func addNews(coll *mgo.Collection, text string) error {

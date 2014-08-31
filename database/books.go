@@ -1,6 +1,8 @@
 package database
 
 import (
+	log "github.com/cihub/seelog"
+
 	"strings"
 	"unicode"
 
@@ -35,6 +37,34 @@ type Book struct {
 	Cover       bool
 	Active      bool
 	Keywords    []string
+}
+
+func indexBooks(coll *mgo.Collection) {
+	indexes := []mgo.Index{
+		{
+			Key:        []string{"id"},
+			Unique:     true,
+			Background: true,
+		},
+		{
+			Key:        []string{"active", "-_id"},
+			Background: true,
+		},
+	}
+	for _, k := range []string{"keywords", "lang", "title", "author", "subject"} {
+		idx := mgo.Index{
+			Key:        []string{"active", k, "-_id"},
+			Background: true,
+		}
+		indexes = append(indexes, idx)
+	}
+
+	for _, idx := range indexes {
+		err := coll.EnsureIndex(idx)
+		if err != nil {
+			log.Error("Error indexing books: ", err)
+		}
+	}
 }
 
 func addBook(coll *mgo.Collection, book map[string]interface{}) error {

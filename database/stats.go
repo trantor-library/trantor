@@ -1,6 +1,8 @@
 package database
 
 import (
+	log "github.com/cihub/seelog"
+
 	"time"
 
 	"gopkg.in/mgo.v2"
@@ -40,6 +42,26 @@ const (
 type Visits struct {
 	Date  time.Time "date"
 	Count int       "count"
+}
+
+func indexStats(coll *mgo.Collection) {
+	indexes := []mgo.Index{
+		{
+			Key:        []string{"section"},
+			Background: true,
+		},
+		{
+			Key:        []string{"-date", "section"},
+			Background: true,
+		},
+	}
+
+	for _, idx := range indexes {
+		err := coll.EnsureIndex(idx)
+		if err != nil {
+			log.Error("Error indexing stats: ", err)
+		}
+	}
 }
 
 func GetTags(tagsColl *mgo.Collection) ([]string, error) {

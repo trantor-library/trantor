@@ -30,7 +30,18 @@ func Init(host string, name string) *DB {
 		os.Exit(1)
 	}
 	db.name = name
+	db.initIndexes()
 	return db
+}
+
+func (db *DB) initIndexes() {
+	dbCopy := db.session.Copy()
+	booksColl := dbCopy.DB(db.name).C(books_coll)
+	go indexBooks(booksColl)
+	statsColl := dbCopy.DB(db.name).C(stats_coll)
+	go indexStats(statsColl)
+	newsColl := dbCopy.DB(db.name).C(news_coll)
+	go indexNews(newsColl)
 }
 
 func (db *DB) Close() {
