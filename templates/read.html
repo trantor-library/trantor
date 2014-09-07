@@ -44,7 +44,7 @@ function resizeIframe() {
 	}
 }
 </script>
-<iframe id="bookContent" onload="resizeIframe();" style="width: 100%; border: none;" scrolling="no" src="{{.Content}}" seamless="seamless"></iframe>
+<iframe id="bookContent" onload="resizeIframe();" style="width: 100%; height: 100%'; border: 0;" scrolling="no" src="{{.Content}}" seamless="seamless" sandbox="allow-same-origin" frameborder=0></iframe>
 </div>
 </div>
 
