@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /delete/
+Disallow: /edit/
+Disallow: /save/

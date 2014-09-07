@@ -32,6 +32,7 @@ const (
 	CSS_PATH      = "css/"
 	JS_PATH       = "js/"
 	IMG_PATH      = "img/"
+	ROBOTS_PATH   = "robots.txt"
 	LOGGER_CONFIG = "logger.xml"
 
 	IMG_WIDTH_BIG   = 300
