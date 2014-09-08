@@ -16,28 +16,29 @@ const (
 )
 
 type Book struct {
-	Id          string
-	Title       string
-	Author      []string
-	Contributor string
-	Publisher   string
-	Description string
-	Subject     []string
-	Date        string
-	Lang        []string
-	Isbn        string
-	Type        string
-	Format      string
-	Source      string
-	Relation    string
-	Coverage    string
-	Rights      string
-	Meta        string
-	FileSize    int
-	Cover       bool
-	Active      bool
-	BadQuality  int `bad_quality`
-	Keywords    []string
+	Id                  string
+	Title               string
+	Author              []string
+	Contributor         string
+	Publisher           string
+	Description         string
+	Subject             []string
+	Date                string
+	Lang                []string
+	Isbn                string
+	Type                string
+	Format              string
+	Source              string
+	Relation            string
+	Coverage            string
+	Rights              string
+	Meta                string
+	FileSize            int
+	Cover               bool
+	Active              bool
+	BadQuality          int      `bad_quality`
+	BadQualityReporters []string `bad_quality_reporters`
+	Keywords            []string
 }
 
 func indexBooks(coll *mgo.Collection) {
@@ -132,8 +133,24 @@ func updateBook(coll *mgo.Collection, id string, data map[string]interface{}) er
 	return coll.Update(bson.M{"id": id}, bson.M{"$set": data})
 }
 
-func flagBadQuality(coll *mgo.Collection, id string) error {
-	return coll.Update(bson.M{"id": id}, bson.M{"$inc": bson.M{"bad_quality": 1}})
+func flagBadQuality(coll *mgo.Collection, id string, user string) error {
+	b, err := getBookId(coll, id)
+	if err != nil {
+		return err
+	}
+
+	for _, reporter := range b.BadQualityReporters {
+		if reporter == user {
+			return nil
+		}
+	}
+	return coll.Update(
+		bson.M{"id": id},
+		bson.M{
+			"$inc":      bson.M{"bad_quality": 1},
+			"$addToSet": bson.M{"bad_quality_reporters": user},
+		},
+	)
 }
 
 func activeBook(coll *mgo.Collection, id string) error {

@@ -1,6 +1,7 @@
 {{template "header.html" .S}}
 
 {{$isAdmin := .S.IsAdmin}}
+{{$flaggedBadQuality := .FlaggedBadQuality}}
 {{with .Book}}
 <script>
 function delBook(){
@@ -60,7 +61,7 @@ function delBook(){
 		{{end}}
 		<div class="pull-right">
 			<br />
-			<a href="/flag/bad_quality/{{.Id}}" class="btn btn-small"><i class="icon-warning-sign"></i> Report bad quality</a>
+			<a href="{{if $flaggedBadQuality}}#{{else}}/flag/bad_quality/{{.Id}}{{end}}" class="btn btn-small{{if $flaggedBadQuality}} disabled{{end}}"><i class="icon-warning-sign"></i> Report bad quality</a>
 		</div>
 	</div>
 	</div>

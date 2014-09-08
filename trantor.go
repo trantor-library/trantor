@@ -40,9 +40,10 @@ func logoutHandler(h handler) {
 }
 
 type bookData struct {
-	S           Status
-	Book        database.Book
-	Description []string
+	S                 Status
+	Book              database.Book
+	Description       []string
+	FlaggedBadQuality bool
 }
 
 func bookHandler(h handler) {
@@ -56,6 +57,13 @@ func bookHandler(h handler) {
 	}
 	data.Book = book
 	data.Description = strings.Split(data.Book.Description, "\n")
+	data.FlaggedBadQuality = false
+	for _, reporter := range book.BadQualityReporters {
+		if reporter == h.sess.User || reporter == h.sess.Id() {
+			data.FlaggedBadQuality = true
+			break
+		}
+	}
 	loadTemplate(h, "book", data)
 }
 
@@ -90,7 +98,11 @@ func downloadHandler(h handler) {
 
 func flagHandler(h handler) {
 	id := mux.Vars(h.r)["id"]
-	err := h.db.FlagBadQuality(id)
+	user := h.sess.Id()
+	if h.sess.User != "" {
+		user = h.sess.User
+	}
+	err := h.db.FlagBadQuality(id, user)
 	if err != nil {
 		log.Warn("An error ocurred while flaging ", id, ": ", err)
 	}

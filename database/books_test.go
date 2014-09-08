@@ -101,9 +101,9 @@ func TestFlag(t *testing.T) {
 	}
 	db.ActiveBook(id3)
 
-	db.FlagBadQuality(id)
-	db.FlagBadQuality(id)
-	db.FlagBadQuality(id3)
+	db.FlagBadQuality(id, "1")
+	db.FlagBadQuality(id, "2")
+	db.FlagBadQuality(id3, "1")
 
 	b, _ := db.GetBookId(id)
 	if b.BadQuality != 2 {
