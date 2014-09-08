@@ -25,7 +25,7 @@ function delBook(){
 <div class="row">
 {{if .Cover}}
 	<div class="span4">
-	<img src="/cover/{{.Id}}/big/{{.Title}}.jpg" alt="{{.Title}}" class="pull-right" />
+		<img src="/cover/{{.Id}}/big/{{.Title}}.jpg" alt="{{.Title}}" class="pull-right" />
 	</div>
 {{end}}
 
@@ -43,20 +43,24 @@ function delBook(){
 		</dl>
 	</div>
 	<div class="span3">
+		<div class="row">
+		<div class="btn-group pull-right">
+		<a href="/download/{{.Id}}/{{.Title}}.epub" class="btn btn-large btn-inverse"><i class="icon-download-alt icon-white"></i> download</a>
+		<a href="/read/{{.Id}}" class="btn btn-large btn-warning"><i class="icon-eye-open icon-white"></i> read it!</a>
+		</div>
+		</div>
 		{{if $isAdmin}}
+		<div class="row"><p></p></div>
 		<div class="row">
 		<div class="btn-group pull-right">
 		<a href="/edit/{{.Id}}" class="btn btn-primary"><i class="icon-pencil"></i> Edit</a>
 		<a href="#" onClick="delBook();" class="btn btn-danger"><i class="icon-trash"></i> Delete</a>
 		</div>
 		</div>
-		<div class="row"><p></p></div>
 		{{end}}
-		<div class="row">
-		<div class="btn-group pull-right">
-		<a href="/download/{{.Id}}/{{.Title}}.epub" class="btn btn-large btn-inverse"><i class="icon-download-alt icon-white"></i> download</a>
-		<a href="/read/{{.Id}}" class="btn btn-large btn-warning"><i class="icon-eye-open icon-white"></i> read it!</a>
-		</div>
+		<div class="pull-right">
+			<br />
+			<a href="/flag/bad_quality/{{.Id}}" class="btn btn-small"><i class="icon-warning-sign"></i> Report bad quality</a>
 		</div>
 	</div>
 	</div>

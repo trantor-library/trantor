@@ -85,6 +85,11 @@ func (db *DB) UpdateBook(id string, data map[string]interface{}) error {
 	return updateBook(booksColl, id, data)
 }
 
+func (db *DB) FlagBadQuality(id string) error {
+	booksColl := db.session.DB(db.name).C(books_coll)
+	return flagBadQuality(booksColl, id)
+}
+
 func (db *DB) ActiveBook(id string) error {
 	booksColl := db.session.DB(db.name).C(books_coll)
 	return activeBook(booksColl, id)

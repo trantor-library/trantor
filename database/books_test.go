@@ -77,9 +77,55 @@ func TestUpdateBookKeywords(t *testing.T) {
 	}
 }
 
+func TestFlag(t *testing.T) {
+	db := Init(test_host, test_coll)
+	defer db.del()
+
+	tAddBook(t, db)
+	id, _ := book["id"].(string)
+	db.ActiveBook(id)
+	id2 := "tfgrBvd2ps_K4iYt"
+	b2 := book
+	b2["id"] = id2
+	err := db.AddBook(b2)
+	if err != nil {
+		t.Error("db.AddBook(", book, ") return an error:", err)
+	}
+	db.ActiveBook(id2)
+	id3 := "tfgrBvd2ps_K4iY2"
+	b3 := book
+	b3["id"] = id3
+	err = db.AddBook(b3)
+	if err != nil {
+		t.Error("db.AddBook(", book, ") return an error:", err)
+	}
+	db.ActiveBook(id3)
+
+	db.FlagBadQuality(id)
+	db.FlagBadQuality(id)
+	db.FlagBadQuality(id3)
+
+	b, _ := db.GetBookId(id)
+	if b.BadQuality != 2 {
+		t.Error("The bad quality flag was not increased")
+	}
+	b, _ = db.GetBookId(id3)
+	if b.BadQuality != 1 {
+		t.Error("The bad quality flag was not increased")
+	}
+
+	books, _, _ := db.GetBooks("flag:bad_quality", 2, 0)
+	if len(books) != 2 {
+		t.Fatal("Not the right number of results to the flag search:", len(books))
+	}
+	if books[0].Id != id {
+		t.Error("Search for flag bad_quality is not sort right")
+	}
+}
+
 func tAddBook(t *testing.T, db *DB) {
 	err := db.AddBook(book)
 	if err != nil {
-		t.Error("db.AddBook(", book, ") return an error: ", err)
+		t.Error("db.AddBook(", book, ") return an error:", err)
 	}
 }

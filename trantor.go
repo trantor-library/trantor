@@ -88,6 +88,17 @@ func downloadHandler(h handler) {
 	io.Copy(h.w, f)
 }
 
+func flagHandler(h handler) {
+	id := mux.Vars(h.r)["id"]
+	err := h.db.FlagBadQuality(id)
+	if err != nil {
+		log.Warn("An error ocurred while flaging ", id, ": ", err)
+	}
+	h.sess.Notify("Flagged!", "Book marked as bad quality, thank you", "success")
+	h.sess.Save(h.w, h.r)
+	http.Redirect(h.w, h.r, h.r.Referer(), http.StatusFound)
+}
+
 type indexData struct {
 	S               Status
 	Books           []database.Book
@@ -176,6 +187,7 @@ func initRouter(db *database.DB, sg *StatsGatherer) {
 	r.HandleFunc("/download/{id:"+id_pattern+"}/{epub:.*}", sg.Gather(downloadHandler))
 	r.HandleFunc("/cover/{id:"+id_pattern+"}/{size}/{img:.*}", sg.Gather(coverHandler))
 	r.HandleFunc("/stats/", sg.Gather(statsHandler))
+	r.HandleFunc("/flag/bad_quality/{id:"+id_pattern+"}", sg.Gather(flagHandler))
 
 	r.HandleFunc("/login/", sg.Gather(loginHandler)).Methods("GET")
 	r.HandleFunc("/login/", sg.Gather(loginPostHandler)).Methods("POST")

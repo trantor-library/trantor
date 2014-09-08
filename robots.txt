@@ -1,4 +1,5 @@
 User-agent: *
+Disallow: /flag/
 Disallow: /delete/
 Disallow: /edit/
 Disallow: /save/

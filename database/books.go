@@ -36,6 +36,7 @@ type Book struct {
 	FileSize    int
 	Cover       bool
 	Active      bool
+	BadQuality  int `bad_quality`
 	Keywords    []string
 }
 
@@ -48,6 +49,10 @@ func indexBooks(coll *mgo.Collection) {
 		},
 		{
 			Key:        []string{"active", "-_id"},
+			Background: true,
+		},
+		{
+			Key:        []string{"active", "-bad_quality", "-_id"},
 			Background: true,
 		},
 	}
@@ -81,7 +86,13 @@ func getNewBooks(coll *mgo.Collection, length int, start int) (books []Book, num
 }
 
 func _getBooks(coll *mgo.Collection, query bson.M, length int, start int) (books []Book, num int, err error) {
-	q := coll.Find(query).Sort("-_id")
+	sort := []string{}
+	if _, present := query["bad_quality"]; present {
+		sort = append(sort, "-bad_quality")
+	}
+	sort = append(sort, "-_id")
+
+	q := coll.Find(query).Sort(sort...)
 	num, err = q.Count()
 	if err != nil {
 		return
@@ -121,6 +132,10 @@ func updateBook(coll *mgo.Collection, id string, data map[string]interface{}) er
 	return coll.Update(bson.M{"id": id}, bson.M{"$set": data})
 }
 
+func flagBadQuality(coll *mgo.Collection, id string) error {
+	return coll.Update(bson.M{"id": id}, bson.M{"$inc": bson.M{"bad_quality": 1}})
+}
+
 func activeBook(coll *mgo.Collection, id string) error {
 	data := map[string]interface{}{"active": true}
 	return coll.Update(bson.M{"id": id}, bson.M{"$set": data})
@@ -142,7 +157,11 @@ func buildQuery(q string) bson.M {
 	for _, w := range words {
 		tag := strings.SplitN(w, ":", 2)
 		if len(tag) > 1 {
-			query[tag[0]] = bson.RegEx{tag[1], "i"}
+			if tag[0] == "flag" {
+				query[tag[1]] = bson.M{"$gt": 0}
+			} else {
+				query[tag[0]] = bson.RegEx{tag[1], "i"} //FIXME: this should be a list
+			}
 		} else {
 			toks := tokens(w)
 			keywords = append(keywords, toks...)
