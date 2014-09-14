@@ -27,13 +27,14 @@ const (
 	NUM_NEWS                  = 10
 	DAYS_NEWS_INDEXPAGE       = 15
 
-	STORE_PATH    = "store/"
-	TEMPLATE_PATH = "templates/"
-	CSS_PATH      = "css/"
-	JS_PATH       = "js/"
-	IMG_PATH      = "img/"
-	ROBOTS_PATH   = "robots.txt"
-	LOGGER_CONFIG = "logger.xml"
+	STORE_PATH       = "store/"
+	TEMPLATE_PATH    = "templates/"
+	CSS_PATH         = "css/"
+	JS_PATH          = "js/"
+	IMG_PATH         = "img/"
+	ROBOTS_PATH      = "robots.txt"
+	DESCRIPTION_PATH = "description.json"
+	LOGGER_CONFIG    = "logger.xml"
 
 	IMG_WIDTH_BIG   = 300
 	IMG_WIDTH_SMALL = 60
