@@ -4,11 +4,9 @@ import (
 	log "github.com/cihub/seelog"
 
 	"strings"
-	"unicode"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"gopkgs.com/unidecode.v1"
 )
 
 const (
@@ -38,7 +36,6 @@ type Book struct {
 	Active              bool
 	BadQuality          int      `bad_quality`
 	BadQualityReporters []string `bad_quality_reporters`
-	Keywords            []string
 }
 
 func indexBooks(coll *mgo.Collection) {
@@ -56,8 +53,9 @@ func indexBooks(coll *mgo.Collection) {
 			Key:        []string{"active", "-bad_quality", "-_id"},
 			Background: true,
 		},
+		// TODO: there is no weights in mgo
 	}
-	for _, k := range []string{"keywords", "lang", "title", "author", "subject"} {
+	for _, k := range []string{"lang", "title", "author", "subject"} {
 		idx := mgo.Index{
 			Key:        []string{"active", k, "-_id"},
 			Background: true,
@@ -74,7 +72,7 @@ func indexBooks(coll *mgo.Collection) {
 }
 
 func addBook(coll *mgo.Collection, book map[string]interface{}) error {
-	book["keywords"] = keywords(book)
+	book["_lang"] = metadataLang(book)
 	return coll.Insert(book)
 }
 
@@ -87,13 +85,13 @@ func getNewBooks(coll *mgo.Collection, length int, start int) (books []Book, num
 }
 
 func _getBooks(coll *mgo.Collection, query bson.M, length int, start int) (books []Book, num int, err error) {
-	sort := []string{}
+	sort := []string{"$textScore:score"}
 	if _, present := query["bad_quality"]; present {
 		sort = append(sort, "-bad_quality")
 	}
 	sort = append(sort, "-_id")
 
-	q := coll.Find(query).Sort(sort...)
+	q := coll.Find(query).Select(bson.M{"score": bson.M{"$meta": "textScore"}}).Sort(sort...)
 	num, err = q.Count()
 	if err != nil {
 		return
@@ -129,7 +127,9 @@ func updateBook(coll *mgo.Collection, id string, data map[string]interface{}) er
 		book[k] = v
 	}
 
-	data["keywords"] = keywords(book)
+	if lang := metadataLang(book); lang != "" {
+		data["_lang"] = lang
+	}
 	return coll.Update(bson.M{"id": id}, bson.M{"$set": data})
 }
 
@@ -168,7 +168,7 @@ func isBookActive(coll *mgo.Collection, id string) bool {
 }
 
 func buildQuery(q string) bson.M {
-	var keywords []string
+	text := ""
 	query := bson.M{"active": true}
 	words := strings.Split(q, " ")
 	for _, w := range words {
@@ -180,51 +180,22 @@ func buildQuery(q string) bson.M {
 				query[tag[0]] = bson.RegEx{tag[1], "i"} //FIXME: this should be a list
 			}
 		} else {
-			toks := tokens(w)
-			keywords = append(keywords, toks...)
+			if len(text) != 0 {
+				text += " "
+			}
+			text += w
 		}
 	}
-	if len(keywords) > 0 {
-		query["keywords"] = bson.M{"$all": keywords}
+	if len(text) > 0 {
+		query["$text"] = bson.M{"$search": text}
 	}
 	return query
 }
 
-func keywords(b map[string]interface{}) (k []string) {
-	title, _ := b["title"].(string)
-	k = tokens(title)
-
-	k = append(k, listKeywords(b["author"])...)
-
-	publisher, _ := b["publisher"].(string)
-	k = append(k, tokens(publisher)...)
-
-	k = append(k, listKeywords(b["subject"])...)
-	return
-}
-
-func listKeywords(v interface{}) (k []string) {
-	list, ok := v.([]string)
-	if !ok {
-		list, _ := v.([]interface{})
-		for _, e := range list {
-			str := e.(string)
-			k = append(k, tokens(str)...)
-		}
-		return
+func metadataLang(book map[string]interface{}) string {
+	lang, ok := book["lang"].([]string)
+	if !ok || len(lang) == 0 || len(lang[0]) < 2 {
+		return ""
 	}
-
-	for _, e := range list {
-		k = append(k, tokens(e)...)
-	}
-	return
-}
-
-func tokens(str string) []string {
-	str = unidecode.Unidecode(str)
-	str = strings.ToLower(str)
-	f := func(r rune) bool {
-		return unicode.IsControl(r) || unicode.IsPunct(r) || unicode.IsSpace(r)
-	}
-	return strings.FieldsFunc(str, f)
+	return strings.ToLower(lang[0][0:2])
 }

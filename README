@@ -13,7 +13,7 @@ https://gitorious.org/trantor/
 In order to run Trantor, you need to install the following packages:
 
 * Go language
-* Mongodb
+* Mongodb (>= 2.6)
 * Bazaar
 * Git
 
@@ -26,7 +26,6 @@ Yo also need to install go dependences:
 # go get gopkg.in/mgo.v2 gopkg.in/mgo.v2/bson github.com/gorilla/sessions \
          github.com/gorilla/securecookie github.com/gorilla/mux \
          github.com/nfnt/resize github.com/cihub/seelog \
-         gopkgs.com/unidecode.v1 \
          code.google.com/p/go.crypto/scrypt
 
 == Installation ==
