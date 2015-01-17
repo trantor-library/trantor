@@ -187,6 +187,7 @@ func initRouter(db *database.DB, sg *StatsGatherer) {
 	r.HandleFunc("/", sg.Gather(indexHandler))
 	r.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, ROBOTS_PATH) })
 	r.HandleFunc("/description.json", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, DESCRIPTION_PATH) })
+	r.HandleFunc("/opensearch.xml", func(w http.ResponseWriter, r *http.Request) { http.ServeFile(w, r, OPENSEARCH_PATH) })
 
 	r.HandleFunc("/book/{id:"+id_pattern+"}", sg.Gather(bookHandler))
 	r.HandleFunc("/search/", sg.Gather(searchHandler))

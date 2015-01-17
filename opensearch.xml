@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+ <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+   <ShortName>Imperial Library of Trantor</ShortName>
+   <Description>Book search in the library.</Description>
+   <InputEncoding>UTF-8</InputEncoding>
+   <OutputEncoding>UTF-8</OutputEncoding>
+   <Tags>books epub</Tags>
+   <Image type="image/x-icon" width="16" height="16">/img/favicon.ico</Image>
+   <Contact>zenow@riseup.net</Contact>
+   <Url type="application/atom+xml" template="/search/?fmt=opds&amp;q={searchTerms}"/>
+ </OpenSearchDescription>

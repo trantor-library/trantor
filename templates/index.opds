@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:odl="http://opds-spec.org/odl"
+      xml:lang="en"
+      xmlns="http://www.w3.org/2005/Atom"
+      xmlns:dcterms="http://purl.org/dc/terms/"
+      xmlns:app="http://www.w3.org/2007/app"
+      xmlns:opds="http://opds-spec.org/2010/catalog"
+      xmlns:thr="http://purl.org/syndication/thread/1.0"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <id>{{.S.BaseURL}}</id>
+  <link rel="self"  
+        href="/?fmt=opds" 
+        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="start" 
+        href="/?fmt=opds" 
+        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="search" 
+        href="/opensearch.xml" 
+        type="application/opensearchdescription+xml"/>
+
+  <title>The Imperial Libary of Trantor</title>
+  <author>
+    <name>The Imperial Library of Trantor</name>
+    <uri>{{.S.BaseURL}}</uri>
+    <email>zenow@riseup.net</email>
+  </author>
+  <updated>{{.S.Updated}}</updated>
+  <icon>{{.S.BaseURL}}/img/favicon.ico</icon>
+ 
+  <entry>
+    <title>Last books added</title>
+    <link rel="http://opds-spec.org/sort/new" 
+          href="/search/?fmt=opds"
+          type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+    <updated>{{.S.Updated}}</updated>
+	<id>{{.S.BaseURL}}/search/</id>
+  </entry>
+{{$updated := .S.Updated}}
+{{$baseurl := .S.BaseURL}}
+{{range .Tags}}
+  <entry>
+    <title>{{html .}}</title>
+    <link rel="http://opds-spec.org/facet" 
+          href="/search/?q=subject:{{urlquery .}}&amp;fmt=opds"
+          title="{{html .}}"
+          type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+	<updated>{{$updated}}</updated>
+	<id>{{$baseurl}}/search/?subject:{{urlquery .}}</id>
+  </entry>
+{{end}}
+</feed>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:odl="http://opds-spec.org/odl"
+      xml:lang="en"
+      xmlns="http://www.w3.org/2005/Atom"
+      xmlns:dcterms="http://purl.org/dc/terms/"
+      xmlns:app="http://www.w3.org/2007/app"
+      xmlns:opds="http://opds-spec.org/2010/catalog"
+      xmlns:thr="http://purl.org/syndication/thread/1.0"
+      xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/">
+  <id>{{.S.BaseURL}}/search/?q={{.S.Search}}</id>
+  <icon>{{.S.BaseURL}}/img/favicon.ico</icon>
+
+  <link rel="self"
+        href="/search/?q={{.S.Search}}&amp;p={{.Page}}&amp;fmt=opds"
+        type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  <link rel="start"
+        href="/?fmt=opds"
+        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  <link rel="up"
+        href="/?fmt=opds"
+        type="application/atom+xml;profile=opds-catalog;kind=navigation"/>
+  {{if .Prev}}
+  <link rel="first"
+        href="/search/?q={{.S.Search}}&amp;fmt=opds"
+        type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  <link rel="previous"
+        href="{{html .Prev}}&amp;fmt=opds"
+        type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  {{end}}
+  {{if .Next}}
+  <link rel="next"
+        href="{{html .Next}}&amp;fmt=opds"
+        type="application/atom+xml;profile=opds-catalog;kind=acquisition"/>
+  {{end}}
+  <link rel="search"
+        title="Search The Imperial Libary of Trantor"
+        href="/search/?q={searchTerms}&amp;fmt=opds"
+        type="application/atom+xml"/>
+  <link rel="search" 
+        href="opensearch.xml" 
+        type="application/opensearchdescription+xml"/>
+
+  <opensearch:totalResults>{{.Found}}</opensearch:totalResults>
+  <opensearch:itemsPerPage>{{.ItemsPage}}</opensearch:itemsPerPage>
+
+  <title>search {{.S.Search}}</title>
+  <author>
+    <name>The Imperial Library of Trantor</name>
+    <uri>{{.S.BaseURL}}</uri>
+    <email>zenow@riseup.net</email>
+  </author>
+  <updated>{{.S.Updated}}</updated>
+
+
+{{$updated := .S.Updated}}
+{{$baseurl := .S.BaseURL}}
+{{range .Books}}
+  <entry>
+    <title>{{html .Title}}</title>
+    <id>{{$baseurl}}/book/{{.Id}}</id>
+    <updated>{{$updated}}</updated>
+
+    {{range .Author}}
+    <author>
+      <name>{{html .}}</name>
+    </author>
+    {{end}}
+    {{if .Contributor}}
+    <contributor>
+      <name>{{html .Contributor}}</name>
+    </contributor>
+    {{end}}
+
+    {{if .Isbn}}
+    <dcterms:identifier>urn:isbn:{{.Isbn}}</dcterms:identifier>
+    {{end}}
+    <dcterms:publisher>{{html .Publisher}}</dcterms:publisher>
+    {{if .Date}}
+    <dcterms:issued>{{.Date}}</dcterms:issued>
+    {{end}}
+
+    {{range .Lang}}
+    <dcterms:language>{{.}}</dcterms:language>
+    {{end}}
+	{{range .Subject}}
+    <category term="{{html .}}"
+              label="{{html .}}"/>
+    {{end}}
+    <summary>{{html .Description}}</summary>
+
+    <link type="image/jpeg" href="/cover/{{.Id}}/big/cover.jpg" rel="http://opds-spec.org/image"/>
+    <link type="image/jpg" href="/cover/{{.Id}}/small/thumbnail.jpg" rel="http://opds-spec.org/image/thumbnail" />
+
+    <link rel="http://opds-spec.org/acquisition"
+		  href="/download/{{.Id}}/{{urlquery .Title}}.epub"
+          type="application/epub+zip" />
+  </entry>
+{{end}}
+</feed>

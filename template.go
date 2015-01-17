@@ -9,6 +9,7 @@ import (
 	"errors"
 	"html/template"
 	"net/http"
+	"time"
 
 	"git.gitorious.org/trantor/trantor.git/database"
 )
@@ -20,6 +21,7 @@ type Status struct {
 	User     string
 	IsAdmin  bool
 	Notif    []Notification
+	Updated  string
 	Home     bool
 	About    bool
 	News     bool
@@ -36,6 +38,7 @@ func GetStatus(h handler) Status {
 	s.User = h.sess.User
 	s.IsAdmin = h.sess.IsAdmin()
 	s.Notif = h.sess.GetNotif()
+	s.Updated = time.Now().UTC().Format("2006-01-02T15:04:05Z")
 	h.sess.Save(h.w, h.r)
 	return s
 }
@@ -66,12 +69,19 @@ var tmpl_rss = txt_tmpl.Must(txt_tmpl.ParseFiles(
 	TEMPLATE_PATH+"news.rss",
 ))
 
+var tmpl_opds = txt_tmpl.Must(txt_tmpl.ParseFiles(
+	TEMPLATE_PATH+"index.opds",
+	TEMPLATE_PATH+"search.opds",
+))
+
 func loadTemplate(h handler, tmpl string, data interface{}) {
 	var err error
 	fmt := h.r.FormValue("fmt")
 	switch fmt {
 	case "rss":
 		err = tmpl_rss.ExecuteTemplate(h.w, tmpl+".rss", data)
+	case "opds":
+		err = tmpl_opds.ExecuteTemplate(h.w, tmpl+".opds", data)
 	case "json":
 		err = loadJson(h.w, tmpl, data)
 	default:

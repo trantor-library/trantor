@@ -34,6 +34,7 @@ const (
 	IMG_PATH         = "img/"
 	ROBOTS_PATH      = "robots.txt"
 	DESCRIPTION_PATH = "description.json"
+	OPENSEARCH_PATH  = "opensearch.xml"
 	LOGGER_CONFIG    = "logger.xml"
 
 	IMG_WIDTH_BIG   = 300
