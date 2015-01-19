@@ -1,7 +1,7 @@
 {{template "header.html" .S}}
 
 <h4>Advanced Search</h4>
-<p>It is possible to search for books in an specific language adding <em>lang:code</em> to the search string. See for example some searches:
+<p>It is possible to search books in an specific language adding <em>lang:code</em> to the search string. See for example some searches:
 <ul>
 	<li><a href="/search/?q=lang:en hacker">lang:en hacker</a></li>
 	<li><a href="/search/?q=lang:es">lang:es</a></li>
@@ -15,5 +15,33 @@
 	<li><a href="/search/?q=subject:computers title:python">subject:computers title:python</a></li>
 </ul>
 </p>
+
+<h4>Other ways to access the library</h4>
+
+<h6>OPDS</h6>
+<p>The Imperial Library of Trantor has support for <a href="https://en.wikipedia.org/wiki/OPDS">OPDS</a>, witch allows you to browse and download books from any <a href="http://wiki.mobileread.com/wiki/OPDS#eBook_Reading_Software_Supporting_OPDS">ebook reading software that supports OPDS</a>. To use it just add the following url as your catalog address in your device:
+<pre>{{.S.BaseURL}}/?fmt=opds</pre>
+</p>
+
+<p>In android devices works fine with <a href="http://fbreader.org/">fbreader</a> configuring <a href="https://guardianproject.info/apps/orbot/">orbot</a> to transparently proxy it's internet connection over tor.</p>
+
+<h6>RSS</h6>
+<p>With <a href="https://en.wikipedia.org/wiki/RSS">RSS</a> you can use your <a href="https://en.wikipedia.org/wiki/Comparison_of_feed_aggregators">feed reader</a> to see the lattest updates on a certain search or the news of the library. To get the RSS url of some search just click on the <img src="/img/feed.png" />.</p>
+
+<h6>hummin</h6>
+<p>For the command line geeks there is a <abbr title="command line interface">cli</abbr> client: <a href="https://gitorious.org/trantor/hummin">hummin</a></p>
+
+<p>To install it in a debian based system (like ubuntu) just do:
+<pre>
+$ sudo apt-get install golang
+$ sudo go get github.com/trantor-library/hummin
+$ hummin
+</pre>
+</p>
+
+<h6>JSON</h6>
+<p>There is a JSON API for the library, with it you can write bots and other cool things like hummin.</p>
+
+<p>You can add <code>?fmt=json</code> to almost any page on trantor and you'll get a json of the contents of the page. I'll love to hear if you do something cool with it, please tell me by email.</p>
 
 {{template "footer.html"}}
