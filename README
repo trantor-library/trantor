@@ -26,14 +26,15 @@ Yo also need to install go dependences:
 # go get gopkg.in/mgo.v2 gopkg.in/mgo.v2/bson github.com/gorilla/sessions \
          github.com/gorilla/securecookie github.com/gorilla/mux \
          github.com/nfnt/resize github.com/cihub/seelog \
-         code.google.com/p/go.crypto/scrypt
+         code.google.com/p/go.crypto/scrypt \
+         github.com/rainycape/cld2
 
 == Installation ==
 === For admins ("for developers" below) ===
 
 Now you can install Trantor itself:
 
-# go get git.gitorious.org/trantor/trantor.git
+# go get -tags prod git.gitorious.org/trantor/trantor.git
 
 You can run trantor in /srv/www/trantor i.e. For this:
 
@@ -63,7 +64,8 @@ $ cd yournames-trantor
 You can edit config.go if you want to change the port and other configuration, by default is 8080
 
 Now you can compile Trantor:
-$ go build
+$ go build -tags prod
+(remove '-tags prod' for a faster compilation without language guessing)
 
 Now you can run it:
 $ ./yourname-trantor

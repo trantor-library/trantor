@@ -124,7 +124,7 @@ func parseFile(epub *epubgo.Epub, store *storage.Store) (metadata map[string]int
 		case "date":
 			book[m] = parseDate(data)
 		case "language":
-			book["lang"] = data
+			book["lang"] = GuessLang(epub, data)
 		case "title", "contributor", "publisher":
 			book[m] = cleanStr(strings.Join(data, ", "))
 		case "identifier":
@@ -140,7 +140,7 @@ func parseFile(epub *epubgo.Epub, store *storage.Store) (metadata map[string]int
 	}
 
 	id = genId()
-	book["id"] = id //TODO
+	book["id"] = id
 	book["cover"] = GetCover(epub, id, store)
 	return book, id
 }
