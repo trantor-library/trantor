@@ -3,16 +3,13 @@ package main
 import (
 	log "github.com/cihub/seelog"
 
-	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"git.gitorious.org/go-pkg/epubgo.git"
 	"git.gitorious.org/trantor/trantor.git/database"
-	"git.gitorious.org/trantor/trantor.git/storage"
 	"github.com/gorilla/mux"
 )
 
@@ -183,13 +180,24 @@ func openReadEpub(h handler) (*epubgo.Epub, database.Book) {
 	if err != nil {
 		return nil, book
 	}
-
 	if !book.Active {
 		if !h.sess.IsAdmin() {
 			return nil, book
 		}
 	}
-	e, err := openBook(book.Id, h.store)
+
+	f, err := h.store.Get(book.Id, EPUB_FILE)
+	if err != nil {
+		return nil, book
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		return nil, book
+	}
+
+	e, err := epubgo.Load(f, info.Size())
 	if err != nil {
 		return nil, book
 	}
@@ -205,42 +213,46 @@ func contentHandler(h handler) {
 		return
 	}
 
-	book, err := h.db.GetBookId(id)
+	err := openEpubFile(h, id, file)
 	if err != nil {
 		notFound(h)
 		return
+	}
+}
+
+func openEpubFile(h handler, id string, file string) error {
+	book, err := h.db.GetBookId(id)
+	if err != nil {
+		return err
 	}
 	if !book.Active {
 		if !h.sess.IsAdmin() {
-			notFound(h)
-			return
+			return err
 		}
 	}
-	e, err := openBook(book.Id, h.store)
+
+	f, err := h.store.Get(id, EPUB_FILE)
 	if err != nil {
-		notFound(h)
-		return
+		return err
+	}
+	defer f.Close()
+
+	info, err := f.Stat()
+	if err != nil {
+		return err
+	}
+
+	e, err := epubgo.Load(f, info.Size())
+	if err != nil {
+		return err
 	}
 	defer e.Close()
 
 	html, err := e.OpenFile(file)
 	if err != nil {
-		notFound(h)
-		return
+		return err
 	}
 	defer html.Close()
 	io.Copy(h.w, html)
-}
-
-func openBook(id string, store *storage.Store) (*epubgo.Epub, error) {
-	f, err := store.Get(id, EPUB_FILE)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	buff, err := ioutil.ReadAll(f)
-	reader := bytes.NewReader(buff)
-
-	return epubgo.Load(reader, int64(len(buff)))
+	return nil
 }

@@ -11,6 +11,12 @@ type Store struct {
 	path string
 }
 
+type File interface {
+	io.ReadCloser
+	io.ReaderAt
+	Stat() (fi os.FileInfo, err error)
+}
+
 func Init(path string) (*Store, error) {
 	st := new(Store)
 	st.path = path
@@ -42,7 +48,7 @@ func (st *Store) Store(id string, file io.Reader, name string) (size int64, err 
 	return io.Copy(dest, file)
 }
 
-func (st *Store) Get(id string, name string) (io.ReadCloser, error) {
+func (st *Store) Get(id string, name string) (File, error) {
 	path := idPath(st.path, id)
 	return os.Open(p.Join(path, name))
 }
