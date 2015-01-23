@@ -99,6 +99,7 @@ func saveHandler(h handler) {
 		"lang":        lang}
 	err := h.db.UpdateBook(id, book)
 	if err != nil {
+		log.Error("Updating book: ", err)
 		notFound(h)
 		return
 	}

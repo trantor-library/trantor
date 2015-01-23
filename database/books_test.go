@@ -51,32 +51,6 @@ func TestActiveBook(t *testing.T) {
 	}
 }
 
-func TestUpdateBookKeywords(t *testing.T) {
-	db := Init(test_host, test_coll)
-	defer db.del()
-
-	tAddBook(t, db)
-	books, _, _ := db.GetNewBooks(1, 0)
-
-	db.UpdateBook(books[0].Id, map[string]interface{}{"title": "Some other title"})
-	books, _, _ = db.GetNewBooks(1, 0)
-	keywords := books[0].Keywords
-
-	alice := false
-	bob := false
-	for _, e := range keywords {
-		if e == "alice" {
-			alice = true
-		}
-		if e == "bob" {
-			bob = true
-		}
-	}
-	if !alice || !bob {
-		t.Error("Alce or Bob are not in the keywords:", keywords)
-	}
-}
-
 func TestFlag(t *testing.T) {
 	db := Init(test_host, test_coll)
 	defer db.del()

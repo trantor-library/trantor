@@ -4,6 +4,7 @@ import (
 	log "github.com/cihub/seelog"
 
 	"strings"
+	"time"
 
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -36,6 +37,11 @@ type Book struct {
 	Active              bool
 	BadQuality          int      `bad_quality`
 	BadQualityReporters []string `bad_quality_reporters`
+}
+
+type history struct {
+	Date    time.Time
+	Changes bson.M
 }
 
 func indexBooks(coll *mgo.Collection) {
@@ -119,18 +125,22 @@ func deleteBook(coll *mgo.Collection, id string) error {
 
 func updateBook(coll *mgo.Collection, id string, data map[string]interface{}) error {
 	var book map[string]interface{}
+	record := history{time.Now(), bson.M{}}
+
 	err := coll.Find(bson.M{"id": id}).One(&book)
 	if err != nil {
 		return err
 	}
-	for k, v := range data {
-		book[k] = v
+	for k, _ := range data {
+		record.Changes[k] = book[k]
+		if k == "lang" {
+			if lang := metadataLang(data); lang != "" {
+				data["_lang"] = lang
+			}
+		}
 	}
 
-	if lang := metadataLang(book); lang != "" {
-		data["_lang"] = lang
-	}
-	return coll.Update(bson.M{"id": id}, bson.M{"$set": data})
+	return coll.Update(bson.M{"id": id}, bson.M{"$set": data, "$push": bson.M{"history": record}})
 }
 
 func flagBadQuality(coll *mgo.Collection, id string, user string) error {
